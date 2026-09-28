@@ -145,7 +145,7 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
     - Danach trägt das Team seine echten Verfügbarkeiten ein.
   - Stand 28.09.2026, **Prüfung belegt, Haken fehlt nur wegen der echten Einträge des Teams:** Commit `2b961df`, live. Vitest `src/lib/availability-grid.test.ts` (19: Raster 08:00–20:00, Winterzeit ab 25.10., Felder außerhalb abgewiesen, Sperrzeit-Überlappung, Obergrenze) und `src/lib/availability.test.ts` gegen `-test` (13: speichern und ändern, deaktiviertes Mitglied speichert nichts, Orte und Sperrzeiten nur Admin, Ende vor Beginn abgewiesen, Ort mit Termin nicht löschbar); `npm test` 419 grün. Von Hand auf `-prod` am Handy (Fynn, Screenshots 22:24–22:27): Ort 0.23 als Standard angelegt, Sperrzeit „Beratung“ im Raster grau; beide Konten (Gmail, Uni) je 8 Felder am 20.10. mit Obergrenze 2 bzw. 1 gespeichert, per Abfrage auf `-prod` bestätigt. **Offen:** Das Team trägt die echten Verfügbarkeiten ein, sobald der Gesprächszeitraum nach dem Gespräch mit Bian feststeht; dann abhaken.
 
-- [ ] **Phase 10: Slotvorschläge (Kernlogik)**
+- [x] **Phase 10: Slotvorschläge (Kernlogik)**
   - Ergebnis: Eine reine Funktion nach TECH_DESIGN 6.2.
   - Prüfung: Vitest-Fälle laufen grün:
     - Keine Verfügbarkeit ergibt keine Slots.
@@ -155,12 +155,15 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
     - Die Verteilung ist gleichmäßig.
     - Die Kapazität reicht nicht: Der Rest wird gemeldet.
     - 30 Bewerber und 12 Mitglieder laufen in weniger als 1 Sekunde.
+  - Belegt am 28.09.2026: Vitest `src/lib/slot-proposals.test.ts` (18 grün, jedes Ergebnis zusätzlich gegen alle Regeln geprüft): keine Verfügbarkeit → keine Slots; Sperrzeiten; zweiter Ort bei gesperrtem Standardort; Obergrenzen inkl. bestehender Slots; keine Überlappung pro Ort (inkl. Puffer) und pro Person; gleichmäßig (6 Mitglieder, 9 Slots → je 3); Rest gemeldet; Puffer, der nicht auf 15 Minuten aufgeht; Winterzeit; „bevorzugt“; 30 Bewerber/12 Mitglieder/12 Tage in 112 ms. `npm test` 437 grün, Build fehlerfrei.
+  - Festlegungen (Fynn, 28.09.2026): Der Slot belegt den Ort für Gespräch + Puffer (kein Termin im Puffer). Gesprächsführer müssen nur für die Gesprächszeit verfügbar sein, bekommen aber während ihres Puffers kein weiteres Gespräch. Belastung eines Paars = der Stärker belastete der beiden, dann die Summe. Mitglieder können „bevorzugt“ sein (zählen nicht als belastet, gewinnen Gleichstand): Fynn will möglichst viele Gespräche führen.
 
 - [ ] **Phase 11: Terminplanung (Admin)**
   - Ergebnis: `/terminplanung` mit folgenden Funktionen:
     - Vorschläge erzeugen, ändern, bestätigen
     - Kapazitätsanzeige
     - einen Bewerber von Hand einem Slot zuordnen
+    - Markierung „bevorzugt“ pro Mitglied und Runde setzen (Fynn will möglichst viele Gespräche; braucht eine Spalte, z. B. in `member_round_settings`, also eine Migration), wird an `proposeSlots` übergeben
     - Hinweis bei einem befangenen oder deaktivierten Gesprächsführer
   - Prüfung:
     - Aus den Testverfügbarkeiten entstehen Vorschläge, 3 werden bestätigt, und die Kapazität zählt richtig herunter.
