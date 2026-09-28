@@ -32,7 +32,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
 - [x] Supabase-Konto anlegen (kostenlos)
 - [x] Gmail-Konto nur für das Tool anlegen, Zwei-Faktor-Anmeldung einschalten und ein App-Passwort erzeugen (`lawclinic.orgateam@gmail.com`, 28.09.2026)
 - [ ] **29.09.:** Gespräch mit Bian über den Einsatz mit echten Daten
-- [ ] **bis 30.09.:** Text des Datenschutzhinweises (Zweck, wer die Daten sieht, Löschdatum). Entwurf von Claude am 28.09.2026 geliefert; offen sind verantwortliche Stelle, Datenschutzbeauftragte(r), Rechtsgrundlage, Versandweg und Löschdatum.
+- [ ] **bis 30.09.:** Text des Datenschutzhinweises (Zweck, wer die Daten sieht, Löschdatum). Entwurf von Claude am 28.09.2026 geliefert; offen sind verantwortliche Stelle, Datenschutzbeauftragte(r), Rechtsgrundlage, Versandweg und Löschdatum. Der Entwurf steht vorläufig in der Runde auf `-prod`; im Formular ausklappbar mit Pflicht-Checkbox „zur Kenntnis genommen“.
 - [ ] **bis 30.09.:** Festlegen: Ende der Bewerbungsphase, Plätze, Löschdatum, Bewerbungsfragen und Ressorts 2026
 - [ ] **bis 06.10.:** Feedback-Kriterien und ihre Gewichtung mit dem Team festlegen
 - [ ] Anfrage an die Uni-IT zu Graph (siehe Phase G)
@@ -125,6 +125,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
     - Alle Tests laufen grün.
     - Eine Testbewerbung auf `-prod` geht vollständig durch und wird danach zurückgezogen. Danach ist die Datenbank leer.
     - Alle Zeilen aus PRD Abschnitt 7, die das Formular und den Login betreffen, sind von Hand geprüft.
+  - Stand 28.09.2026, **Prüfung belegt, Haken fehlt nur wegen der Rundendaten:** `-prod` hat alle sieben Migrationen (Prüfabfrage: 19 Tabellen, alle mit RLS, 73 Policies, Bucket `cv` privat/10 MB/PDF, Spalte `privacy_confirmed_at`; Screenshot), Admins `fynn.clemens@law-school.de` und `fynn.clemens@gmail.com` (Skript), Vercel zeigt auf `-prod` (Redeploy „Ready“, Login live, leere Rundenseite, Upload landet im Bucket von `-prod`). `npm test` 387 grün. Testbewerbung vom Handy auf `-prod` (Screenshots 20:24–20:29): leeres Pflichtfeld markiert, Bewerbung mit Mail, Bearbeitung sichtbar, zweite Bewerbung → „Bewerbung schon vorhanden“ plus neuer Link, alter Link → „Link ungültig“, zurückgezogen; danach per Abfrage 0 Bewerber, 0 Antworten, 0 Dateien. Nicht-PDF lässt sich auf dem iPhone gar nicht auswählen; getarnte Nicht-PDF und über 10 MB belegt Vitest. Login live: unbekannte Adresse → neutrale Meldung, schon benutzter Link → Hinweis (Screenshots). Vor dem Beginn geschlossen: live per Abruf. Nach dem Ende geschlossen: nur Vitest (Ende liegt in der Zukunft). **Offen:** Runde „Runde 2026“ auf `-prod` hat vorläufige Werte (aus „Testlauf“, Beginn 01.10.2026 00:00, Ende 15.10.2026 23:59, Löschdatum 30.11.2026, Datenschutz-Entwurf mit eckigen Klammern). Nach dem Gespräch mit Bian trägt Fynn die echten Werte ein, dann abhaken.
 
 > **Ausstiegspunkt 30.09. abends:** Ist Phase 8 nicht geprüft, geht die Ausschreibung wie bisher mit der Adresse für Bewerbungen per Mail raus. Das Formular wird nachgeschoben, sobald Etappe A steht. Bis dahin trägt der Admin eingehende Bewerbungen über `/einstellungen/erfassen` ein. Die Runde hängt nicht am Tool.
 
