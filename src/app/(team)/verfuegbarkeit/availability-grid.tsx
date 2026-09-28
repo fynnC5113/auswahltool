@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { button, input, secondaryButton } from "../../ui";
+import { button, secondaryButton } from "../../ui";
 import { saveAvailabilityAction } from "./actions";
 
 export type GridCell = { start: string; label: string; blocked: string[] };
@@ -182,25 +182,34 @@ export function AvailabilityGrid({
       </div>
 
       <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] -mx-4 lg:bottom-0 border-t border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-sm">
-            Höchstens so viele Gespräche (leer = unbegrenzt)
-            <input
-              value={max}
-              onChange={(e) => {
-                setMax(e.target.value);
-                setMessage(null);
-              }}
-              inputMode="numeric"
-              className={`${input} w-28`}
-            />
-          </label>
-          <button type="button" onClick={save} disabled={pending || !dirty} className={button}>
+        <div className="flex items-center gap-2 text-sm">
+          <label htmlFor="max-interviews">Höchstens</label>
+          <input
+            id="max-interviews"
+            value={max}
+            onChange={(e) => {
+              setMax(e.target.value);
+              setMessage(null);
+            }}
+            inputMode="numeric"
+            placeholder="–"
+            aria-describedby="max-hint"
+            className="w-14 rounded border border-zinc-300 px-2 py-1.5 text-center text-base dark:border-zinc-700 dark:bg-zinc-900"
+          />
+          <span>Gespräche</span>
+          <button type="button" onClick={save} disabled={pending || !dirty} className={`${button} ml-auto`}>
             {pending ? "Speichert …" : "Speichern"}
           </button>
-          {dirty && !pending && <span className="text-sm text-amber-700 dark:text-amber-400">Nicht gespeichert</span>}
-          {message && <span className={`text-sm ${message.error ? "text-red-700" : "text-emerald-700"}`}>{message.text}</span>}
         </div>
+        <p id="max-hint" className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+          {message ? (
+            <span className={message.error ? "text-red-700" : "text-emerald-700"}>{message.text}</span>
+          ) : dirty && !pending ? (
+            <span className="text-amber-700 dark:text-amber-400">Nicht gespeichert</span>
+          ) : (
+            "Leer = unbegrenzt"
+          )}
+        </p>
       </div>
     </div>
   );
