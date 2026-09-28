@@ -41,7 +41,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
 
 ## Etappe A: Bewerbungsstart am 01.10.
 
-- [ ] **Phase 1: Projektgerüst und erste Veröffentlichung**
+- [x] **Phase 1: Projektgerüst und erste Veröffentlichung**
   - Ergebnis:
     - Next.js-App mit TypeScript, Tailwind und Vitest
     - zwei Supabase-Projekte (`-test`, `-prod`) in der **Region Frankfurt**
