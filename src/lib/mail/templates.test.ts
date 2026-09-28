@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applicationReceivedMail, escapeHtml, formatBerlin, loginLinkMail } from "./templates";
+import { applicationLinkMail, applicationReceivedMail, escapeHtml, formatBerlin, loginLinkMail } from "./templates";
 
 describe("formatBerlin", () => {
   it("shows summer time (CEST) in Europe/Berlin", () => {
@@ -45,5 +45,24 @@ describe("applicationReceivedMail", () => {
   it("escapes the name in html", () => {
     expect(mail.html).toContain("Hallo Anna &lt;script&gt;,");
     expect(mail.html).not.toContain("<script>");
+  });
+});
+
+describe("applicationReceivedMail without deadline", () => {
+  it("offers no editing after the deadline", () => {
+    const mail = applicationReceivedMail({ name: "Anna", url: "https://x.example/b/t", closesAt: null });
+    expect(mail.text).toContain("ansehen oder zurückziehen");
+    expect(mail.text).not.toContain("ändern");
+  });
+});
+
+describe("applicationLinkMail", () => {
+  it("contains the new link, says old links are void, escapes the name", () => {
+    const url = "https://auswahltool.vercel.app/b/new";
+    const mail = applicationLinkMail({ name: "Anna <b>", url });
+    expect(mail.text).toContain(url);
+    expect(mail.text).toContain("gelten nicht mehr");
+    expect(mail.html).toContain(`href="${url}"`);
+    expect(mail.html).toContain("Anna &lt;b&gt;");
   });
 });

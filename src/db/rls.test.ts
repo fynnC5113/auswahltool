@@ -342,6 +342,21 @@ describe("applicants, answers, CV: members read, admins write", () => {
   rule("insert applicant_departments", ADMIN, async (c) =>
     canInsert(c, "applicant_departments", { applicant_id: await createApplicant(f.round), department_id: f.department }),
   );
+  // Phase 7: the admin entry writes through save_application with the session.
+  // Own round: other rules add questions to f.round, which would all need answers.
+  rule("save an application (save_application)", ADMIN, async (c) => {
+    const round = await createRound();
+    const question = ok(await db.from("questions").insert({ round_id: round, position: 1, text: "Warum?" }).select("id").single()).id;
+    const { error } = await c.rpc("save_application", {
+      p_create: true,
+      p_applicant: { ...applicantRow(round), id: randomUUID(), source: "admin" },
+      p_answers: [{ question_id: question, text: "Weil." }],
+      p_department_ids: [],
+    });
+    if (!error) return true;
+    if (error.code === DENIED) return false;
+    throw new Error(error.message);
+  });
   rule("create a signed CV link", MEMBERS, async (c) => {
     const { data, error } = await c.storage.from("cv").createSignedUrl(f.cvPath, 60);
     return !error && Boolean(data?.signedUrl);

@@ -50,6 +50,7 @@ export function loginLinkMail({ url }: { url: string }): Content {
   };
 }
 
+/** closesAt null: the application can no longer be changed (entered by an admin after the deadline). */
 export function applicationReceivedMail({
   name,
   url,
@@ -57,23 +58,46 @@ export function applicationReceivedMail({
 }: {
   name: string;
   url: string;
-  closesAt: Date;
+  closesAt: Date | null;
 }): Content {
-  const deadline = formatBerlin(closesAt);
+  const use = closesAt
+    ? `Über deinen persönlichen Link kannst du deine Bewerbung ansehen, bis zum ${formatBerlin(closesAt)} ändern oder zurückziehen.`
+    : "Über deinen persönlichen Link kannst du deine Bewerbung ansehen oder zurückziehen.";
   return {
     subject: "Deine Bewerbung für das Orga-Team der Law Clinic",
     text: [
       `Hallo ${name},`,
       "vielen Dank für deine Bewerbung für das Orga-Team der Law Clinic. Sie ist bei uns eingegangen.",
-      `Über deinen persönlichen Link kannst du deine Bewerbung ansehen, bis zum ${deadline} ändern oder zurückziehen. Später buchst du dort auch deinen Gesprächstermin:\n${url}`,
+      `${use} Später buchst du dort auch deinen Gesprächstermin:\n${url}`,
       "Bitte gib den Link nicht weiter, er ist dein Zugang zu deiner Bewerbung.",
       "Viele Grüße\nLaw Clinic Orga-Team",
     ].join("\n\n"),
     html: html([
       `Hallo ${escapeHtml(name)},`,
       "vielen Dank für deine Bewerbung für das Orga-Team der Law Clinic. Sie ist bei uns eingegangen.",
-      `Über deinen persönlichen Link kannst du deine Bewerbung ansehen, bis zum ${escapeHtml(deadline)} ändern oder zurückziehen. Später buchst du dort auch deinen Gesprächstermin:<br>${link(url, "Zu deiner Bewerbung")}`,
+      `${escapeHtml(use)} Später buchst du dort auch deinen Gesprächstermin:<br>${link(url, "Zu deiner Bewerbung")}`,
       "Bitte gib den Link nicht weiter, er ist dein Zugang zu deiner Bewerbung.",
+      "Viele Grüße<br>Law Clinic Orga-Team",
+    ]),
+  };
+}
+
+/** Second application with the same address: a new link, the old one no longer works. */
+export function applicationLinkMail({ name, url }: { name: string; url: string }): Content {
+  return {
+    subject: "Dein neuer Link zu deiner Bewerbung",
+    text: [
+      `Hallo ${name},`,
+      "für deine Adresse gibt es bereits eine Bewerbung für das Orga-Team der Law Clinic. Deshalb wurde keine zweite angelegt.",
+      `Hier ist dein neuer persönlicher Link. Über ihn kannst du deine Bewerbung ansehen, ändern oder zurückziehen:\n${url}`,
+      "Frühere Links zu deiner Bewerbung gelten nicht mehr. Bitte gib den Link nicht weiter.",
+      "Viele Grüße\nLaw Clinic Orga-Team",
+    ].join("\n\n"),
+    html: html([
+      `Hallo ${escapeHtml(name)},`,
+      "für deine Adresse gibt es bereits eine Bewerbung für das Orga-Team der Law Clinic. Deshalb wurde keine zweite angelegt.",
+      `Hier ist dein neuer persönlicher Link. Über ihn kannst du deine Bewerbung ansehen, ändern oder zurückziehen:<br>${link(url, "Zu deiner Bewerbung")}`,
+      "Frühere Links zu deiner Bewerbung gelten nicht mehr. Bitte gib den Link nicht weiter.",
       "Viele Grüße<br>Law Clinic Orga-Team",
     ]),
   };
