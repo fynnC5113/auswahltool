@@ -11,7 +11,7 @@ Was hier über Funktionen der Bibliotheken steht, ist am 28.09.2026 über Contex
 | **Next.js** (App Router, TypeScript) | Die ganze App: Seiten, Formulare, Serverlogik | Läuft direkt auf dem vorhandenen Vercel-Konto. Oberfläche und Server liegen in einem Projekt. | Das Framework ändert sich schnell, bei Updates müssen Teile nachgezogen werden. |
 | **Vercel** (kostenloser Tarif) | Hosting | Das Konto ist vorhanden. Die Funktionsregion wird auf Frankfurt (`fra1`) gestellt, Standard wäre Washington (`iad1`). | US-Anbieter. Im kostenlosen Tarif laufen Zeitplan-Jobs höchstens einmal täglich, und der Zeitpunkt schwankt innerhalb einer Stunde. |
 | **Supabase** (kostenloser Tarif, Region Frankfurt) | Postgres-Datenbank, Login-Links (Auth), PDF-Ablage (Storage), Live-Aktualisierung (Realtime) | Alles aus einer Hand. Es gibt einen DPA (Auftragsverarbeitungsvertrag). Laut Doku muss man eine **konkrete EU-Region** wählen, weil die Gruppe „Europa“ auch London und Zürich umfasst. | Der kostenlose Tarif **pausiert nach 7 Tagen ohne Aktivität** und hat keine herunterladbaren Backups. Man ist an Supabase gebunden: Die Datenbank ist mitnehmbar, Login, Ablage und Realtime nicht. |
-| **Microsoft Graph** (`/users/{postfach}/sendMail`) | Versandweg A: Mails aus dem Funktionspostfach der Law Clinic | Echter Absender Law Clinic, kostenlos. Die IT kann die Berechtigung `Mail.Send` per Application Access Policy auf **genau dieses eine Postfach** beschränken. | Braucht die einmalige Freigabe der Uni-IT (App-Registrierung plus Richtlinie). |
+| **Microsoft Graph** (`/users/{postfach}/sendMail`) | Versandweg A: Mails aus dem Funktionspostfach der Law Clinic | Echter Absender Law Clinic, kostenlos. Die IT kann die Berechtigung `Mail.Send` per RBAC for Applications in Exchange Online auf **genau dieses eine Postfach** beschränken (ersetzt laut Microsoft-Doku die Application Access Policy). | Braucht die einmalige Freigabe der Uni-IT (App-Registrierung plus Rollenzuweisung in Exchange). |
 | **Nodemailer** mit Gmail | Versandweg B (Ersatz): eigenes, kostenloses Gmail-Konto des Tools, Anmeldung per App-Passwort | Kostenlos und sofort nutzbar. Kann Kalendereinladungen direkt mitsenden (`icalEvent`, `method: REQUEST`). | Der Absender ist sichtbar eine Gmail-Adresse. Google (US) verarbeitet die Mails, darin stehen Namen, Termine und Links, aber keine Lebensläufe. Das Gmail-Konto braucht Zwei-Faktor-Anmeldung. |
 | **ics** | Kalendereinladungen erzeugen | Unterstützt Organisator, Teilnehmer, feste `uid` und `sequence`. Damit lassen sich Einladung, Änderung und Absage desselben Termins abbilden. | – |
 | **dnd kit** | Drag & Drop im Board | Hat eine eigene Anleitung für Karten zwischen mehreren Spalten, funktioniert per Maus, Touch und Tastatur. | – |
@@ -253,10 +253,16 @@ Das Ergebnis sind Slots mit dem Status `proposed`. Der Admin ändert sie oder be
 
 ### 6.5 Mail-Baustein
 Eine Funktion `sendMail({ to, subject, text, html, ics? })` mit zwei Umsetzungen:
-- **graph:** OAuth-Anmeldung als App (Client Credentials), dann `POST /users/{funktionspostfach}/sendMail`
 - **gmail:** Nodemailer mit `service: 'gmail'`, App-Passwort, `icalEvent` für Einladungen
+- **graph:** OAuth-Anmeldung als App (Client Credentials, Token etwa 1 Stunde gültig und bis kurz vor Ablauf wiederverwendet), dann `POST /users/{funktionspostfach}/sendMail` im **MIME-Format** (`Content-Type: text/plain`, Mail base64-kodiert, Antwort `202`). Die MIME-Nachricht baut Nodemailer (Stream-Transport), damit beide Wege dieselbe Mail mit Text- und HTML-Teil und später derselben Kalendereinladung verschicken.
 
-Was welcher Weg genau braucht (App-Registrierung und Richtlinie bei der IT, App-Passwort bei Gmail), wird beim Bau gegen die Doku geprüft. Gebaut und getestet wird zuerst **gmail**.
+Absender ist „Law Clinic Orga-Team“ mit der Gmail-Adresse bzw. dem Funktionspostfach, „Antwort an“ ist `rounds.reply_to` (Ersatz: `MAIL_REPLY_TO`). Umgebungsvariablen: `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `MAIL_REPLY_TO`, `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`, `GRAPH_MAILBOX`.
+
+Freigabe durch die IT für **graph** (laut Microsoft-Doku, am 28.09.2026 nachgelesen):
+1. App-Registrierung in Entra ID mit Client Secret. `Mail.Send` dort **nicht** per Admin-Consent freigeben, sonst gilt das Recht für alle Postfächer (Entra- und Exchange-Rechte addieren sich).
+2. In Exchange Online (RBAC for Applications): `New-ServicePrincipal` als Verweis auf die App, eine Management Scope nur für das Funktionspostfach, `New-ManagementRoleAssignment -Role "Application Mail.Send" -CustomResourceScope …`. Prüfbar mit `Test-ServicePrincipalAuthorization`.
+
+**Spamfilter der Uni (festgestellt 28.09.2026):** Testmails über **gmail** an @law-school.de landeten im Junk-Ordner (`SCL:5`, `CAT:PHISH`), obwohl SPF, DKIM und DMARC bestanden. Abhilfe bis **graph** läuft: Die IT trägt die Gmail-Adresse in die Tenant Allow/Block List ein. Solche Einträge heben laut Doku Spam und Phishing (nicht hochgradig) auf, laufen aber standardmäßig 45 Tage nach letzter Nutzung ab, also vor jeder Runde erneuern lassen.
 
 Mails an Bewerber und Team enthalten keine Lebensläufe und keine Bewertungen, nur Namen, Termine und Links.
 
@@ -309,7 +315,7 @@ Mails an Bewerber und Team enthalten keine Lebensläufe und keine Bewertungen, n
 ## 9. Prüfpunkte (nicht verifiziert)
 
 - [ ] Bietet Vercel für den kostenlosen Tarif einen Auftragsverarbeitungsvertrag an? Relevant für das Gespräch mit Bian.
-- [ ] Wie hoch ist das tägliche Sendelimit des Gmail-Kontos? Erwartet werden rund 150 Mails pro Runde, verteilt über Wochen.
+- [x] Wie hoch ist das tägliche Sendelimit des Gmail-Kontos? Erwartet werden rund 150 Mails pro Runde, verteilt über Wochen. **Geklärt 28.09.2026:** 500 Mails pro Tag, danach 1 bis 24 Stunden gesperrt (Google-Hilfe, support.google.com/mail/answer/22839). Reicht deutlich.
 - [ ] Hält der tägliche Zeitplan-Job Supabase wach, sodass es während einer Runde nicht pausiert? Sonst muss das Projekt vor einer Runde einmal von Hand aufgeweckt werden.
-- [ ] Genauer Ablauf der IT-Freigabe für Graph (App-Registrierung, `Mail.Send`, Beschränkung auf das Funktionspostfach). Das ist die Grundlage für die Anfrage an die IT.
+- [ ] Genauer Ablauf der IT-Freigabe für Graph (App-Registrierung, `Mail.Send`, Beschränkung auf das Funktionspostfach). Das ist die Grundlage für die Anfrage an die IT. Stand 28.09.2026: Ablauf laut Doku in 6.5 beschrieben, von der IT noch nicht bestätigt.
 - [ ] Laufen Realtime-Änderungen bei 20 gleichzeitigen Geräten im kostenlosen Tarif ohne Engpass?
