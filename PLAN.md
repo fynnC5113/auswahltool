@@ -143,6 +143,7 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
     - Zwei Mitglieder tragen am Handy Verfügbarkeiten ein (Screenshot).
     - Eine Sperrzeit für 0.23 wird im Raster als belegt angezeigt.
     - Danach trägt das Team seine echten Verfügbarkeiten ein.
+  - Stand 28.09.2026, **Prüfung belegt, Haken fehlt nur wegen der echten Einträge des Teams:** Commit `2b961df`, live. Vitest `src/lib/availability-grid.test.ts` (19: Raster 08:00–20:00, Winterzeit ab 25.10., Felder außerhalb abgewiesen, Sperrzeit-Überlappung, Obergrenze) und `src/lib/availability.test.ts` gegen `-test` (13: speichern und ändern, deaktiviertes Mitglied speichert nichts, Orte und Sperrzeiten nur Admin, Ende vor Beginn abgewiesen, Ort mit Termin nicht löschbar); `npm test` 419 grün. Von Hand auf `-prod` am Handy (Fynn, Screenshots 22:24–22:27): Ort 0.23 als Standard angelegt, Sperrzeit „Beratung“ im Raster grau; beide Konten (Gmail, Uni) je 8 Felder am 20.10. mit Obergrenze 2 bzw. 1 gespeichert, per Abfrage auf `-prod` bestätigt. **Offen:** Das Team trägt die echten Verfügbarkeiten ein, sobald der Gesprächszeitraum nach dem Gespräch mit Bian feststeht; dann abhaken.
 
 - [ ] **Phase 10: Slotvorschläge (Kernlogik)**
   - Ergebnis: Eine reine Funktion nach TECH_DESIGN 6.2.
