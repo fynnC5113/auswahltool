@@ -111,8 +111,9 @@ async function createApplicant(roundId: string): Promise<string> {
   return ok(await db.from("applicants").insert(applicantRow(roundId)).select("id").single()).id;
 }
 
+/** Every slot gets its own hour: the pair may not sit in two overlapping slots. */
 function slotRow(roundId: string, locationId: string, applicantId: string | null = null) {
-  const start = new Date("2026-10-20T10:00:00+02:00");
+  const start = new Date(Date.UTC(2026, 9, 21, 6) + next() * 60 * 60_000);
   return {
     round_id: roundId,
     location_id: locationId,
@@ -392,6 +393,16 @@ describe("availabilities, member_round_settings: members read, own rows only", (
   rule("update someone else's member_round_settings", NOBODY, (c) =>
     canUpdate(c, "member_round_settings", { max_interviews: 9 }, { member_id: id.interviewerA }),
   );
+  // Phase 11: "preferred" only through set_preferred, and only by admins.
+  rule("set own preferred directly", NOBODY, (c, role) =>
+    canUpdate(c, "member_round_settings", { preferred: true }, { round_id: f.round, member_id: ownId(role) }),
+  );
+  rule("set preferred (set_preferred)", ADMIN, async (c) => {
+    const { error } = await c.rpc("set_preferred", { p_round_id: f.round, p_member_id: id.interviewerB, p_preferred: true });
+    if (!error) return true;
+    if (error.code === DENIED) return false;
+    throw new Error(error.message);
+  });
 });
 
 describe("locations, blocked_times, slots: members read, admins write", () => {

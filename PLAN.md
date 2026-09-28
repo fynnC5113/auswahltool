@@ -160,19 +160,22 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
 
 - [ ] **Phase 11: Terminplanung (Admin)**
   - Ergebnis: `/terminplanung` mit folgenden Funktionen:
-    - Vorschläge erzeugen, ändern, bestätigen
-    - Kapazitätsanzeige
-    - einen Bewerber von Hand einem Slot zuordnen
-    - Markierung „bevorzugt“ pro Mitglied und Runde setzen (Fynn will möglichst viele Gespräche; braucht eine Spalte, z. B. in `member_round_settings`, also eine Migration), wird an `proposeSlots` übergeben
-    - Hinweis bei einem befangenen oder deaktivierten Gesprächsführer
+    - Festlegungen (Fynn, 29.09.2026): Mit einem Klick entstehen alle möglichen Termine (Zeit + Ort, ohne Paar), sofort buchbar, auch während der Bewerbungsphase, keine Bestätigung. Das Paar wählt das Tool erst bei der Buchung (gleichmäßig nach gebuchten Gesprächen), der Admin kann es festlegen. Obergrenze zählt gebuchte Gespräche. TECH_DESIGN 6.2.
+    - „Alle möglichen Termine erzeugen“, „Alle freien Termine löschen“, Termin anlegen, freie Termine ändern und löschen, Paar festlegen
+    - Kapazitätsanzeige (Bewerbungen ohne Termin, freie und derzeit buchbare Termine)
+    - einen Bewerber von Hand eintragen (das Tool wählt das Paar)
+    - Markierung „bevorzugt“ pro Mitglied und Runde (Migration `20260929100000_scheduling.sql`, nur Admins)
+    - Hinweise: befangener oder deaktivierter Gesprächsführer, nicht verfügbar, über der Obergrenze, Ort gesperrt, kein Paar mehr frei
   - Prüfung:
-    - Aus den Testverfügbarkeiten entstehen Vorschläge, 3 werden bestätigt, und die Kapazität zählt richtig herunter.
-    - Eine Änderung, die eine Überschneidung erzeugen würde, wird abgewiesen.
+    - Aus den Testverfügbarkeiten entstehen Termine; 3 Bewerber werden eingetragen und bekommen ein Paar; die Kapazität zählt richtig.
+    - Eine Änderung, die eine Überschneidung erzeugen würde (Ort oder Person), wird abgewiesen.
 
 - [ ] **Phase 12: Buchung, Umbuchung und Kalendermails**
   - Ergebnis:
-    - Buchung und Umbuchung auf `/b/[token]`
-    - Befangene Slots werden ausgeblendet.
+    - Buchung und Umbuchung auf `/b/[token]`, schon während der Bewerbungsphase (Fynn, 29.09.2026); das Paar wählt `choosePair` bei der Buchung (TECH_DESIGN 6.2/6.3), bei gleichzeitigem Doppeleinsatz das nächste Paar
+    - Obergrenze (gebuchte Gespräche) in der Datenbank prüfen (Migration)
+    - Angeboten werden nur Termine, für die es ohne befangene Mitglieder ein Paar gibt.
+    - Offene Frage an Fynn: Bekommen Bewerber, die sich vor dem Start der Buchung beworben haben, eine Mail „Jetzt Termin buchen“?
     - Hinweis „Mail an die Law Clinic“, wenn kein Slot passt
     - Kalendermails nach TECH_DESIGN 6.4 (ics)
   - Prüfung:

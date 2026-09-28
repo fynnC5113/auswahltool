@@ -144,8 +144,8 @@ Alle Tabellen hängen über `round_id` an `rounds`, mit `on delete cascade`. Lö
 | round_id, location_id | uuid | |
 | starts_at | timestamptz | Beginn des Gesprächs |
 | interview_ends_at, ends_at | timestamptz | Ende des Gesprächs, Ende des Puffers |
-| interviewer_a, interviewer_b | uuid | Paar |
-| status | `proposed` \| `confirmed` | |
+| interviewer_a, interviewer_b | uuid, null | Paar. Leer, bis gebucht wird oder ein Admin es festlegt; beide gesetzt oder beide leer, ein gebuchter Slot hat immer ein Paar. |
+| status | `proposed` \| `confirmed` | Seit 29.09.2026 legt das Tool jeden Slot als `confirmed` an (keine Bestätigung, Fynn); `proposed` wird nicht mehr benutzt. |
 | applicant_id | uuid, null, **eindeutig** | Buchung. Die Eindeutigkeit verhindert Doppelbuchungen. |
 | booked_at | timestamptz, null | |
 | ics_sequence | int | Zähler für Kalender-Updates |
@@ -183,7 +183,7 @@ Zusatzregel in der Datenbank: Zwei Slots am selben Ort dürfen sich zeitlich nic
 ### 4.3 Berechnet, nicht gespeichert
 
 - **Kurzbewertung** = Σ(score × weight) / Σ(weight) über alle abgegebenen Werte beider Gesprächsführer. Damit sie über Kriterien mit unterschiedlicher Skala vergleichbar ist, wird jede Skala vorher auf 0 bis 1 umgerechnet. Angezeigt wird auf der Skala des ersten Kriteriums. Fehlt Feedback ganz, steht „–“ auf der Karte.
-- **Kapazität** = Zahl der Bewerbungen minus Zahl der bestätigten Slots.
+- **Kapazität**: Bewerbungen ohne Termin (= Bewerbungen minus gebuchte Slots), freie Slots und davon derzeit buchbare (Paar festgelegt oder noch eines zu finden).
 - **Zusammensetzungsleiste** = Anzahl in der Zone `seat`, gruppiert nach `cohort` und nach Wunsch-Ressort.
 
 ## 5. Zugriffsregeln (RLS)
@@ -226,20 +226,19 @@ Entwürfe (`submitted_at` ist null) sieht nur der Verfasser.
    - Die Buchung des Slots wird freigegeben.
    - Kalender-Absage an die Gesprächsführer
 
-### 6.2 Slotvorschläge (Kernlogik, als reine Funktion testbar)
-Eingaben: Verfügbarkeiten, Obergrenzen, Orte, Sperrzeiten, bestehende Slots, Dauer und Puffer, Zeitraum, benötigte Anzahl.
+### 6.2 Slots und Paare (Kernlogik, als reine Funktionen testbar)
+Festgelegt von Fynn am 29.09.2026, `src/lib/slot-offers.ts`. Die ursprüngliche Fassung (Slots mit festem Paar und Bestätigung, `proposeSlots` in `src/lib/slot-proposals.ts`, Phase 10) wird nicht mehr aufgerufen.
 
-Vorgehen, in Worten:
-1. Alle möglichen Startzeiten im 15-Minuten-Raster pro Ort bilden, an denen Gespräch plus Puffer ganz frei sind: keine Sperrzeit und kein anderer Slot an diesem Ort.
-2. Für jede Startzeit alle Paare bestimmen, die über die ganze Dauer verfügbar sind und ihre Obergrenze noch nicht erreicht haben. Niemand darf zur selben Zeit schon in einem anderen Slot sitzen.
-3. Nacheinander den Slot wählen, dessen Paar bisher die **wenigsten** Gespräche hat. Bei Gleichstand gewinnt die frühere Zeit.
-4. Stoppen, sobald die benötigte Anzahl erreicht ist oder keine Möglichkeit mehr bleibt. Die Kapazitätsanzeige zeigt den Rest.
+**`offerTimes`: alle möglichen Slots.** Pro Ort (Standardort zuerst) ab der frühesten Startzeit lückenlos hintereinander (Gespräch + Puffer), wo der Ort frei ist (keine Sperrzeit, kein anderer Slot) und mindestens zwei aktive Mitglieder für die Gesprächszeit verfügbar sind und bis Pufferende in keinem Slot mit Paar sitzen. Ein weiterer Ort zur selben Zeit nur, wenn für jeden überlappenden Slot ohne Paar zwei weitere Leute da sind. Obergrenzen zählen hier nicht (nur 0 = nimmt keine Gespräche). Der Admin klickt „Alle möglichen Termine erzeugen“; vorhandene Slots bleiben, ein erneuter Klick ergänzt. Die Slots sind sofort buchbar (`confirmed`, ohne Paar), auch während der Bewerbungsphase.
 
-Das Ergebnis sind Slots mit dem Status `proposed`. Der Admin ändert sie oder bestätigt sie (`confirmed`).
+**`choosePair`: das Paar bei der Buchung.** Aus den aktiven Mitgliedern, die für die Gesprächszeit verfügbar sind, bis Pufferende in keinem Slot mit Paar sitzen, weniger gebuchte Gespräche als ihre Obergrenze haben und beim Bewerber nicht befangen sind: das Paar mit dem kleinsten Wert des stärker belasteten Partners, dann eines mit „bevorzugt“, dann die kleinste Summe. Belastung = gebuchte Gespräche; „bevorzugt“ zählt als unbelastet. Hat ein Admin das Paar festgelegt, gilt dieses.
+
+Der Admin ändert oder löscht freie Slots und legt bei jedem Slot das Paar fest oder ändert es. Zeit und Ort gebuchter Slots ändert erst Phase 12 (Kalendermails).
 
 ### 6.3 Buchung
-- Angeboten werden bestätigte, freie Slots, in denen kein Gesprächsführer bei diesem Bewerber befangen ist.
-- Die Buchung schreibt `applicant_id` in den Slot. Ist der Slot inzwischen vergeben, meldet die Eindeutigkeitsregel einen Fehler, und der Bewerber sieht „Dieser Termin ist gerade vergeben worden“.
+- Angeboten werden freie Slots, schon während der Bewerbungsphase: mit festgelegtem Paar, in dem niemand bei diesem Bewerber befangen ist, oder ohne Paar, wenn `choosePair` (ohne die Befangenen) eines findet.
+- Die Buchung schreibt `applicant_id` und das Paar in den Slot. Die Regel „niemand in zwei Gesprächen gleichzeitig“ (Trigger) kann eine gleichzeitige Buchung abweisen; dann versucht der Server das nächste Paar. Die Obergrenze (gebuchte Gespräche) muss die Datenbank bei der Buchung prüfen, damit gleichzeitige Buchungen sie nicht überschreiten (Migration in Phase 12).
+- Ist der Slot inzwischen vergeben, meldet die Eindeutigkeitsregel einen Fehler, und der Bewerber sieht „Dieser Termin ist gerade vergeben worden“.
 - Umbuchen geht nur bis `starts_at − rebook_hours_before`. Dabei wird der alte Slot frei, der neue gebucht, und beide Seiten bekommen die passende Kalendermail.
 
 ### 6.4 Kalendermails

@@ -92,10 +92,11 @@ function slotAt(roundId: string, locationId: string, a: string, b: string, time:
 
 let memberA: string;
 let memberB: string;
+let memberC: string;
+let memberD: string;
 
 beforeAll(async () => {
-  memberA = await createMember();
-  memberB = await createMember();
+  [memberA, memberB, memberC, memberD] = await Promise.all([createMember(), createMember(), createMember(), createMember()]);
 });
 
 afterAll(async () => {
@@ -129,22 +130,55 @@ describe("slots", () => {
     ok(await db.from("slots").insert(slotAt(roundId, loc, memberA, memberB, "10:00")));
 
     // 10:00 slot runs until 10:45 including buffer; 10:30 overlaps only the buffer.
-    const overlap = await db.from("slots").insert(slotAt(roundId, loc, memberA, memberB, "10:30"));
+    // Another pair, so only the location clashes (the same pair would hit the person rule first).
+    const overlap = await db.from("slots").insert(slotAt(roundId, loc, memberC, memberD, "10:30"));
 
     expect(overlap.error?.code).toBe(EXCLUSION_VIOLATION);
   });
 
-  it("allows back-to-back slots and the same time at another location", async () => {
+  it("allows back-to-back slots and the same time at another location with another pair", async () => {
     const roundId = await createRound();
     const loc1 = await createLocation(roundId, "Raum 1");
     const loc2 = await createLocation(roundId, "Raum 2");
     ok(await db.from("slots").insert(slotAt(roundId, loc1, memberA, memberB, "10:00")));
 
     const backToBack = await db.from("slots").insert(slotAt(roundId, loc1, memberA, memberB, "10:45"));
-    const otherRoom = await db.from("slots").insert(slotAt(roundId, loc2, memberA, memberB, "10:00"));
+    const otherRoom = await db.from("slots").insert(slotAt(roundId, loc2, memberC, memberD, "10:00"));
 
     expect(backToBack.error).toBeNull();
     expect(otherRoom.error).toBeNull();
+  });
+
+  it("rejects a person in two overlapping slots, buffer included, even at another location", async () => {
+    const roundId = await createRound();
+    const loc1 = await createLocation(roundId, "Raum 1");
+    const loc2 = await createLocation(roundId, "Raum 2");
+    ok(await db.from("slots").insert(slotAt(roundId, loc1, memberA, memberB, "10:00")));
+
+    // memberB sits in the first slot until 10:45 (buffer).
+    const overlap = await db.from("slots").insert(slotAt(roundId, loc2, memberC, memberB, "10:30"));
+    const later = await db.from("slots").insert(slotAt(roundId, loc2, memberC, memberB, "10:45"));
+    const round2 = await createRound();
+    const otherRound = await db.from("slots").insert(slotAt(round2, await createLocation(round2), memberA, memberB, "10:00"));
+
+    expect(overlap.error?.hint).toBe("person_overlap");
+    expect(later.error).toBeNull();
+    expect(otherRound.error).toBeNull();
+  });
+
+  it("moving a slot onto a person's other slot is rejected; booking it is not", async () => {
+    const roundId = await createRound();
+    const loc1 = await createLocation(roundId, "Raum 1");
+    const loc2 = await createLocation(roundId, "Raum 2");
+    ok(await db.from("slots").insert(slotAt(roundId, loc1, memberA, memberB, "10:00")));
+    const moved = ok(await db.from("slots").insert(slotAt(roundId, loc2, memberA, memberC, "12:00")).select("id").single());
+    const applicant = ok(await createApplicant(roundId));
+
+    const update = await db.from("slots").update(slotAt(roundId, loc2, memberA, memberC, "10:15")).eq("id", moved.id);
+    const booking = await db.from("slots").update({ applicant_id: applicant.id }).eq("id", moved.id);
+
+    expect(update.error?.hint).toBe("person_overlap");
+    expect(booking.error).toBeNull();
   });
 });
 

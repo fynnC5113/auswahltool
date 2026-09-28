@@ -41,7 +41,7 @@ Die Reihenfolge der Stufen bleibt die Bau-Reihenfolge.
   - Teammitglieder anlegen und deaktivieren
   - andere Mitglieder zu Admins machen
   - die Runde konfigurieren
-  - Slots bestätigen
+  - Termine erzeugen und ändern
   - Bewerbungen erfassen
   - die Sichtsperre aufheben
   - das Board einfrieren
@@ -91,15 +91,16 @@ Pro Jahr gibt es eine Runde. Konfigurierbar sind:
 - **Orte:** Standard ist 0.23. Weitere Orte legt der Admin an. An einem Ort findet immer nur ein Gespräch gleichzeitig statt.
 - **Sperrzeiten:** Der Admin trägt ein, wann ein Ort belegt ist, etwa 0.23 wegen Beratungen. In Sperrzeiten entstehen keine Slots.
 - **Slot = Gespräch + Puffer.** Der Puffer dient der Nachbesprechung und dem Feedback.
-- **Slotvorschläge:** Aus den Verfügbarkeiten schlägt das Tool Slots mit Zeit, Ort und zwei Gesprächsführern vor. Dabei gilt:
+- **Slots erzeugen** (Fynn, 29.09.2026): Mit einem Klick legt das Tool alle Slots an, die die Verfügbarkeiten hergeben (Zeit und Ort, möglichst viel Auswahl für die Bewerber). Sie sind sofort buchbar, auch schon während der Bewerbungsphase, damit die Gespräche direkt nach deren Ende beginnen können. Ein erneuter Klick ergänzt, was neu möglich ist.
+- **Paar bei der Buchung:** Wer das Gespräch führt, legt das Tool erst fest, wenn ein Bewerber bucht. Dabei gilt:
   - Die Paare bildet das Tool frei.
-  - Die Gespräche werden möglichst gleichmäßig verteilt.
-  - Obergrenzen werden eingehalten.
-- Der Admin kann jeden Vorschlag ändern und bestätigt ihn.
-- **Kapazitätsanzeige:** zeigt, wie viele Slots im Verhältnis zur Zahl der Bewerbungen noch fehlen.
+  - Die Gespräche werden möglichst gleichmäßig verteilt (das Paar mit den bisher wenigsten gebuchten Gesprächen).
+  - Obergrenzen zählen gebuchte Gespräche und werden eingehalten.
+- Der Admin kann freie Slots ändern oder löschen und bei jedem Slot das Paar von Hand festlegen.
+- **Kapazitätsanzeige:** Bewerbungen ohne Termin, freie und derzeit buchbare Slots; Warnung, wenn weniger buchbare Slots da sind als Bewerber ohne Termin.
 
 **Bewerber:**
-- Bewerber buchen über ihre persönliche Seite einen freien, bestätigten Slot. Ein Slot kann nur einmal gebucht werden.
+- Bewerber buchen über ihre persönliche Seite einen freien Slot, auch schon während der Bewerbungsphase. Ein Slot kann nur einmal gebucht werden.
 - **Befangenheit:** Ein Gesprächsführer, der sich bei einem Bewerber als befangen markiert hat, darf dessen Slot nicht führen. Das Tool bietet diesem Bewerber solche Slots nicht an. Markiert sich ein Gesprächsführer erst nach der Buchung als befangen, sehen die Admins einen Hinweis und teilen um.
 - Passt kein Slot, zeigt die Buchungsseite nur den Hinweis, sich per Mail an die Law Clinic zu wenden. Der Admin kann dann einen Slot anlegen oder einen Bewerber einem Slot zuordnen.
 
@@ -213,7 +214,7 @@ Keine festgelegt. Neue Ideen werden erst nach der Fertigstellung der drei Stufen
   ├─ [Meine Verfügbarkeit]    Zeitraster zum Anklicken, Obergrenze
   ├─ [Meine Gespräche]        (Handy) eigene Termine mit Ort und Partner
   │     └─ [Feedback]         Kriterien: Skala + Freitext, Gesamtfeld, Abgeben
-  ├─ [Terminplanung] Admin    Orte, Sperrzeiten, Slotvorschläge bestätigen/ändern,
+  ├─ [Terminplanung] Admin    Orte, Sperrzeiten, Slots erzeugen/ändern,
   │                           Kapazitätsanzeige, Bewerber einem Slot zuordnen
   ├─ [Draft Board]            vier Zonen, Zusammensetzungsleiste, Verlauf
   │     ├─ [Detail]           Seitenleiste: Feedback oben, Antworten + CV darunter
