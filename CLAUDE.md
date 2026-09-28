@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stand des Repos
 
-Phase 1 und 2 sind fertig: Next.js-Gerüst (Next.js 16, Tailwind 4, Vitest 5) und alle Tabellen samt Bucket `cv` auf `auswahltool-test` (Migrationen unter `supabase/migrations/`). RLS ist eingeschaltet, aber noch ohne Regeln (Phase 3). Den aktuellen Stand zeigen die Checkboxen in `PLAN.md`.
+Phase 1 bis 3 sind fertig: Next.js-Gerüst (Next.js 16, Tailwind 4, Vitest 5), alle Tabellen samt Bucket `cv` und alle RLS-Regeln auf `auswahltool-test` (Migrationen unter `supabase/migrations/`, auf `-prod` noch keine, das ist Phase 8). Nächste Phase: 4 (Mail-Baustein Gmail), braucht das Gmail-Konto mit App-Passwort von Fynn. Den aktuellen Stand zeigen die Checkboxen in `PLAN.md`.
 
 - Repo: https://github.com/fynnC5113/auswahltool (privat)
 - Live: https://auswahltool.vercel.app
@@ -26,7 +26,8 @@ Jede Phase in `PLAN.md` hat einen Abschnitt **Prüfung**. Eine Phase gilt erst m
 - `npm test`: Vitest (`vitest run`, Konfiguration in `vitest.config.mts`, Tests unter `src/**/*.test.ts`)
 - einzelner Test: `npx vitest run <pfad>` bzw. `-t "<testname>"`
 - Datenbanktests (`src/db/*.test.ts`) laufen gegen `auswahltool-test` mit den Schlüsseln aus `.env.local` (geladen in `vitest.config.mts`) und räumen ihre Daten selbst auf.
-- Migrationen: Supabase CLI (`npx supabase …`, Dev-Dependency), verknüpft mit `auswahltool-test` (ref `oxbryalllwtwxrisozeq`). `supabase db push` erreicht die Datenbank derzeit nicht (siehe Offene Nachweise); Phase-2-Migrationen wurden deshalb von Fynn im SQL-Editor des Dashboards ausgeführt.
+- RLS-Tests (`src/db/rls.test.ts`) melden Testnutzer ohne Mail an: `auth.admin.generateLink({ type: 'magiclink' })`, dann `verifyOtp({ token_hash: properties.hashed_token, type: 'email' })` mit dem Publishable Key. Neue Regeln dort mit `rule(name, erlaubteRollen, versuch)` ergänzen; das erzeugt je Rolle einen „may“/„may not“-Test.
+- Migrationen: Supabase CLI (`npx supabase …`, Dev-Dependency), verknüpft mit `auswahltool-test` (ref `oxbryalllwtwxrisozeq`). `supabase db push` erreicht die Datenbank derzeit nicht (siehe Offene Nachweise); die Migrationen aus Phase 2 und 3 wurden deshalb von Fynn im SQL-Editor des Dashboards ausgeführt.
 
 Entwickelt und getestet wird gegen das Supabase-Projekt `auswahltool-test`, echte Daten liegen nur in `auswahltool-prod`. Keine lokale Datenbank, kein Docker. Geheimnisse nur in `.env.local` (von `.env*` in `.gitignore` erfasst) und in den Vercel-Umgebungsvariablen. Vorlage mit den Variablennamen: `.env.example`.
 
@@ -43,7 +44,7 @@ Next.js App Router + TypeScript auf Vercel (Funktionsregion `fra1`), Supabase (R
 
 Drei Zugriffswege, die sich nicht vermischen dürfen:
 
-1. **Team:** Alle Zugriffe laufen mit der Session des Mitglieds, **RLS entscheidet**. Keine Sicherheitslogik nur in der Oberfläche. Hilfsfunktionen `is_member()` / `is_admin()` prüfen immer auch `team_members.active`.
+1. **Team:** Alle Zugriffe laufen mit der Session des Mitglieds, **RLS entscheidet**. Keine Sicherheitslogik nur in der Oberfläche. Hilfsfunktionen `private.is_member()` / `private.is_admin()` prüfen immer auch `team_members.active`. Sie und die übrigen RLS-Hilfsfunktionen (`board_open`, `board_open_for_applicant`, `can_read_feedback`) liegen als `security definer` im Schema `private`, das die Data API nicht freigibt; nur `authenticated` darf sie ausführen. Alle Policies gelten nur `to authenticated`, `anon` hat weder Tabellenrechte noch Storage-Regeln. Festgelegt in Phase 3: Die eigene Befangenheit darf man wieder entfernen; das Einfrieren sperrt auch Feedback (inkl. Entwürfe); `board_positions` hat keine Delete-Regel (nur Kaskade).
 2. **Bewerber** (`/b/[token]`): kein Konto. Der Server prüft das Token (gespeichert wird nur der SHA-256-Hash), danach Service-Role-Zugriff, **fest auf die `applicant_id` dieses Bewerbers begrenzt**. Der Service-Role-Schlüssel verlässt nie den Server.
 3. **Öffentliches Formular** (`/bewerben`): schreibt nur über den Server, nach Prüfung von Frist, Pflichtfeldern, PDF-Typ und max. 10 MB.
 
@@ -73,6 +74,7 @@ Offene Nachweise aus abgeschlossenen Phasen:
 - Phase 1: Dass Vercel-Funktionen tatsächlich in `fra1` laufen, ist nur per Einstellung belegt, noch nicht im Betrieb. Nachliefern mit der ersten Serverfunktion (Phase 4 oder 5), z. B. über `process.env.VERCEL_REGION`. `x-vercel-id` einer statischen Seite zeigt nur den Edge-Knoten.
 - Phase 2: `npx supabase db push` scheitert mit „Connection timed out“ zu `aws-0-eu-central-1.pooler.supabase.com` (Adresse laut Dashboard korrekt), im Heimnetz und über den Handy-Hotspot; auch der temporäre Login-Role-Weg ohne Passwort scheiterte. Ursache unbekannt. Vor Phase 8 klären, dann die Migrationshistorie von `-test` mit `supabase migration repair --status applied <version>` nachtragen (Befehl vorher gegen die Doku prüfen).
 - Phase 2: Beim Upload muss der `Blob` selbst den Typ `application/pdf` tragen; ein untypisierter Blob kommt als `application/octet-stream` an und wird vom Bucket abgelehnt. Relevant für Phase 7.
+- Seit Phase 3 (festgestellt 28.09.2026): Im Build-Ordner `.next/types/` liegen iCloud-Doppel-Kopien (`… 2.ts`). `npx tsc --noEmit` meldet deshalb „Duplicate identifier“, obwohl der Quellcode fehlerfrei ist. Noch nicht bereinigt, bei Fynn nachfragen, bevor `.next` gelöscht wird. Kann auch `npm run build` stören.
 
 ## Session-Ende („Ende“)
 
