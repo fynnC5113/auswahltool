@@ -1,0 +1,272 @@
+# Bauplan: Auswahltool Orga-Team
+
+Grundlage: `PRD.md` und `TECH_DESIGN.md`. Das Tool wird schon in der **Runde 2026** eingesetzt. Deshalb ist der Plan nach den Terminen der Runde geordnet: Jede Etappe muss fertig sein, bevor die Runde sie braucht.
+
+Ablauf pro Phase:
+1. Plan-Mode (`Shift+Tab`)
+2. Vorschlag prüfen
+3. Umsetzen
+4. Prüfung durchführen
+5. Commit
+
+Eine Phase gilt erst als fertig, wenn ihre **Prüfung** mit Beleg erfüllt ist: Testausgabe, Befehl mit Rückgabe oder Screenshot.
+
+Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in `auswahltool-prod`.
+
+## Termine der Runde 2026
+
+| Datum | Ereignis |
+| :---- | :---- |
+| 29.09. | Gespräch mit Bian |
+| **01.10.** | Beginn der Bewerbungsphase |
+| ca. 15.10. | Ende der Bewerbungsphase |
+| ca. 20.10. | erste Gespräche |
+| ca. 05.11. | Auswahlsitzung (eine Woche vor dem Onboarding) |
+| 12.11. | Onboarding |
+| Löschdatum (noch festzulegen) | Löschung der Runde |
+
+---
+
+## Vorbereitung (Fynn, ohne Code)
+
+- [ ] Supabase-Konto anlegen (kostenlos)
+- [ ] Gmail-Konto nur für das Tool anlegen, Zwei-Faktor-Anmeldung einschalten und ein App-Passwort erzeugen
+- [ ] **29.09.:** Gespräch mit Bian über den Einsatz mit echten Daten
+- [ ] **bis 30.09.:** Text des Datenschutzhinweises (Zweck, wer die Daten sieht, Löschdatum). Den Entwurf kann Claude in Phase 7 liefern.
+- [ ] **bis 30.09.:** Festlegen: Ende der Bewerbungsphase, Plätze, Löschdatum, Bewerbungsfragen und Ressorts 2026
+- [ ] **bis 06.10.:** Feedback-Kriterien und ihre Gewichtung mit dem Team festlegen
+- [ ] Anfrage an die Uni-IT zu Graph (siehe Phase G)
+
+---
+
+## Etappe A: Bewerbungsstart am 01.10.
+
+- [ ] **Phase 1: Projektgerüst und erste Veröffentlichung**
+  - Ergebnis:
+    - Next.js-App mit TypeScript, Tailwind und Vitest
+    - zwei Supabase-Projekte (`-test`, `-prod`) in der **Region Frankfurt**
+    - Vercel-Projekt mit Funktionsregion `fra1`
+    - `.env.local` angelegt und in `.gitignore`
+  - Prüfung:
+    - `npm run build` läuft ohne Fehler.
+    - `npm test` führt einen Beispieltest grün aus.
+    - Die Vercel-Adresse ist im Browser erreichbar.
+    - Beide Supabase-Projekte zeigen im Dashboard die Region Frankfurt (Screenshot).
+    - `git status` zeigt keine `.env.local`.
+
+- [ ] **Phase 2: Alle Tabellen und Datenbankregeln**
+  - Ergebnis: Migrationen für **alle** Tabellen aus TECH_DESIGN Abschnitt 4, damit spätere Etappen nicht umbauen müssen. Dazu gehören:
+    - Kaskaden-Löschung ab `rounds`
+    - Eindeutigkeit von `slots.applicant_id` und von Mail pro Runde
+    - keine überlappenden Slots am selben Ort
+    - privater Bucket `cv` (nur PDF, 10 MB)
+  - Prüfung: Vitest gegen `-test` belegt:
+    - Eine Doppelbuchung schlägt fehl.
+    - Überlappende Slots am selben Ort schlagen fehl.
+    - Das Löschen einer Runde entfernt alle abhängigen Zeilen.
+    - Ein Upload einer Nicht-PDF oder einer Datei über 10 MB wird abgelehnt.
+
+- [ ] **Phase 3: Zugriffsregeln (RLS) mit Tests**
+  - Ergebnis:
+    - Die Hilfsfunktionen `is_member()` und `is_admin()`
+    - Regeln für jede Tabelle nach TECH_DESIGN Abschnitt 5, einschließlich der Sichtsperre und der Board-Sperre
+    - Regeln für den Storage-Bucket
+  - Prüfung:
+    - Eine Testsuite läuft grün. Sie enthält für jede Zeile der Tabelle in Abschnitt 5 einen Test „darf“ und einen Test „darf nicht“, geprüft als Admin, als Mitglied, als deaktiviertes Mitglied und ohne Anmeldung.
+    - Die vier Bedingungen der Sichtsperre werden einzeln getestet.
+
+- [ ] **Phase 4: Mail-Baustein (Gmail)**
+  - Ergebnis:
+    - `sendMail()` mit dem Weg `gmail`
+    - Vorlagen für Login-Link und Eingangsbestätigung
+    - Kalendereinladungen folgen erst in Phase 12.
+  - Prüfung:
+    - Ein Testskript schickt beide Vorlagen an Fynn. Sie kommen an, nicht im Spam, mit „Antwort an“ auf das Funktionspostfach (Screenshot).
+    - **Prüfpunkt klären:** das Gmail-Sendelimit.
+
+- [ ] **Phase 5: Team-Login und Teamverwaltung**
+  - Ergebnis:
+    - `/login` und `/auth/confirm` mit Knopf „Anmelden“
+    - Schutz aller Team-Seiten
+    - `/einstellungen/team`: anlegen, deaktivieren, zu Admins machen
+    - Der erste Admin wird per Skript angelegt.
+  - Prüfung:
+    - Fynn meldet sich mit dem Link aus der Mail an und bleibt nach einem Neustart des Browsers angemeldet.
+    - Eine unbekannte Adresse bekommt dieselbe Meldung, aber keine Mail.
+    - Ein deaktiviertes Testmitglied sieht sofort nichts mehr.
+
+- [ ] **Phase 6: Runde anlegen und konfigurieren**
+  - Ergebnis: `/einstellungen/runde` mit allem aus PRD 4.2 sowie Versandweg, Antwortadresse und Datenschutzhinweis.
+  - Prüfung:
+    - Eine Testrunde wird mit 3 Fragen, 4 Ressorts und 3 gewichteten Kriterien angelegt und bearbeitet.
+    - Ungültige Eingaben werden abgewiesen, zum Beispiel ein Ende vor dem Beginn oder ein Gewicht von 0.
+
+- [ ] **Phase 7: Öffentliches Formular, persönliche Seite und Erfassung durch den Admin**
+  - Ergebnis:
+    - `/bewerben` mit Datenschutzhinweis und Bestätigungsseite
+    - `/b/[token]`: ansehen, bis zur Frist ändern, zurückziehen
+    - `/einstellungen/erfassen` als Ersatzweg
+    - Eine schlichte Liste der Bewerbungen für Admins, zur Kontrolle ab dem 01.10.
+  - Prüfung: Auf dem Handy wird eine Bewerbung abgeschickt, und die Mail mit dem Link kommt an. Außerdem gilt:
+    - Eine Bearbeitung ist sichtbar.
+    - Eine zweite Bewerbung mit derselben Adresse schickt einen neuen Link, und der alte zeigt die neutrale Fehlerseite.
+    - Ein leeres Pflichtfeld, eine Nicht-PDF oder eine zu große PDF wird abgewiesen.
+    - Vor und nach der Bewerbungsphase ist das Formular geschlossen.
+    - Nach dem Zurückziehen sind der Bewerber in der Datenbank und die PDF im Bucket weg (Abfrage und Screenshot).
+
+- [ ] **Phase 8: Produktivumgebung und Abnahme A**
+  - Ergebnis:
+    - Auf `-prod`: Migrationen, Bucket, Admin Fynn, Umgebungsvariablen in Vercel
+    - Die echte Runde 2026 ist angelegt.
+  - Prüfung:
+    - Alle Tests laufen grün.
+    - Eine Testbewerbung auf `-prod` geht vollständig durch und wird danach zurückgezogen. Danach ist die Datenbank leer.
+    - Alle Zeilen aus PRD Abschnitt 7, die das Formular und den Login betreffen, sind von Hand geprüft.
+
+> **Ausstiegspunkt 30.09. abends:** Ist Phase 8 nicht geprüft, geht die Ausschreibung wie bisher mit der Adresse für Bewerbungen per Mail raus. Das Formular wird nachgeschoben, sobald Etappe A steht. Bis dahin trägt der Admin eingehende Bewerbungen über `/einstellungen/erfassen` ein. Die Runde hängt nicht am Tool.
+
+---
+
+## Etappe B: Terminplanung bis ca. 14.10.
+
+Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügbarkeiten des Teams müssen vorher stehen.
+
+- [ ] **Phase 9: Verfügbarkeit, Orte und Sperrzeiten**, Ziel **06.10.**
+  - Ergebnis:
+    - `/verfuegbarkeit` mit einem 15-Minuten-Raster zum Antippen und der Obergrenze, am Handy bedienbar
+    - Orte und Sperrzeiten in `/terminplanung`
+  - Prüfung:
+    - Zwei Mitglieder tragen am Handy Verfügbarkeiten ein (Screenshot).
+    - Eine Sperrzeit für 0.23 wird im Raster als belegt angezeigt.
+    - Danach trägt das Team seine echten Verfügbarkeiten ein.
+
+- [ ] **Phase 10: Slotvorschläge (Kernlogik)**
+  - Ergebnis: Eine reine Funktion nach TECH_DESIGN 6.2.
+  - Prüfung: Vitest-Fälle laufen grün:
+    - Keine Verfügbarkeit ergibt keine Slots.
+    - Sperrzeiten werden eingehalten.
+    - Obergrenzen werden eingehalten.
+    - Es gibt keine Überlappung pro Ort und keine pro Person.
+    - Die Verteilung ist gleichmäßig.
+    - Die Kapazität reicht nicht: Der Rest wird gemeldet.
+    - 30 Bewerber und 12 Mitglieder laufen in weniger als 1 Sekunde.
+
+- [ ] **Phase 11: Terminplanung (Admin)**
+  - Ergebnis: `/terminplanung` mit folgenden Funktionen:
+    - Vorschläge erzeugen, ändern, bestätigen
+    - Kapazitätsanzeige
+    - einen Bewerber von Hand einem Slot zuordnen
+    - Hinweis bei einem befangenen oder deaktivierten Gesprächsführer
+  - Prüfung:
+    - Aus den Testverfügbarkeiten entstehen Vorschläge, 3 werden bestätigt, und die Kapazität zählt richtig herunter.
+    - Eine Änderung, die eine Überschneidung erzeugen würde, wird abgewiesen.
+
+- [ ] **Phase 12: Buchung, Umbuchung und Kalendermails**
+  - Ergebnis:
+    - Buchung und Umbuchung auf `/b/[token]`
+    - Befangene Slots werden ausgeblendet.
+    - Hinweis „Mail an die Law Clinic“, wenn kein Slot passt
+    - Kalendermails nach TECH_DESIGN 6.4 (ics)
+  - Prüfung:
+    - Nach einer Buchung haben der Bewerber und beide Gesprächsführer die Einladung im Kalender.
+    - Nach einer Umbuchung ist der alte Termin weg und der neue da.
+    - Nach der Umbuchungsfrist ist keine Umbuchung mehr möglich.
+    - Zwei gleichzeitige Buchungen desselben Slots liefern genau einen Erfolg.
+    - Ein Rückzug sagt den Termin bei den Gesprächsführern ab.
+
+- [ ] **Phase 13: Bewerbungen im Team, Befangenheit und Übersicht; Abnahme B**
+  - Ergebnis:
+    - `/bewerbungen` mit Suche und Filter
+    - `/bewerbungen/[id]` mit Antworten, PDF (signierter Link) und dem Knopf „Ich bin befangen“
+    - Status „nicht erschienen“
+    - `/` als Übersicht
+  - Prüfung:
+    - Die Suche findet Text aus den Antworten.
+    - Die PDF öffnet sich, ein abgelaufener Link nicht mehr.
+    - Die Befangenheit ist für andere sichtbar und blendet die betroffenen Slots für diesen Bewerber aus.
+    - Abnahme B: Auf `-test` läuft ein Durchlauf von der Verfügbarkeit bis zur Buchung mit Kalendereinladung.
+
+---
+
+## Etappe C: Feedback bis 19.10.
+
+- [ ] **Phase 14: Meine Gespräche und Feedback; Abnahme C**
+  - Ergebnis:
+    - `/gespraeche` für das Handy
+    - Feedback-Formular mit Entwurf und Abgabe
+    - Sichtsperre in der Oberfläche
+    - Admin-Übersicht über fehlendes Feedback mit „Sperre aufheben“
+    - Knopf „Auswahlrunde starten“
+  - Prüfung:
+    - Am Handy dauert das Ausfüllen unter 3 Minuten.
+    - A sieht den Eintrag von B erst nach der eigenen Abgabe, ein Dritter sieht ihn sofort.
+    - Nach „Sperre aufheben“ und nach „Auswahlrunde starten“ ist der Eintrag sichtbar.
+
+---
+
+## Etappe D: Draft Board bis ca. 01.11.
+
+- [ ] **Phase 15: Rechenregeln**
+  - Ergebnis: Reine Funktionen für:
+    - die Kurzbewertung (gewichtet, auf eine Skala umgerechnet)
+    - die Zusammensetzungsleiste
+    - die Board-Verschiebung mit Neunummerierung der Positionen
+    - Rückgängig
+  - Prüfung:
+    - Vitest-Fälle laufen grün, darunter Kriterien mit unterschiedlicher Skala, fehlendes Feedback ergibt „–“, und ein Rückgängig stellt genau den vorherigen Zustand her.
+
+- [ ] **Phase 16: Draft Board für einen Nutzer**
+  - Ergebnis: `/board` mit
+    - vier Zonen und Drag & Drop per Maus, Touch und Tastatur
+    - Karten mit Name, Jahrgang, Ressort und Kurzbewertung
+    - Detail-Seitenleiste: Feedback oben, Antworten und PDF darunter
+    - Zusammensetzungsleiste
+    - Ansicht für den Beamer
+  - Prüfung: Mit 15 Testbewerbern auf N = 10 Plätzen:
+    - Karten lassen sich in alle Zonen verschieben.
+    - Die Reihenfolge von „Auch gern“ bleibt nach dem Neuladen erhalten.
+    - Die Leiste stimmt mit einer Handzählung überein.
+
+- [ ] **Phase 17: Board live, Verlauf, Einfrieren und Ergebnis; Abnahme D**
+  - Ergebnis:
+    - Realtime
+    - Einblendung „wer, was, wohin“
+    - Verlauf mit Rückgängig
+    - Einfrieren durch einen Admin
+    - `/board/ergebnis` mit den Gruppen Zusage, Nachrücker und Absage samt Adressen
+  - Prüfung:
+    - Zwei Browser und ein Handy verschieben gleichzeitig, und alle zeigen innerhalb von etwa 1 Sekunde denselben Stand (Bildschirmaufnahme).
+    - Rückgängig funktioniert.
+    - Nach dem Einfrieren wird jede Verschiebung abgewiesen, auch ein direkter Datenbankzugriff, belegt durch einen Test.
+    - Die Ergebnisliste stimmt.
+    - Abnahme D: eine Probe-Auswahlsitzung mit 3 Personen auf `-test`.
+    - **Prüfpunkt klären:** Realtime mit mehreren Geräten.
+
+---
+
+## Etappe E: Löschung bis zum Löschdatum
+
+- [ ] **Phase 18: Löschung, Erinnerung und Statistik; Abnahme E**
+  - Ergebnis:
+    - `/api/cron/daily` mit Schutzschlüssel
+    - Vercel-Cron täglich
+    - Erinnerung 7 Tage vorher
+    - Löschung nach TECH_DESIGN 6.7 einschließlich `round_stats`
+    - `/einstellungen/loeschung`
+  - Prüfung:
+    - Eine Testrunde mit dem Löschdatum heute wird über den manuell aufgerufenen Job gelöscht.
+    - Danach sind die Tabellen der Runde und der Bucket-Pfad leer, und in `round_stats` steht eine Zeile (Abfragen und Screenshot).
+    - Ein Aufruf ohne Schlüssel wird abgewiesen.
+    - **Prüfpunkt klären:** Hält der Job Supabase wach?
+    - Offene Prüfpunkte aus TECH_DESIGN Abschnitt 9 sind abgehakt oder ausdrücklich als offen notiert.
+
+---
+
+## Bedingte Phase
+
+- [ ] **Phase G: Versandweg Microsoft Graph**, sobald die IT zugestimmt hat, jederzeit einschiebbar
+  - Ergebnis: `sendMail()` mit dem Weg `graph`, umschaltbar pro Runde.
+  - Prüfung:
+    - Eine Testmail mit Kalendereinladung kommt mit dem Absender Funktionspostfach an.
+    - Nach dem Zurückschalten läuft wieder alles über Gmail.
+    - **Prüfpunkt klären:** Ablauf der IT-Freigabe.
