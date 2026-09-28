@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stand des Repos
 
-Stand 28.09.2026: Phase 1, 2, 3, 5 und 6 sind fertig. Phase 4 (Mail Gmail) und Phase G (Mail Graph) sind **gebaut, aber nicht abgehakt**, beide warten auf die Uni-IT (siehe Offene Nachweise). Die Live-Seite nutzt vorerst die Datenbank `auswahltool-test`; `-prod` hat noch keine Migrationen (Phase 8). Den aktuellen Stand zeigen die Checkboxen in `PLAN.md`.
+Stand 28.09.2026: Phase 1, 2, 3, 5 und 6 sind fertig und live (Phase 6 live belegt per Screenshot von `/einstellungen/runde`, Commit `adf8cd0`). Phase 4 (Mail Gmail) und Phase G (Mail Graph) sind **gebaut, aber nicht abgehakt**, beide warten auf die Uni-IT (siehe Offene Nachweise). Die Live-Seite nutzt vorerst die Datenbank `auswahltool-test`; `-prod` hat noch keine Migrationen (Phase 8; dort alle fünf Migrationen unter `supabase/migrations/` ausführen, auch die beiden aus Phase 6). Den aktuellen Stand zeigen die Checkboxen in `PLAN.md`.
 
 **Nächste Phase: 7 (Formular `/bewerben`, persönliche Seite `/b/[token]`, Erfassung durch den Admin).** Noch nicht geplant: erst Plan mit Fynn abstimmen. Auf `-test` steht die Runde „Testlauf“ (von Fynn über die Oberfläche angelegt), die das Formular nutzen kann.
 
