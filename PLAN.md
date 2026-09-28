@@ -158,7 +158,7 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
   - Belegt am 28.09.2026: Vitest `src/lib/slot-proposals.test.ts` (18 grün, jedes Ergebnis zusätzlich gegen alle Regeln geprüft): keine Verfügbarkeit → keine Slots; Sperrzeiten; zweiter Ort bei gesperrtem Standardort; Obergrenzen inkl. bestehender Slots; keine Überlappung pro Ort (inkl. Puffer) und pro Person; gleichmäßig (6 Mitglieder, 9 Slots → je 3); Rest gemeldet; Puffer, der nicht auf 15 Minuten aufgeht; Winterzeit; „bevorzugt“; 30 Bewerber/12 Mitglieder/12 Tage in 112 ms. `npm test` 437 grün, Build fehlerfrei.
   - Festlegungen (Fynn, 28.09.2026): Der Slot belegt den Ort für Gespräch + Puffer (kein Termin im Puffer). Gesprächsführer müssen nur für die Gesprächszeit verfügbar sein, bekommen aber während ihres Puffers kein weiteres Gespräch. Belastung eines Paars = der stärker belastete der beiden, dann die Summe. Mitglieder können „bevorzugt“ sein (zählen nicht als belastet, gewinnen Gleichstand): Fynn will möglichst viele Gespräche führen.
 
-- [ ] **Phase 11: Terminplanung (Admin)**
+- [x] **Phase 11: Terminplanung (Admin)**
   - Ergebnis: `/terminplanung` mit folgenden Funktionen:
     - Festlegungen (Fynn, 29.09.2026): Mit einem Klick entstehen alle möglichen Termine (Zeit + Ort, ohne Paar), sofort buchbar, auch während der Bewerbungsphase, keine Bestätigung. Das Paar wählt das Tool erst bei der Buchung (gleichmäßig nach gebuchten Gesprächen), der Admin kann es festlegen. Obergrenze zählt gebuchte Gespräche. TECH_DESIGN 6.2.
     - „Alle möglichen Termine erzeugen“, „Alle freien Termine löschen“, Termin anlegen, freie Termine ändern und löschen, Paar festlegen
@@ -169,6 +169,7 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
   - Prüfung:
     - Aus den Testverfügbarkeiten entstehen Termine; 3 Bewerber werden eingetragen und bekommen ein Paar; die Kapazität zählt richtig.
     - Eine Änderung, die eine Überschneidung erzeugen würde (Ort oder Person), wird abgewiesen.
+  - Belegt am 29.09.2026: Commit `0635624`, live. Migration `20260929100000_scheduling.sql` auf `-test` und `-prod` (Screenshots „Success“, auf `-prod` zusätzlich per Abfrage). Vitest `src/lib/slot-offers.test.ts` (18: alle möglichen Termine, zweiter Raum nur mit Leuten für ein zweites Paar, Sperrzeiten, Winterzeit, 12 Mitglieder/12 Tage unter 1 s; Paarwahl: gleichmäßig 6 Buchungen auf 4 → je 3, Obergrenze zählt Buchungen, Puffer, Befangenheit, „bevorzugt“), `src/lib/scheduling-rules.test.ts` (14), `src/lib/scheduling.test.ts` gegen `-test` (13: Termine erzeugen, 3 Bewerber eingetragen mit Paar, befangenes Mitglied übergangen, Kapazität, Überschneidung am Ort und pro Person abgewiesen, gebuchter Termin braucht Paar, „bevorzugt“ nur Admin), RLS-Regeln `set_preferred`; `npm test` 493 grün. Von Hand live auf `-prod` (Fynn, Screenshots): 2 Termine erzeugt (45-Minuten-Gespräche in 2 Stunden), Testbewerber eingetragen mit Paar, Kapazität 1/1/0/1/1, Termin am selben Ort zur selben Zeit abgewiesen.
 
 - [ ] **Phase 12: Buchung, Umbuchung und Kalendermails**
   - Ergebnis:
