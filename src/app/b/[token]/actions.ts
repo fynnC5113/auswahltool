@@ -1,6 +1,7 @@
 "use server";
 
 // Applicant page: every call checks the token first (src/lib/application.ts).
+import { redirect, RedirectType } from "next/navigation";
 import type { PrepareState, SubmitState } from "@/app/bewerben/application-form";
 import { coerceFields } from "@/lib/application-form";
 import { prepareCvReplacement, updateApplication, withdrawApplication, type EditResult } from "@/lib/application";
@@ -28,8 +29,14 @@ export async function saveEdit(token: string, raw: unknown, newCvPath: string | 
   return toState(await updateApplication(createAdminClient(), String(token), coerceFields(raw), path));
 }
 
+/**
+ * Deletes, then leaves the page: a re-render of /b/[token] (for example when
+ * the team login cookie is refreshed on the same request) would only show
+ * "Link ungültig". false = nothing to delete.
+ */
 export async function withdraw(token: string): Promise<boolean> {
-  return withdrawApplication(createAdminClient(), String(token));
+  if (!(await withdrawApplication(createAdminClient(), String(token)))) return false;
+  redirect("/b/zurueckgezogen", RedirectType.replace);
 }
 
 export async function book(token: string, slotId: string): Promise<BookResult> {

@@ -30,18 +30,8 @@ export function ApplicantView(props: Props) {
   const [saved, setSaved] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
-  const [withdrawn, setWithdrawn] = useState(false);
   const [error, setError] = useState("");
   const mailto = <a className="underline" href={`mailto:${replyTo}`}>{replyTo}</a>;
-
-  if (withdrawn) {
-    return (
-      <div>
-        <h1 className="mb-4 text-2xl font-semibold">Bewerbung zurückgezogen</h1>
-        <p>Deine Bewerbung und dein Lebenslauf sind endgültig gelöscht. Dieser Link funktioniert nicht mehr.</p>
-      </div>
-    );
-  }
 
   if (editing) {
     return (
@@ -69,8 +59,8 @@ export function ApplicantView(props: Props) {
     setWithdrawing(true);
     setError("");
     try {
-      if (await props.withdraw()) setWithdrawn(true);
-      else setError("Die Bewerbung wurde nicht gefunden. Vielleicht ist sie schon gelöscht.");
+      // On success the server redirects to /b/zurueckgezogen.
+      if ((await props.withdraw()) === false) setError("Die Bewerbung wurde nicht gefunden. Vielleicht ist sie schon gelöscht.");
     } catch (e) {
       console.error(e);
       setError(`Das Zurückziehen hat nicht geklappt. Bitte versuche es noch einmal oder schreib an ${replyTo}.`);
