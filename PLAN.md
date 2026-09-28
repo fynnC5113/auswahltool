@@ -29,8 +29,8 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
 
 ## Vorbereitung (Fynn, ohne Code)
 
-- [ ] Supabase-Konto anlegen (kostenlos)
-- [ ] Gmail-Konto nur für das Tool anlegen, Zwei-Faktor-Anmeldung einschalten und ein App-Passwort erzeugen
+- [x] Supabase-Konto anlegen (kostenlos)
+- [x] Gmail-Konto nur für das Tool anlegen, Zwei-Faktor-Anmeldung einschalten und ein App-Passwort erzeugen (`lawclinic.orgateam@gmail.com`, 28.09.2026)
 - [ ] **29.09.:** Gespräch mit Bian über den Einsatz mit echten Daten
 - [ ] **bis 30.09.:** Text des Datenschutzhinweises (Zweck, wer die Daten sieht, Löschdatum). Den Entwurf kann Claude in Phase 7 liefern.
 - [ ] **bis 30.09.:** Festlegen: Ende der Bewerbungsphase, Plätze, Löschdatum, Bewerbungsfragen und Ressorts 2026
@@ -94,7 +94,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
     - Fynn meldet sich mit dem Link aus der Mail an und bleibt nach einem Neustart des Browsers angemeldet.
     - Eine unbekannte Adresse bekommt dieselbe Meldung, aber keine Mail.
     - Ein deaktiviertes Testmitglied sieht sofort nichts mehr.
-  - Belegt am 28.09.2026: Login per Mail-Link und Anmeldung nach Neustart von Chrome (Fynn, lokal mit Gmail-Adresse); Deaktivieren, Rolle und Selbstschutz (Screenshot); unbekannte/deaktivierte Adresse ohne Mail und deaktiviertes Mitglied sieht nichts (Vitest `src/lib/auth/login.test.ts`, `src/lib/team.test.ts`). Login-Mails an @law-school.de kommen nicht an (vermutlich Quarantäne), siehe Phase 4.
+  - Belegt am 28.09.2026: Login per Mail-Link und Anmeldung nach Neustart von Chrome (Fynn, lokal mit Gmail-Adresse); Deaktivieren, Rolle und Selbstschutz (Screenshot); unbekannte/deaktivierte Adresse ohne Mail und deaktiviertes Mitglied sieht nichts (Vitest `src/lib/auth/login.test.ts`, `src/lib/team.test.ts`). Live auf auswahltool.vercel.app ebenfalls erfolgreich (Fynn). Login-Mails an @law-school.de: mit localhost-Link nicht angekommen (vermutlich Quarantäne), mit Live-Link angekommen; siehe Phase 4.
 
 - [ ] **Phase 6: Runde anlegen und konfigurieren**
   - Ergebnis: `/einstellungen/runde` mit allem aus PRD 4.2 sowie Versandweg, Antwortadresse und Datenschutzhinweis.
@@ -104,7 +104,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
 
 - [ ] **Phase 7: Öffentliches Formular, persönliche Seite und Erfassung durch den Admin**
   - Ergebnis:
-    - `/bewerben` mit Datenschutzhinweis und Bestätigungsseite
+    - `/bewerben` mit Datenschutzhinweis und Bestätigungsseite (mit dem Hinweis, auch im Junk-Ordner nach der Mail zu sehen)
     - `/b/[token]`: ansehen, bis zur Frist ändern, zurückziehen
     - `/einstellungen/erfassen` als Ersatzweg
     - Eine schlichte Liste der Bewerbungen für Admins, zur Kontrolle ab dem 01.10.

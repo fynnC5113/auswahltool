@@ -4,7 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stand des Repos
 
-Phase 1 bis 3 sind fertig: Next.js-Gerüst (Next.js 16, Tailwind 4, Vitest 5), alle Tabellen samt Bucket `cv` und alle RLS-Regeln auf `auswahltool-test` (Migrationen unter `supabase/migrations/`, auf `-prod` noch keine, das ist Phase 8). Nächste Phase: 4 (Mail-Baustein Gmail), braucht das Gmail-Konto mit App-Passwort von Fynn. Den aktuellen Stand zeigen die Checkboxen in `PLAN.md`.
+Stand 28.09.2026: Phase 1, 2, 3 und 5 sind fertig und live. Phase 4 (Mail Gmail) und Phase G (Mail Graph) sind **gebaut, aber nicht abgehakt**, beide warten auf die Uni-IT (siehe Offene Nachweise). Die Live-Seite nutzt vorerst die Datenbank `auswahltool-test`; `-prod` hat noch keine Migrationen (Phase 8). Den aktuellen Stand zeigen die Checkboxen in `PLAN.md`.
+
+**Nächste Phase: 6 (Runde anlegen).** Plan mit Fynn abgestimmt, Entscheidungen stehen (nicht erneut fragen):
+- `/einstellungen/runde` (nur Admins): leeres Formular, wenn es keine Runde gibt, sonst die neueste Runde bearbeiten; es gibt immer nur eine Runde gleichzeitig. Abschnitte: Grunddaten (Titel, Jahr, Plätze, Dauer, Puffer, Umbuchungsfrist), Termine (Bewerbungsphase mit Uhrzeit in deutscher Zeit, Gesprächszeitraum, Löschdatum), Mail (Versandweg, Antwortadresse vorbelegt `termin.lawclinic@law-school.de`, Datenschutzhinweis), Listen (Fragen, Ressorts mit Beschreibung, Kriterien mit Gewicht und Skala, vorbelegt 1–5; hinzufügen, entfernen, ↑/↓). Fehlermeldungen am Feld.
+- **Speichern atomar über eine Postgres-Funktion `save_round(...)`** (security invoker, RLS greift). Neue Migration; Fynn führt sie im SQL-Editor aus (Text liefern).
+- **Sperre beim Entfernen:** Frage, Ressort oder Kriterium mit vorhandenen Antworten, Ressortwahlen bzw. Feedback-Punkten lässt sich nicht entfernen (sonst löscht die Kaskade sie mit); umbenennen und umsortieren bleibt möglich. Durchsetzen in `save_round`.
+- Datum/Uhrzeit aus `datetime-local` als Europe/Berlin nach `timestamptz` umrechnen: eigene reine Funktion mit Tests (Sommer-/Winterzeit, Umstellung 25.10.2026).
+- Tests: Eingabeprüfung (Ende vor Beginn, Gewicht 0, leere Namen, Skala verkehrt), Zeitumrechnung, gegen `-test`: Admin speichert/bearbeitet, Mitglied darf nicht, Umsortieren, Entfernen trotz Antwort verweigert.
 
 - Repo: https://github.com/fynnC5113/auswahltool (privat)
 - Live: https://auswahltool.vercel.app
@@ -25,13 +32,22 @@ Jede Phase in `PLAN.md` hat einen Abschnitt **Prüfung**. Eine Phase gilt erst m
 - `npm run lint`: ESLint
 - `npm test`: Vitest (`vitest run`, Konfiguration in `vitest.config.mts`, Tests unter `src/**/*.test.ts`)
 - einzelner Test: `npx vitest run <pfad>` bzw. `-t "<testname>"`
-- Datenbanktests (`src/db/*.test.ts`) laufen gegen `auswahltool-test` mit den Schlüsseln aus `.env.local` (geladen in `vitest.config.mts`) und räumen ihre Daten selbst auf.
+- Datenbanktests (`src/db/*.test.ts`, `src/lib/auth/login.test.ts`, `src/lib/team.test.ts`) laufen gegen `auswahltool-test` mit den Schlüsseln aus `.env.local` (geladen in `vitest.config.mts`) und räumen ihre Daten selbst auf.
 - RLS-Tests (`src/db/rls.test.ts`) melden Testnutzer ohne Mail an: `auth.admin.generateLink({ type: 'magiclink' })`, dann `verifyOtp({ token_hash: properties.hashed_token, type: 'email' })` mit dem Publishable Key. Neue Regeln dort mit `rule(name, erlaubteRollen, versuch)` ergänzen; das erzeugt je Rolle einen „may“/„may not“-Test.
+- Erster Admin: `node --env-file=.env.local scripts/create-admin.mjs "Name" mail@…` (legt Auth-Nutzer und `team_members`-Zeile an, gegen die Datenbank aus der Env-Datei).
+- Echter Probeversand beider Mailvorlagen: `MAIL_LIVE_TO=adresse npx vitest run src/lib/mail/live.test.ts`, mit `MAIL_LIVE_TRANSPORT=graph` über das Funktionspostfach. Ohne `MAIL_LIVE_TO` wird der Test übersprungen, `npm test` verschickt also nie Mails.
+- Test-Helfer für Anmeldung und Aufräumen: `src/test/supabase.ts` (`createMember`, `signIn`, `redeem`, `deleteUsersByEmail`).
 - Migrationen: Supabase CLI (`npx supabase …`, Dev-Dependency), verknüpft mit `auswahltool-test` (ref `oxbryalllwtwxrisozeq`). `supabase db push` erreicht die Datenbank derzeit nicht (siehe Offene Nachweise); die Migrationen aus Phase 2 und 3 wurden deshalb von Fynn im SQL-Editor des Dashboards ausgeführt.
 
 Entwickelt und getestet wird gegen das Supabase-Projekt `auswahltool-test`, echte Daten liegen nur in `auswahltool-prod`. Keine lokale Datenbank, kein Docker. Geheimnisse nur in `.env.local` (von `.env*` in `.gitignore` erfasst) und in den Vercel-Umgebungsvariablen. Vorlage mit den Variablennamen: `.env.example`.
 
-**Deployment:** Vercel ist mit dem GitHub-Repo verbunden. Jeder Push auf `main` geht sofort live. Funktionsregion `fra1` steht in `vercel.json` und im Vercel-Dashboard.
+**Deployment:** Vercel ist mit dem GitHub-Repo verbunden. Jeder Push auf `main` geht sofort live (Build dauert etwa 40 s). Funktionsregion `fra1` steht in `vercel.json`; im Betrieb belegt am 28.09.2026: `x-vercel-id: fra1::fra1::…` auf `/login` mit `x-vercel-cache: MISS` (laut Vercel-Doku enthält der Header die Region, in der die Funktion lief).
+
+**Vercel-Umgebungsvariablen** (Production), Namen wie in `.env.example`: `NEXT_PUBLIC_SUPABASE_URL` (zeigt auf `-test`), `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Typ Config), `SUPABASE_SECRET_KEY` (Secret), `GMAIL_USER`, `GMAIL_APP_PASSWORD` (Secret), `MAIL_REPLY_TO`, `APP_URL=https://auswahltool.vercel.app`. `NEXT_PUBLIC_*` als „Config“ anlegen, sonst warnt Vercel. Die alten Einträge `NEXT_PUBLIC_SUPABASE_ANON_KEY` und `SUPABASE_SERVICE_ROLE_KEY` werden nicht benutzt; Fynn hat zugestimmt, sie zu löschen, ob es geschehen ist, ist unbestätigt. Graph-Variablen kommen erst mit der IT-Freigabe. Neue Variablen gelten erst nach dem nächsten Deployment.
+
+**Mail:** Gmail-Konto des Tools `lawclinic.orgateam@gmail.com` (Anzeigename „Law Clinic Orga-Team“, App-Passwort), Antwortadresse `termin.lawclinic@law-school.de`. Anrede in allen Mails an Bewerber und Team: „du“.
+
+**Testkonten auf `-test`:** Admins `fynn.clemens@law-school.de` und `fynn.clemens@gmail.com` (beide Fynn). Für Login-Tests die Gmail-Adresse nehmen (siehe Offene Nachweise).
 
 **Supabase-Einstellungen** (bei beiden Projekten so angelegt):
 - „Automatically expose new tables“ ist **aus**. Migrationen müssen für jede Tabelle ausdrücklich `GRANT`s an `anon`, `authenticated` bzw. `service_role` vergeben, sonst scheitern Abfragen trotz korrekter RLS-Regeln.
@@ -57,7 +73,9 @@ Weitere Invarianten, die über mehrere Stellen verteilt sind:
 - **Sichtsperre** ist eine RLS-Leseregel auf `feedback` mit vier Freigabebedingungen (TECH_DESIGN 5). Entwürfe (`submitted_at` null) sieht nur der Verfasser.
 - **Board:** `board_events` ist append-only; Rückgängig schreibt einen neuen Eintrag mit `undoes_event_id`. Eine Verschiebung ist eine Transaktion (Position + Neunummerierung + Event). Nach `board_frozen_at` lehnt die Datenbank Verschiebungen ab.
 - **Kalender:** feste `uid` pro Slot, `ics_sequence` für Änderungen, `METHOD:CANCEL` für Absagen.
-- **Mail-Baustein:** eine Funktion `sendMail({ to, subject, text, html, ics? })` mit Umsetzungen `gmail` und `graph`, wählbar pro Runde (`rounds.mail_transport`). Mails enthalten nie Lebensläufe oder Bewertungen.
+- **Mail-Baustein** (`src/lib/mail/`): `sendMail({ to, subject, text, html }, { transport, replyTo })` mit `gmail` (Nodemailer SMTP) und `graph` (Client Credentials, `POST /users/{GRAPH_MAILBOX}/sendMail` im MIME-Format). Nodemailer baut für beide Wege dieselbe MIME-Mail; `ics` kommt in Phase 12. Versandweg und Antwortadresse pro Runde (`rounds.mail_transport`, `rounds.reply_to`), vor der ersten Runde Gmail und `MAIL_REPLY_TO`. Vorlagen in `templates.ts` (Namen im HTML maskiert, Zeiten Europe/Berlin). Mails enthalten nie Lebensläufe oder Bewertungen.
+- **Team-Login** (Phase 5): Session per `@supabase/ssr` in Cookies, `src/proxy.ts` (Next 16: Proxy statt Middleware) frischt sie auf und schickt Besucher ohne Session auf `/login` (öffentlich: `/login`, `/auth/confirm`, `/bewerben`, `/b/…`, `/api/cron/…`). Identität immer über `getClaims()` prüfen, nie `getSession()`. `getMember()` (`src/lib/auth/member.ts`) liest die eigene `team_members`-Zeile mit der Session; deaktiviert → RLS liefert nichts → „Kein Zugang“. Links in Mails bauen auf `APP_URL`, nie auf dem Host der Anfrage. Team-Adressen werden kleingeschrieben gespeichert.
+- **Teamverwaltung** (`src/lib/team.ts`): Schreiben mit der Session des Admins (RLS), nur `auth.admin.createUser` mit Secret Key und erst nach der Admin-Prüfung. Selbstschutz: Ein Admin kann sich nicht selbst deaktivieren oder die Admin-Rolle entziehen.
 - **Zeiten:** `timestamptz` speichern, in `Europe/Berlin` anzeigen. Verfügbarkeitsraster 15 Minuten.
 
 Reine, mit Vitest testbare Funktionen (ohne Datenbank): Slotvorschläge (TECH_DESIGN 6.2), Kurzbewertung (4.3, Skalen vorher auf 0–1 normiert), Fristen, Token-Hash, Kalendertexte, Board-Verschiebung und Rückgängig. RLS wird gegen `auswahltool-test` getestet: pro Zeile der Tabelle in TECH_DESIGN 5 je ein „darf“ und „darf nicht“ als Admin, Mitglied, deaktiviertes Mitglied und anonym.
@@ -68,13 +86,17 @@ Siehe PRD Abschnitt 6: keine automatische Vorauswahl/KI-Bewertung, kein Export, 
 
 ## Offene Prüfpunkte
 
-TECH_DESIGN Abschnitt 9 listet unverifizierte Annahmen (Gmail-Sendelimit, Supabase-Pausierung, Realtime-Last, Graph-Freigabe, Vercel-DPA). Nicht als geklärt behandeln, bevor die zugehörige Phase sie abhakt.
+TECH_DESIGN Abschnitt 9 listet unverifizierte Annahmen (Supabase-Pausierung, Realtime-Last, Graph-Freigabe, Vercel-DPA; das Gmail-Sendelimit ist geklärt: 500 pro Tag). Nicht als geklärt behandeln, bevor die zugehörige Phase sie abhakt.
 
 Offene Nachweise aus abgeschlossenen Phasen:
-- Phase 1: Dass Vercel-Funktionen tatsächlich in `fra1` laufen, ist nur per Einstellung belegt, noch nicht im Betrieb. Nachliefern mit der ersten Serverfunktion (Phase 4 oder 5), z. B. über `process.env.VERCEL_REGION`. `x-vercel-id` einer statischen Seite zeigt nur den Edge-Knoten.
+- **Phase 4 (Gmail) nicht abgehakt:** Versand funktioniert, aber Mails an @law-school.de landen im Junk (Kopfzeilen: SPF/DKIM/DMARC `pass`, `SCL:5`, `CAT:PHISH`). Login-Mails mit `http://localhost:3000`-Link kamen gar nicht an (vermutlich Quarantäne), mit Live-Link kamen sie bei Fynn nach etwa 2 Minuten an; Fynns Postfach hat die Gmail-Adresse eventuell als sicheren Absender, das ist also kein Beleg für andere. Fynn fragt am 29.09.2026 persönlich bei der IT: (1) Versand über das Funktionspostfach per Graph, (2) sofort: Gmail-Adresse in die Tenant Allow/Block List (wirkt laut Doku gegen Spam und normales Phishing, nicht gegen hochgradiges; Eintrag läuft 45 Tage nach letzter Nutzung ab, vor jeder Runde erneuern). Danach Probeversand an ein @law-school.de-Postfach, bei dem die Adresse **nicht** als sicher markiert ist, Screenshot „Posteingang“, dann abhaken.
+- **Phase G nicht abgehakt:** Code und Tests fertig (Commit `275c816`), der erste echte Versand fehlt. Braucht von der IT Tenant-ID, Client-ID, Client Secret (Ablaufdatum notieren) und die RBAC-for-Applications-Zuweisung auf das Funktionspostfach (Ablauf in TECH_DESIGN 6.5). Dann `GRAPH_*` in `.env.local` und Vercel, Probeversand mit `MAIL_LIVE_TRANSPORT=graph`.
+- Phase 5: Dass ein deaktiviertes Mitglied sofort nichts mehr sieht, ist per Vitest belegt, nicht von Hand (Login mit der Uni-Adresse war wegen der Quarantäne nicht möglich).
+- Für Phase 7 vorgemerkt: Die Bestätigungsseite nach der Bewerbung weist darauf hin, auch im Junk-Ordner nachzusehen.
 - Phase 2: `npx supabase db push` scheitert mit „Connection timed out“ zu `aws-0-eu-central-1.pooler.supabase.com` (Adresse laut Dashboard korrekt), im Heimnetz und über den Handy-Hotspot; auch der temporäre Login-Role-Weg ohne Passwort scheiterte. Ursache unbekannt. Vor Phase 8 klären, dann die Migrationshistorie von `-test` mit `supabase migration repair --status applied <version>` nachtragen (Befehl vorher gegen die Doku prüfen).
 - Phase 2: Beim Upload muss der `Blob` selbst den Typ `application/pdf` tragen; ein untypisierter Blob kommt als `application/octet-stream` an und wird vom Bucket abgelehnt. Relevant für Phase 7.
-- Seit Phase 3 (festgestellt 28.09.2026): Im Build-Ordner `.next/types/` liegen iCloud-Doppel-Kopien (`… 2.ts`). `npx tsc --noEmit` meldet deshalb „Duplicate identifier“, obwohl der Quellcode fehlerfrei ist. Noch nicht bereinigt, bei Fynn nachfragen, bevor `.next` gelöscht wird. Kann auch `npm run build` stören.
+- iCloud-Doppelkopien im Build-Ordner: Stand 28.09.2026 liegen nur noch `.next/server/app 2` und `.next/server/chunks 2` dort; `npm run build` und `npx tsc --noEmit` laufen fehlerfrei (0 Fehler). Nicht bereinigt; vor dem Löschen von `.next` bei Fynn nachfragen.
+- `next dev` hängt unten an CLAUDE.md einen Block „nextjs-agent-rules“ an (Hinweis auf die mitgelieferte Doku unter `node_modules/next/dist/docs/`). Block bleibt und wird mitcommittet (Fynn hat dem Vorschlag nicht widersprochen). Für Next.js-Fragen zuerst dort nachlesen.
 
 ## Session-Ende („Ende“)
 
