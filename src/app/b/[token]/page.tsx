@@ -42,6 +42,7 @@ export default async function ApplicantPage({ params }: { params: Promise<{ toke
           answers: applicant.answers,
           departmentIds: applicant.departmentIds,
           departmentUnsure: applicant.departmentUnsure,
+          privacyConfirmed: false,
           hasCv: !!applicant.cvPath,
         }}
         questions={round.questions}

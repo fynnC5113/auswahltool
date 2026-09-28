@@ -126,6 +126,7 @@ Alle Tabellen hängen über `round_id` an `rounds`, mit `on delete cascade`. Lö
 | source | `form` \| `admin` | Formular oder Erfassung durch Admin |
 | status | `active` \| `no_show` | Rückzug = sofortige Löschung, deshalb kein eigener Status |
 | sight_lock_lifted | bool | Sichtsperre vom Admin aufgehoben |
+| privacy_confirmed_at | timestamptz | Datenschutzhinweis im Formular bestätigt; bei Erfassung durch Admin leer |
 | created_at, updated_at | timestamptz | |
 
 **answers**: `applicant_id`, `question_id`, `text`

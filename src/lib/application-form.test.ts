@@ -23,6 +23,7 @@ function filled(changes: Partial<ApplicationFields> = {}): ApplicationFields {
     answers: { q1: "Weil …", q2: "Darum." },
     departmentIds: ["d1"],
     departmentUnsure: false,
+    privacyConfirmed: true,
     ...changes,
   };
 }
@@ -96,6 +97,13 @@ describe("validateApplication", () => {
     expect(validateApplication(filled({ email: "" }), round, { requireDepartment: true, withEmail: false })).toEqual({});
   });
 
+  it("requires the privacy checkbox only when asked to", () => {
+    const unconfirmed = filled({ privacyConfirmed: false });
+    expect(validateApplication(unconfirmed, round, { ...publicForm, requirePrivacy: true })).toEqual({ privacy: expect.any(String) });
+    expect(validateApplication(filled(), round, { ...publicForm, requirePrivacy: true })).toEqual({});
+    expect(validateApplication(unconfirmed, round, publicForm)).toEqual({});
+  });
+
   it("rejects overlong input", () => {
     const errors = validateApplication(filled({ name: "x".repeat(201), answers: { q1: "x".repeat(10_001), q2: "ok" } }), round, publicForm);
     expect(Object.keys(errors).sort()).toEqual(["answers.q1", "name"]);
@@ -145,7 +153,7 @@ describe("looksLikePdf", () => {
 describe("coerceFields", () => {
   it("turns anything into well-formed fields", () => {
     expect(coerceFields(null)).toEqual(emptyFields());
-    expect(coerceFields({ name: 1, answers: { q1: 2, q2: "ok" }, departmentIds: ["d1", 3], departmentUnsure: "yes" })).toEqual({
+    expect(coerceFields({ name: 1, answers: { q1: 2, q2: "ok" }, departmentIds: ["d1", 3], departmentUnsure: "yes", privacyConfirmed: "yes" })).toEqual({
       ...emptyFields(),
       answers: { q1: "", q2: "ok" },
       departmentIds: ["d1"],

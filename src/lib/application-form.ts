@@ -19,6 +19,8 @@ export interface ApplicationFields {
   departmentIds: string[];
   /** "weiß ich noch nicht" */
   departmentUnsure: boolean;
+  /** Checkbox under the privacy notice (public form only). */
+  privacyConfirmed: boolean;
 }
 
 export type ApplicationWindow = "before" | "open" | "closed";
@@ -30,7 +32,7 @@ export function applicationWindow(opensAt: Date, closesAt: Date, now: Date): App
 }
 
 export function emptyFields(): ApplicationFields {
-  return { name: "", email: "", cohort: "", answers: {}, departmentIds: [], departmentUnsure: false };
+  return { name: "", email: "", cohort: "", answers: {}, departmentIds: [], departmentUnsure: false, privacyConfirmed: false };
 }
 
 /** Server actions receive whatever the client sends: bring it into shape first. */
@@ -45,21 +47,23 @@ export function coerceFields(raw: unknown): ApplicationFields {
     answers: Object.fromEntries(Object.entries(answers).map(([k, v]) => [k, str(v)])),
     departmentIds: Array.isArray(r.departmentIds) ? r.departmentIds.filter((d): d is string => typeof d === "string") : [],
     departmentUnsure: r.departmentUnsure === true,
+    privacyConfirmed: r.privacyConfirmed === true,
   };
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * Keys: "name", "email", "cohort", "answers.<questionId>", "departments".
+ * Keys: "name", "email", "cohort", "answers.<questionId>", "departments", "privacy".
  * requireDepartment: the public form requires a department or "weiß ich noch
  * nicht"; an admin entering an application may leave it open.
  * withEmail: false when editing (the address is bound to the link).
+ * requirePrivacy: the public form, when the round has a privacy notice.
  */
 export function validateApplication(
   fields: ApplicationFields,
   round: { questionIds: string[]; departmentIds: string[] },
-  options: { requireDepartment: boolean; withEmail: boolean },
+  options: { requireDepartment: boolean; withEmail: boolean; requirePrivacy?: boolean },
 ): FieldErrors {
   const errors: FieldErrors = {};
 
@@ -89,6 +93,10 @@ export function validateApplication(
     errors.departments = "Bitte wähle mindestens ein Ressort oder „weiß ich noch nicht“.";
   }
 
+  if (options.requirePrivacy && !fields.privacyConfirmed) {
+    errors.privacy = "Bitte bestätige, dass du den Datenschutzhinweis zur Kenntnis genommen hast.";
+  }
+
   return errors;
 }
 
@@ -101,6 +109,7 @@ export function normalizeFields(fields: ApplicationFields, questionIds: string[]
     answers: Object.fromEntries(questionIds.map((id) => [id, (fields.answers[id] ?? "").trim()])),
     departmentIds: fields.departmentUnsure ? [] : [...new Set(fields.departmentIds)],
     departmentUnsure: fields.departmentUnsure,
+    privacyConfirmed: fields.privacyConfirmed,
   };
 }
 

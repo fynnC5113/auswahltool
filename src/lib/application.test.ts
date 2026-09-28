@@ -40,6 +40,7 @@ function fields(changes: Partial<ApplicationFields> = {}): ApplicationFields {
     answers: { [questions[0]]: "Antwort eins", [questions[1]]: "Antwort zwei" },
     departmentIds: [departments[0]],
     departmentUnsure: false,
+    privacyConfirmed: true,
     ...changes,
   };
 }
@@ -71,7 +72,7 @@ async function filesOf(applicantId: string): Promise<string[]> {
 }
 
 async function rowByEmail(email: string) {
-  const { data } = await admin.from("applicants").select("id, token_hash, cv_path, source").eq("round_id", roundId).eq("email", email.toLowerCase());
+  const { data } = await admin.from("applicants").select("id, token_hash, cv_path, source, privacy_confirmed_at").eq("round_id", roundId).eq("email", email.toLowerCase());
   return data ?? [];
 }
 
@@ -89,6 +90,7 @@ beforeAll(async () => {
       interviews_until: "2026-10-31",
       deletion_date: "2026-12-31",
       reply_to: "test@example.invalid",
+      privacy_notice: "Datenschutzhinweis für den Test",
     })
     .select("id")
     .single();
@@ -168,6 +170,24 @@ describe("public form", () => {
     expect(await findApplicant(admin, oldToken)).toBeNull();
     expect((await findApplicant(admin, newToken))?.name).toBe("Test Bewerberin");
     expect(await rowByEmail(input.email)).toHaveLength(1);
+  });
+
+  it("requires the privacy checkbox and stores when it was confirmed; editing keeps the time", async () => {
+    const unconfirmed = fields({ privacyConfirmed: false });
+    expect(await prepareApplication(admin, unconfirmed, "form", deps())).toEqual({ status: "invalid", errors: { privacy: expect.any(String) } });
+    expect(await rowByEmail(unconfirmed.email)).toEqual([]);
+
+    const input = fields();
+    const started = Date.now();
+    await apply(input);
+    const [row] = await rowByEmail(input.email);
+    const confirmedAt = new Date(row.privacy_confirmed_at!).getTime();
+    expect(confirmedAt).toBeGreaterThanOrEqual(started - 60_000);
+    expect(confirmedAt).toBeLessThanOrEqual(Date.now() + 60_000);
+
+    // Editing sends no checkbox and must not clear or move the time.
+    expect(await updateApplication(admin, lastToken(), fields({ privacyConfirmed: false }), null)).toEqual({ status: "done" });
+    expect((await rowByEmail(input.email))[0].privacy_confirmed_at).toBe(row.privacy_confirmed_at);
   });
 
   it("rejects empty required fields before any upload", async () => {
@@ -301,6 +321,8 @@ describe("admin entry", () => {
     expect(result).toEqual({ status: "done", mailSent: true });
     const [row] = await rowByEmail(input.email);
     expect(row.source).toBe("admin");
+    // The admin enters the application; the applicant confirmed nothing in the tool.
+    expect(row.privacy_confirmed_at).toBeNull();
     expect(send.mock.calls[0][0].text).toContain("ansehen oder zurückziehen");
   });
 

@@ -175,7 +175,11 @@ const ADMIN_DUPLICATE = "Für diese Adresse gibt es in dieser Runde schon eine B
 const RELOAD = "Die Runde hat sich geändert. Bitte lade die Seite neu und versuche es noch einmal.";
 
 function checkFields(round: ApplicationRound, fields: ApplicationFields, source: Source): FieldErrors {
-  return validateApplication(fields, roundIds(round), { requireDepartment: source === "form", withEmail: true });
+  return validateApplication(fields, roundIds(round), {
+    requireDepartment: source === "form",
+    withEmail: true,
+    requirePrivacy: source === "form" && round.privacyNotice.trim() !== "",
+  });
 }
 
 async function existingByEmail(db: SupabaseClient, roundId: string, email: string) {
@@ -274,6 +278,8 @@ export async function submitApplication(
       cv_path: cvPath(round.id, applicantId),
       token_hash: hashToken(token),
       source,
+      // The database sets privacy_confirmed_at = now(); checked in checkFields.
+      privacy_confirmed: source === "form" && fields.privacyConfirmed,
     },
     p_answers: Object.entries(fields.answers).map(([question_id, text]) => ({ question_id, text })),
     p_department_ids: fields.departmentIds,

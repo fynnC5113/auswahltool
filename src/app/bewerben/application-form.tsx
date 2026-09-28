@@ -35,7 +35,7 @@ interface Props {
   departments: { id: string; name: string; description: string }[];
   initial: ApplicationFields;
   replyTo: string;
-  /** Shown above the submit button (public form). */
+  /** Public form: collapsible notice plus a required checkbox above the submit button. */
   privacyNotice?: string;
   /** "upload" when a CV was chosen; otherwise the form goes straight to submit (edit only). */
   prepare: (fields: ApplicationFields) => Promise<PrepareState>;
@@ -97,7 +97,7 @@ export function ApplicationForm({ mode, questions, departments, initial, replyTo
     const local = validateApplication(
       fields,
       { questionIds: questions.map((q) => q.id), departmentIds: departments.map((d) => d.id) },
-      { requireDepartment: mode !== "admin", withEmail: mode !== "edit" },
+      { requireDepartment: mode !== "admin", withEmail: mode !== "edit", requirePrivacy: mode === "apply" && !!privacyNotice?.trim() },
     );
     if (cvRequired || file) {
       const cv = cvFileError(file);
@@ -254,10 +254,23 @@ export function ApplicationForm({ mode, questions, departments, initial, replyTo
         />
       </Field>
 
-      {privacyNotice && (
-        <section className={box}>
-          <h2 className="mb-2 font-semibold">Datenschutzhinweis</h2>
-          <p className="whitespace-pre-line text-sm">{privacyNotice}</p>
+      {mode === "apply" && privacyNotice?.trim() && (
+        <section className={`${box} flex flex-col gap-3`}>
+          <details>
+            <summary className="cursor-pointer font-semibold">Datenschutzhinweis lesen</summary>
+            <p className="mt-2 whitespace-pre-line text-sm">{privacyNotice}</p>
+          </details>
+          <label className="flex gap-3">
+            <input
+              type="checkbox"
+              className="mt-1 h-5 w-5 shrink-0"
+              checked={fields.privacyConfirmed}
+              onChange={(e) => set("privacyConfirmed", e.target.checked, "privacy")}
+              aria-invalid={!!errors.privacy || undefined}
+            />
+            <span>Ich habe den Datenschutzhinweis zur Kenntnis genommen.</span>
+          </label>
+          {errors.privacy && <span className={errorText}>{errors.privacy}</span>}
         </section>
       )}
 
