@@ -190,10 +190,12 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
   - Ergebnis:
     - `/bewerbungen` mit Suche und Filter
     - `/bewerbungen/[id]` mit Antworten, PDF (signierter Link) und dem Knopf „Ich bin befangen“
+    - Knopf „Bewerbung löschen“ für Admins (Fynn, 29.09.2026: etwa wenn jemand per Mail zurückzieht und keinen Link hat); gleiche Löschung wie der Rückzug auf `/b/[token]` (erst alle Dateien `<round_id>/<applicant_id>*`, dann die Zeile, Slot wird frei; ab Phase 12 Kalender-Absage an die Gesprächsführer), mit Rückfrage
     - Status „nicht erschienen“
     - `/` als Übersicht
   - Prüfung:
     - Die Suche findet Text aus den Antworten.
+    - Ein Admin löscht eine Bewerbung: Zeile, Antworten und PDF sind weg, ihr Termin ist wieder frei; ein Mitglied sieht den Knopf nicht und darf nicht löschen.
     - Die PDF öffnet sich, ein abgelaufener Link nicht mehr.
     - Die Befangenheit ist für andere sichtbar und blendet die betroffenen Slots für diesen Bewerber aus.
     - Abnahme B: Auf `-test` läuft ein Durchlauf von der Verfügbarkeit bis zur Buchung mit Kalendereinladung.
