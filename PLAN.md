@@ -32,7 +32,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
 - [x] Supabase-Konto anlegen (kostenlos)
 - [x] Gmail-Konto nur für das Tool anlegen, Zwei-Faktor-Anmeldung einschalten und ein App-Passwort erzeugen (`lawclinic.orgateam@gmail.com`, 28.09.2026)
 - [ ] **29.09.:** Gespräch mit Bian über den Einsatz mit echten Daten
-- [ ] **bis 30.09.:** Text des Datenschutzhinweises (Zweck, wer die Daten sieht, Löschdatum). Den Entwurf kann Claude in Phase 7 liefern.
+- [ ] **bis 30.09.:** Text des Datenschutzhinweises (Zweck, wer die Daten sieht, Löschdatum). Entwurf von Claude am 28.09.2026 geliefert; offen sind verantwortliche Stelle, Datenschutzbeauftragte(r), Rechtsgrundlage, Versandweg und Löschdatum.
 - [ ] **bis 30.09.:** Festlegen: Ende der Bewerbungsphase, Plätze, Löschdatum, Bewerbungsfragen und Ressorts 2026
 - [ ] **bis 06.10.:** Feedback-Kriterien und ihre Gewichtung mit dem Team festlegen
 - [ ] Anfrage an die Uni-IT zu Graph (siehe Phase G)
@@ -103,7 +103,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
     - Ungültige Eingaben werden abgewiesen, zum Beispiel ein Ende vor dem Beginn oder ein Gewicht von 0.
   - Belegt am 28.09.2026: Vitest `src/lib/round.test.ts` gegen `-test` (Runde mit 3 Fragen, 4 Ressorts, 3 gewichteten Kriterien angelegt und bearbeitet; Umsortieren; Entfernen und Skalenänderung trotz vorhandener Daten verweigert, auch bei fremden Entwürfen; Mitglied und deaktivierter Admin dürfen nicht), `src/lib/round-form.test.ts` (Ende vor Beginn, Gewicht 0, leere Namen, Skala verkehrt, Löschdatum nicht nach Gesprächsende), `src/lib/berlin-time.test.ts` (Sommer-/Winterzeit, 25.10.2026); `npm test` 339 grün. Von Hand (Fynn, lokal): Gewicht 0 abgewiesen (Screenshot), Runde „Testlauf“ gespeichert und per Abfrage geprüft (Zeiten korrekt in UTC); Ende vor Beginn laut Fynn abgewiesen.
 
-- [ ] **Phase 7: Öffentliches Formular, persönliche Seite und Erfassung durch den Admin**
+- [x] **Phase 7: Öffentliches Formular, persönliche Seite und Erfassung durch den Admin**
   - Ergebnis:
     - `/bewerben` mit Datenschutzhinweis und Bestätigungsseite (mit dem Hinweis, auch im Junk-Ordner nach der Mail zu sehen)
     - `/b/[token]`: ansehen, bis zur Frist ändern, zurückziehen
@@ -115,6 +115,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
     - Ein leeres Pflichtfeld, eine Nicht-PDF oder eine zu große PDF wird abgewiesen.
     - Vor und nach der Bewerbungsphase ist das Formular geschlossen.
     - Nach dem Zurückziehen sind der Bewerber in der Datenbank und die PDF im Bucket weg (Abfrage und Screenshot).
+  - Belegt am 28.09.2026: Vitest `src/lib/application-form.test.ts` (Token, Fristfenster, Pflichtfelder, Nicht-PDF, über 10 MB, %PDF-Kopf) und `src/lib/application.test.ts` gegen `-test` (18 Tests: vollständige Bewerbung mit Mail; zweite Bewerbung derselben Adresse schickt neuen Link, alter findet nichts; getarnte Nicht-PDF abgewiesen und gelöscht; Bucket lehnt Word und über 10 MB ab; vor/nach der Phase geschlossen; Ändern bis Fristende, danach verweigert; Zurückziehen löscht Zeile, Antworten, alle Dateien; Admin-Erfassung nach Fristende; Mitglied darf nicht erfassen), RLS-Regel `save_application` für alle vier Rollen; `npm test` 385 grün. Von Hand auf dem Handy, live mit Runde „Testlauf“ (Fynn, Screenshots 19:22–19:32): Bewerbung abgeschickt und Mail angekommen (Antwort an Funktionspostfach), Bearbeitung sichtbar, leeres Pflichtfeld markiert, zweite Bewerbung → „Bewerbung schon vorhanden“ plus Mail mit neuem Link, alter Link → „Link ungültig“, Zurückziehen bestätigt; danach per Abfrage: keine Bewerberzeile, Ordner der Runde im Bucket `cv` leer. Vor Beginn geschlossen: live per Abruf von `/bewerben` belegt.
 
 - [ ] **Phase 8: Produktivumgebung und Abnahme A**
   - Ergebnis:
