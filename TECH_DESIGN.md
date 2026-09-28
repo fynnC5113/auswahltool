@@ -233,27 +233,32 @@ Festgelegt von Fynn am 29.09.2026, `src/lib/slot-offers.ts`. Die ursprüngliche 
 
 **`choosePair`: das Paar bei der Buchung.** Aus den aktiven Mitgliedern, die für die Gesprächszeit verfügbar sind, bis Pufferende in keinem Slot mit Paar sitzen, weniger gebuchte Gespräche als ihre Obergrenze haben und beim Bewerber nicht befangen sind: das Paar mit dem kleinsten Wert des stärker belasteten Partners, dann eines mit „bevorzugt“, dann die kleinste Summe. Belastung = gebuchte Gespräche; „bevorzugt“ zählt als unbelastet. Hat ein Admin das Paar festgelegt, gilt dieses.
 
-Der Admin ändert oder löscht freie Slots und legt bei jedem Slot das Paar fest oder ändert es. Zeit und Ort gebuchter Slots ändert erst Phase 12 (Kalendermails).
+Der Admin ändert oder löscht freie Slots und legt bei jedem Slot das Paar fest oder ändert es. Zeit und Ort gebuchter Slots bleiben fest: Der Admin trägt den Bewerber aus und woanders ein (Fynn, 29.09.2026). Eintragen, Austragen und ein Paarwechsel bei gebuchten Slots verschicken Kalendermails (6.4). Admins dürfen die Obergrenze überschreiten (Hinweis in der Liste), Bewerber nicht.
 
 ### 6.3 Buchung
 - Angeboten werden freie Slots, schon während der Bewerbungsphase: mit festgelegtem Paar, in dem niemand bei diesem Bewerber befangen ist, oder ohne Paar, wenn `choosePair` (ohne die Befangenen) eines findet.
-- Die Buchung schreibt `applicant_id` und das Paar in den Slot. Die Regel „niemand in zwei Gesprächen gleichzeitig“ (Trigger) kann eine gleichzeitige Buchung abweisen; dann versucht der Server das nächste Paar. Die Obergrenze (gebuchte Gespräche) muss die Datenbank bei der Buchung prüfen, damit gleichzeitige Buchungen sie nicht überschreiten (Migration in Phase 12).
+- Angeboten und buchbar sind nur Slots, deren Umbuchungsfrist (`starts_at − rebook_hours_before`) noch nicht vorbei ist (Fynn, 29.09.2026). Gibt es noch gar keine Slots, sieht der Bewerber „Die Gesprächstermine werden gerade geplant“; gibt es Slots, aber keinen passenden, den Hinweis auf die Mailadresse.
+- Das Paar wählt der Server (`pairFor` in `src/lib/scheduling-rules.ts`: festgelegtes Paar, wenn aktiv, nicht befangen und unter der Obergrenze, sonst `choosePair`); der eigene bisherige Slot zählt dabei nicht. Gebucht wird über `public.book_slot(p_slot_id, p_applicant_id, p_interviewer_a, p_interviewer_b)` (Migration `20260930100000_booking.sql`, nur `service_role`): Unter derselben Sperre wie der Trigger `slots_no_overlap_per_person` prüft sie freien Slot, Paar (festgelegtes Paar bleibt), aktiv und nicht befangen, Obergrenze (gebuchte Gespräche ohne den eigenen Slot), Umbuchungsfrist des alten Slots (`rebook_closed`) und des neuen (`too_late`); dann gibt sie den alten Slot samt Paar frei und bucht den neuen, beide mit `ics_sequence + 1`. Weist sie das Paar ab (`person_overlap`, `over_limit`, `member_unavailable`, `pair_changed`), versucht der Server es bis zu dreimal mit neu geladenen Daten.
 - Ist der Slot inzwischen vergeben, meldet die Eindeutigkeitsregel einen Fehler, und der Bewerber sieht „Dieser Termin ist gerade vergeben worden“.
 - Umbuchen geht nur bis `starts_at − rebook_hours_before`. Dabei wird der alte Slot frei, der neue gebucht, und beide Seiten bekommen die passende Kalendermail.
+- Rückzug: Der Slot wird vor dem Löschen frei (samt Paar), die Gesprächsführer bekommen eine Absage; danach leitet die Seite auf `/b/zurueckgezogen` weiter.
+- „Bewerber ohne Termin zum Buchen auffordern“ (Admin, `/terminplanung`): Weil nur der Hash des Tokens gespeichert ist, bekommt jeder einen neuen Link, der alte gilt nicht mehr; schlägt die Mail fehl, wird der alte Hash wiederhergestellt.
 
 ### 6.4 Kalendermails
 - Jeder Slot hat eine feste `uid`, zum Beispiel `slot-<id>@auswahltool`.
 - Einladung: `METHOD:REQUEST`, `sequence` = `ics_sequence`.
 - Änderung: `ics_sequence + 1`, erneut `REQUEST`.
 - Absage: `METHOD:CANCEL`, `STATUS:CANCELLED`.
+- Jeder Empfänger bekommt eine eigene Mail mit eigener Kalenderdatei, in der nur er als Teilnehmer steht (`RSVP=FALSE`); `ORGANIZER` ist die Absenderadresse. Zeiten in UTC, Ende = Ende des Gesprächs (ohne Puffer). Umsetzung ohne Paket: `src/lib/calendar.ts` (Text), `src/lib/calendar-mail.ts` (Empfänger, Versand; Fehler werden gezählt und gemeldet, die Buchung bleibt).
 - Empfänger:
   - Buchung: Bewerber (mit Buchungsbestätigung) und beide Gesprächsführer
   - Umbuchung: Absage des alten und Einladung zum neuen Termin
   - Rückzug: Absage an die Gesprächsführer
+  - Admin trägt ein: wie Buchung (Bestätigung ohne Link, weil das Tool den Link nicht kennt); trägt aus: Absage an alle drei; ändert das Paar eines gebuchten Slots: Absage an wer herausfällt, Einladung an das neue Paar
 
 ### 6.5 Mail-Baustein
 Eine Funktion `sendMail({ to, subject, text, html, ics? })` mit zwei Umsetzungen:
-- **gmail:** Nodemailer mit `service: 'gmail'`, App-Passwort, `icalEvent` für Einladungen
+- **gmail:** Nodemailer mit `service: 'gmail'`, App-Passwort, `icalEvent` für Einladungen (`text/calendar; method=…`, Dateiname `termin.ics`, keine weiteren Anhänge)
 - **graph:** OAuth-Anmeldung als App (Client Credentials, Token etwa 1 Stunde gültig und bis kurz vor Ablauf wiederverwendet), dann `POST /users/{funktionspostfach}/sendMail` im **MIME-Format** (`Content-Type: text/plain`, Mail base64-kodiert, Antwort `202`). Die MIME-Nachricht baut Nodemailer (Stream-Transport), damit beide Wege dieselbe Mail mit Text- und HTML-Teil und später derselben Kalendereinladung verschicken.
 
 Absender ist „Law Clinic Orga-Team“ mit der Gmail-Adresse bzw. dem Funktionspostfach, „Antwort an“ ist `rounds.reply_to` (Ersatz: `MAIL_REPLY_TO`). Umgebungsvariablen: `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `MAIL_REPLY_TO`, `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`, `GRAPH_MAILBOX`.

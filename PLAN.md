@@ -171,12 +171,12 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
     - Eine Änderung, die eine Überschneidung erzeugen würde (Ort oder Person), wird abgewiesen.
   - Belegt am 29.09.2026: Commit `0635624`, live. Migration `20260929100000_scheduling.sql` auf `-test` und `-prod` (Screenshots „Success“, auf `-prod` zusätzlich per Abfrage). Vitest `src/lib/slot-offers.test.ts` (18: alle möglichen Termine, zweiter Raum nur mit Leuten für ein zweites Paar, Sperrzeiten, Winterzeit, 12 Mitglieder/12 Tage unter 1 s; Paarwahl: gleichmäßig 6 Buchungen auf 4 → je 3, Obergrenze zählt Buchungen, Puffer, Befangenheit, „bevorzugt“), `src/lib/scheduling-rules.test.ts` (14), `src/lib/scheduling.test.ts` gegen `-test` (13: Termine erzeugen, 3 Bewerber eingetragen mit Paar, befangenes Mitglied übergangen, Kapazität, Überschneidung am Ort und pro Person abgewiesen, gebuchter Termin braucht Paar, „bevorzugt“ nur Admin), RLS-Regeln `set_preferred`; `npm test` 493 grün. Von Hand live auf `-prod` (Fynn, Screenshots): 2 Termine erzeugt (45-Minuten-Gespräche in 2 Stunden), Testbewerber eingetragen mit Paar, Kapazität 1/1/0/1/1, Termin am selben Ort zur selben Zeit abgewiesen.
 
-- [ ] **Phase 12: Buchung, Umbuchung und Kalendermails**
+- [x] **Phase 12: Buchung, Umbuchung und Kalendermails**
   - Ergebnis:
     - Buchung und Umbuchung auf `/b/[token]`, schon während der Bewerbungsphase (Fynn, 29.09.2026); das Paar wählt `choosePair` bei der Buchung (TECH_DESIGN 6.2/6.3), bei gleichzeitigem Doppeleinsatz das nächste Paar
     - Obergrenze (gebuchte Gespräche) in der Datenbank prüfen (Migration)
     - Angeboten werden nur Termine, für die es ohne befangene Mitglieder ein Paar gibt.
-    - Offene Frage an Fynn: Bekommen Bewerber, die sich vor dem Start der Buchung beworben haben, eine Mail „Jetzt Termin buchen“?
+    - „Jetzt Termin buchen“: Knopf in `/terminplanung`, den der Admin selbst auslöst (Fynn, 29.09.2026)
     - Hinweis „Mail an die Law Clinic“, wenn kein Slot passt
     - Kalendermails nach TECH_DESIGN 6.4 (ics)
   - Prüfung:
@@ -185,12 +185,16 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
     - Nach der Umbuchungsfrist ist keine Umbuchung mehr möglich.
     - Zwei gleichzeitige Buchungen desselben Slots liefern genau einen Erfolg.
     - Ein Rückzug sagt den Termin bei den Gesprächsführern ab.
+  - Festlegungen (Fynn, 29.09.2026): Angeboten und buchbar sind nur Termine, deren Umbuchungsfrist noch nicht vorbei ist. Admins dürfen die Obergrenze überschreiten (Hinweis bleibt), Bewerber nicht. Uhrzeit und Ort gebuchter Termine werden nicht geändert (austragen und neu eintragen). Kalenderdatei selbst gebaut (`src/lib/calendar.ts`), kein Paket `ics`. Seite: Variante A der Vorschau (alle Tage untereinander, Uhrzeiten als Kacheln).
+  - Belegt am 29.09.2026: Commits `4d4ff3a` und `1dcb5f8`, live. Migration `20260930100000_booking.sql` (`public.book_slot`, nur `service_role`) auf `-test` und `-prod` (Screenshots „Success“, auf `-prod` zusätzlich per Aufruf: antwortet mit `slot_gone`). Vitest `src/lib/booking.test.ts` gegen `-test` (11: Angebot, Buchung mit Paar und drei Einladungen je mit eigener ics, nur Termine mit Paar ohne Befangene, Umbuchen gibt alten Termin frei und sagt ab, zwei gleichzeitige Buchungen → genau ein Erfolg, nach der Frist weder Buchen noch Umbuchen, Obergrenze in der Datenbank, Aufruf ohne Server-Schlüssel verweigert, Rückzug sagt nur den Gesprächsführern ab, „zum Buchen auffordern“ mit neuem Link und Wiederherstellung bei Mailfehler), `calendar.test.ts` (5), Regeln `pairFor`/`offersFor`, Vorlagen; `npm test` 520 grün, Build fehlerfrei. Probeversand an `fynn.clemens@law-school.de` (Screenshots 00:55/00:56): Einladung im Posteingang und von selbst im Outlook-Kalender, Absage markiert den Termin als „Abgesagt“ mit „Aus dem Kalender entfernen“. Live auf `-prod` (Fynn, Screenshots 01:04–01:15): Testbewerber gebucht (Bewerberseite, Kapazität 1/1/0/1/1, Bestätigung in Gmail mit Termin-Karte, Einladung im Outlook-Kalender), umgebucht (Absage alt, Einladung neu bei Bewerber und Gesprächsführern), zurückgezogen (Seite „Bewerbung zurückgezogen“, Absage nur an die Gesprächsführer; per Abfrage 0 Bewerber, 0 Dateien, Termine frei, `ics_sequence` 2). Umbuchungsfrist und Gleichzeitigkeit nur per Vitest.
+  - Fehler bei der Prüfung behoben: Nach dem Zurückziehen zeigte die Seite „Link ungültig“ statt der Bestätigung (Neurendern im selben Aufruf, Ursache vermutlich das Auffrischen der Team-Session). Jetzt leitet die Server Action auf `/b/zurueckgezogen` weiter.
+  - **Offen (nach dem Gespräch mit der IT):** Probe an eine zweite Law-School-Adresse, die den Absender nicht kennt; Fynns Postfach kennt ihn eventuell schon. Gmail trägt Einladungen nur ein, wenn der Empfänger das eingestellt hat (Karte mit Ja/Nein erscheint).
 
 - [ ] **Phase 13: Bewerbungen im Team, Befangenheit und Übersicht; Abnahme B**
   - Ergebnis:
     - `/bewerbungen` mit Suche und Filter
     - `/bewerbungen/[id]` mit Antworten, PDF (signierter Link) und dem Knopf „Ich bin befangen“
-    - Knopf „Bewerbung löschen“ für Admins (Fynn, 29.09.2026: etwa wenn jemand per Mail zurückzieht und keinen Link hat); gleiche Löschung wie der Rückzug auf `/b/[token]` (erst alle Dateien `<round_id>/<applicant_id>*`, dann die Zeile, Slot wird frei; ab Phase 12 Kalender-Absage an die Gesprächsführer), mit Rückfrage
+    - Knopf „Bewerbung löschen“ für Admins (Fynn, 29.09.2026: etwa wenn jemand per Mail zurückzieht und keinen Link hat); gleiche Löschung wie der Rückzug auf `/b/[token]` (erst alle Dateien `<round_id>/<applicant_id>*`, dann die Zeile, Slot wird frei; Kalender-Absage an die Gesprächsführer über `releaseForWithdrawal` in `src/lib/calendar-mail.ts`), mit Rückfrage
     - Status „nicht erschienen“
     - `/` als Übersicht
   - Prüfung:
