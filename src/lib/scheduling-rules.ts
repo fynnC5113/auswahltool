@@ -123,3 +123,55 @@ export function hintText(hint: Hint, nameOf: (id: string) => string): string {
       return "Derzeit ist kein Paar frei. Der Termin ist nicht buchbar.";
   }
 }
+
+// ---------------------------------------------------------------------------
+// Phase 12: what an applicant may book (TECH_DESIGN 6.3)
+// ---------------------------------------------------------------------------
+
+type Pair = { interviewerA: string; interviewerB: string };
+
+const bookedCount = (slots: PlannedSlot[], memberId: string) =>
+  slots.filter((s) => s.applicantId && (s.interviewerA === memberId || s.interviewerB === memberId)).length;
+
+/**
+ * The pair this applicant would get in this free slot, or null. A pair fixed
+ * by an admin is used as it is, if both are active, not conflicted and under
+ * their limit; otherwise choosePair decides. The applicant's own current slot
+ * does not count: a rebooking frees it.
+ */
+export function pairFor(slot: PlannedSlot, context: HintContext, applicantId: string): Pair | null {
+  const excluded = context.conflicts.filter((c) => c.applicantId === applicantId).map((c) => c.memberId);
+  const others = context.slots.filter((s) => s.id !== slot.id && s.applicantId !== applicantId);
+  const active = context.members.filter((m) => m.active);
+
+  if (slot.interviewerA && slot.interviewerB) {
+    const fixed = [slot.interviewerA, slot.interviewerB];
+    const fine = fixed.every((id) => {
+      const member = active.find((m) => m.id === id);
+      return (
+        member &&
+        !excluded.includes(id) &&
+        (member.maxInterviews === null || bookedCount(others, id) < member.maxInterviews)
+      );
+    });
+    return fine ? { interviewerA: slot.interviewerA, interviewerB: slot.interviewerB } : null;
+  }
+  return choosePair({ slot, members: active, slots: others, excluded });
+}
+
+/** A slot may be booked until the rebooking deadline before it starts (Fynn, 29.09.2026). */
+export function bookingDeadline(startsAt: string, rebookHoursBefore: number): Date {
+  return new Date(Date.parse(startsAt) - rebookHoursBefore * 60 * 60 * 1000);
+}
+
+/** Free slots this applicant can book now, by start. */
+export function offersFor(context: HintContext, applicantId: string, rebookHoursBefore: number, now = new Date()): PlannedSlot[] {
+  return context.slots
+    .filter(
+      (s) =>
+        !s.applicantId &&
+        bookingDeadline(s.startsAt, rebookHoursBefore) > now &&
+        pairFor(s, context, applicantId) !== null,
+    )
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+}

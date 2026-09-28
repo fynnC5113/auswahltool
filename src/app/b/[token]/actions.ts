@@ -4,6 +4,7 @@
 import type { PrepareState, SubmitState } from "@/app/bewerben/application-form";
 import { coerceFields } from "@/lib/application-form";
 import { prepareCvReplacement, updateApplication, withdrawApplication, type EditResult } from "@/lib/application";
+import { bookSlot, type BookResult } from "@/lib/booking";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const NOT_FOUND = { status: "invalid", errors: { form: "Dieser Link ist ungültig." } } as const;
@@ -29,4 +30,8 @@ export async function saveEdit(token: string, raw: unknown, newCvPath: string | 
 
 export async function withdraw(token: string): Promise<boolean> {
   return withdrawApplication(createAdminClient(), String(token));
+}
+
+export async function book(token: string, slotId: string): Promise<BookResult> {
+  return bookSlot(createAdminClient(), String(token), String(slotId));
 }

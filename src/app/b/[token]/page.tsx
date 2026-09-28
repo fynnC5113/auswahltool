@@ -6,8 +6,10 @@ import { formatBerlin } from "@/lib/mail/templates";
 import { DEFAULT_REPLY_TO } from "@/lib/round-form";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { page } from "../../ui";
-import { prepareEdit, saveEdit, withdraw } from "./actions";
+import { loadBooking } from "@/lib/booking";
+import { book, prepareEdit, saveEdit, withdraw } from "./actions";
 import { ApplicantView } from "./applicant-view";
+import { BookingSection } from "./booking-section";
 
 // no-referrer: the token must not leak to other sites through links.
 export const metadata: Metadata = { title: "Deine Bewerbung", referrer: "no-referrer", robots: { index: false, follow: false } };
@@ -32,6 +34,7 @@ export default async function ApplicantPage({ params }: { params: Promise<{ toke
   }
 
   const { round } = applicant;
+  const booking = await loadBooking(db, applicant);
   return (
     <main className={page}>
       <ApplicantView
@@ -54,6 +57,19 @@ export default async function ApplicantPage({ params }: { params: Promise<{ toke
         prepare={prepareEdit.bind(null, token)}
         save={saveEdit.bind(null, token)}
         withdraw={withdraw.bind(null, token)}
+        booking={
+          <BookingSection
+            booked={booking.booked}
+            rebookUntil={booking.rebookUntil && formatBerlin(booking.rebookUntil)}
+            canRebook={booking.canRebook}
+            offers={booking.offers}
+            planned={booking.planned}
+            interviewMinutes={booking.interviewMinutes}
+            rebookHoursBefore={booking.rebookHoursBefore}
+            replyTo={round.replyTo}
+            book={book.bind(null, token)}
+          />
+        }
       />
     </main>
   );

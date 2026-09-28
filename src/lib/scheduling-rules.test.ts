@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { capacity, hintText, isBookable, slotHints, type HintContext, type HintMember, type PlannedSlot } from "./scheduling-rules";
+import { bookingDeadline, capacity, hintText, isBookable, offersFor, pairFor, slotHints, type HintContext, type HintMember, type PlannedSlot } from "./scheduling-rules";
 
 const at = (time: string) => new Date(`2026-10-20T${time}:00+02:00`).toISOString();
 const cells = (from: string, count: number) =>
@@ -128,5 +128,45 @@ describe("slotHints", () => {
     expect(hintText({ kind: "conflict", memberId: "a" }, (id) => `Name ${id}`)).toBe(
       "Name a ist bei diesem Bewerber befangen. Bitte neu besetzen.",
     );
+  });
+});
+
+describe("pairFor and offersFor (Phase 12)", () => {
+  const three = [member("a"), member("b"), member("c")];
+
+  it("without a fixed pair, conflicted members are left out", () => {
+    const ctx = context({ members: three, slots: [open("o")], conflicts: [{ applicantId: "x", memberId: "a" }] });
+    expect(pairFor(open("o"), ctx, "x")).toEqual({ interviewerA: "b", interviewerB: "c" });
+    expect(pairFor(open("o"), ctx, "y")).toEqual({ interviewerA: "a", interviewerB: "b" });
+  });
+
+  it("a fixed pair is kept, unless one is conflicted, deactivated or at the limit", () => {
+    const fixed = slot({ id: "f" });
+    expect(pairFor(fixed, context({ slots: [fixed] }), "x")).toEqual({ interviewerA: "a", interviewerB: "b" });
+    expect(pairFor(fixed, context({ slots: [fixed], conflicts: [{ applicantId: "x", memberId: "b" }] }), "x")).toBeNull();
+    expect(pairFor(fixed, context({ slots: [fixed], members: [member("a"), member("b", { active: false })] }), "x")).toBeNull();
+    const booked = slot({ id: "g", startsAt: at("12:00"), interviewEndsAt: at("12:30"), endsAt: at("12:45"), applicantId: "z" });
+    const limited = context({ slots: [fixed, booked], members: [member("a", { maxInterviews: 1 }), member("b")] });
+    expect(pairFor(fixed, limited, "x")).toBeNull();
+    // A rebooking frees the applicant's own slot, so it does not count toward the limit.
+    expect(pairFor(fixed, limited, "z")).toEqual({ interviewerA: "a", interviewerB: "b" });
+  });
+
+  it("the applicant's own booked slot does not block its pair", () => {
+    const own = slot({ id: "own", locationId: "other", applicantId: "x" });
+    const ctx = context({ slots: [own, open("o")] });
+    expect(pairFor(open("o"), ctx, "x")).toEqual({ interviewerA: "a", interviewerB: "b" });
+    expect(pairFor(open("o"), ctx, "y")).toBeNull();
+  });
+
+  it("offers only free slots before the deadline, by start", () => {
+    const later = open("later", { startsAt: at("11:00"), interviewEndsAt: at("11:30"), endsAt: at("11:45") });
+    const members = three.map((m) => ({ ...m, cells: cells("10:00", 6) }));
+    const ctx = context({ members, slots: [later, open("o"), slot({ id: "taken", startsAt: at("13:00"), interviewEndsAt: at("13:30"), endsAt: at("13:45"), applicantId: "z" })] });
+    const now = new Date("2026-10-19T09:00:00+02:00");
+    expect(offersFor(ctx, "x", 24, now).map((s) => s.id)).toEqual(["o", "later"]);
+    // 24 hours before 10:00 on 20.10. is 10:00 on 19.10.
+    expect(offersFor(ctx, "x", 24, new Date("2026-10-19T10:00:00+02:00")).map((s) => s.id)).toEqual(["later"]);
+    expect(bookingDeadline(at("10:00"), 24).toISOString()).toBe(new Date("2026-10-19T10:00:00+02:00").toISOString());
   });
 });

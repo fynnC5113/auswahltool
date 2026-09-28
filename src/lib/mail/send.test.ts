@@ -41,6 +41,17 @@ describe("buildMessage", () => {
     expect(await render({ replyTo: "runde@example.org" })).toMatch(/^Reply-To: runde@example\.org$/m);
   });
 
+  it("adds a calendar invitation as text/calendar with its method", async () => {
+    const transporter = nodemailer.createTransport({ streamTransport: true, buffer: true, newline: "unix" });
+    const content = "BEGIN:VCALENDAR\r\nMETHOD:CANCEL\r\nEND:VCALENDAR\r\n";
+    const info = await transporter.sendMail(buildMessage({ ...mail, ics: { method: "CANCEL", content } }));
+    const raw = info.message.toString();
+    expect(raw).toMatch(/^Content-Type: text\/calendar; charset=utf-8; method=CANCEL$/m);
+    expect(raw).toContain("termin.ics");
+    // Without an invitation there is no calendar part.
+    expect(await render()).not.toContain("text/calendar");
+  });
+
   it("fails without GMAIL_USER", () => {
     vi.stubEnv("GMAIL_USER", "");
     expect(() => buildMessage(mail)).toThrow("GMAIL_USER");

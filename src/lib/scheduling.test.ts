@@ -22,6 +22,8 @@ import {
 import { capacity, slotHints } from "./scheduling-rules";
 
 const emails: string[] = [];
+/** Entering, removing and changing a pair send calendar mails from Phase 12; never here. */
+const noMail = async () => "not sent";
 const email = (prefix: string) => {
   const e = testEmail(prefix);
   emails.push(e);
@@ -156,9 +158,9 @@ describe("entering applicants", () => {
     const first = await slotAt("2026-10-20T10:00:00+02:00");
     const second = await slotAt("2026-10-20T10:45:00+02:00");
     const third = await slotAt("2026-10-21T14:00:00+02:00");
-    expect(await assignApplicant(asAdmin, first.id, applicantIds[0])).toEqual({ ok: true });
-    expect(await assignApplicant(asAdmin, second.id, applicantIds[1])).toEqual({ ok: true });
-    expect(await assignApplicant(asAdmin, third.id, applicantIds[2])).toEqual({ ok: true });
+    expect(await assignApplicant(asAdmin, first.id, applicantIds[0], noMail)).toEqual({ ok: true });
+    expect(await assignApplicant(asAdmin, second.id, applicantIds[1], noMail)).toEqual({ ok: true });
+    expect(await assignApplicant(asAdmin, third.id, applicantIds[2], noMail)).toEqual({ ok: true });
 
     const data = await load();
     const pairOf = (id: string) => {
@@ -175,8 +177,8 @@ describe("entering applicants", () => {
   it("an applicant cannot get a second slot; a booked slot cannot be deleted", async () => {
     const free = await slotAt("2026-10-20T11:30:00+02:00");
     const booked = await slotAt("2026-10-20T10:00:00+02:00");
-    expect(await assignApplicant(asAdmin, free.id, applicantIds[0])).toEqual({ error: "Dieser Bewerber hat schon einen Termin." });
-    expect(await assignApplicant(asAdmin, booked.id, applicantIds[3])).toHaveProperty("error");
+    expect(await assignApplicant(asAdmin, free.id, applicantIds[0], noMail)).toEqual({ error: "Dieser Bewerber hat schon einen Termin." });
+    expect(await assignApplicant(asAdmin, booked.id, applicantIds[3], noMail)).toHaveProperty("error");
     expect(await deleteSlot(asAdmin, booked.id)).toHaveProperty("error");
   });
 
@@ -185,15 +187,15 @@ describe("entering applicants", () => {
     const conflict = await admin.from("conflicts").insert({ applicant_id: applicantIds[3], member_id: adminId });
     if (conflict.error) throw new Error(conflict.error.message);
     const slot = await slotAt("2026-10-21T14:45:00+02:00");
-    expect(await assignApplicant(asAdmin, slot.id, applicantIds[3])).toEqual({
+    expect(await assignApplicant(asAdmin, slot.id, applicantIds[3], noMail)).toEqual({
       error: "Zu dieser Zeit ist kein passendes Paar frei. Bitte das Paar von Hand festlegen.",
     });
   });
 
   it("a member may not enter applicants or fix pairs", async () => {
     const slot = await slotAt("2026-10-20T11:30:00+02:00");
-    expect(await assignApplicant(asMember, slot.id, applicantIds[4])).toEqual({ error: "Das dürfen nur Admins." });
-    expect(await setPair(asMember, slot.id, adminId, memberId)).toEqual({ error: "Das dürfen nur Admins." });
+    expect(await assignApplicant(asMember, slot.id, applicantIds[4], noMail)).toEqual({ error: "Das dürfen nur Admins." });
+    expect(await setPair(asMember, slot.id, adminId, memberId, noMail)).toEqual({ error: "Das dürfen nur Admins." });
   });
 });
 
@@ -252,15 +254,15 @@ describe("changing slots", () => {
 
   it("the pair of a booked slot can be changed but not removed; hints show", async () => {
     const booked = await slotAt("2026-10-21T14:00:00+02:00");
-    expect(await setPair(asAdmin, booked.id, "", "")).toEqual({ error: "Ein gebuchter Termin braucht zwei Gesprächsführer." });
-    expect(await setPair(asAdmin, booked.id, memberId, member3Id)).toEqual({ ok: true });
+    expect(await setPair(asAdmin, booked.id, "", "", noMail)).toEqual({ error: "Ein gebuchter Termin braucht zwei Gesprächsführer." });
+    expect(await setPair(asAdmin, booked.id, memberId, member3Id, noMail)).toEqual({ ok: true });
     const changed = await slotAt("2026-10-21T14:00:00+02:00");
     expect(slotHints(changed, hintContext(await load()))).toEqual([{ kind: "unavailable", memberId: member3Id }]);
   });
 
   it("removing the applicant frees the slot and its pair", async () => {
     const booked = await slotAt("2026-10-21T14:00:00+02:00");
-    expect(await unassignApplicant(asAdmin, booked.id)).toEqual({ ok: true });
+    expect(await unassignApplicant(asAdmin, booked.id, noMail)).toEqual({ ok: true });
     expect(await slotAt("2026-10-21T14:00:00+02:00")).toMatchObject({ applicantId: null, interviewerA: null, interviewerB: null });
   });
 

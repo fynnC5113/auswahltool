@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { ApplicationFields } from "@/lib/application-form";
 import { ApplicationForm, type PrepareState, type SubmitState } from "../../bewerben/application-form";
 import { button, secondaryButton } from "../../ui";
@@ -17,6 +17,8 @@ interface Props {
   prepare: (fields: ApplicationFields) => Promise<PrepareState>;
   save: (fields: ApplicationFields, newCvPath: string | null) => Promise<SubmitState>;
   withdraw: () => Promise<boolean>;
+  /** "Dein Gesprächstermin" (booking-section.tsx). */
+  booking: ReactNode;
 }
 
 const label = "text-sm text-zinc-600 dark:text-zinc-400";
@@ -80,63 +82,73 @@ export function ApplicantView(props: Props) {
   const chosen = departments.filter((d) => applicant.departmentIds.includes(d.id)).map((d) => d.name);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-10">
       <div>
         <h1 className="mb-2 text-2xl font-semibold">Deine Bewerbung</h1>
-        {saved && <p className="mb-2 font-medium text-green-700" role="status">Änderungen gespeichert.</p>}
-        <p className={label}>
-          {editable
-            ? `Du kannst deine Bewerbung bis zum ${deadline} ändern.`
-            : "Die Bewerbungsphase ist vorbei, Änderungen sind nicht mehr möglich."}{" "}
-          Die Buchung deines Gesprächstermins folgt hier nach dem Ende der Bewerbungsphase.
+        <p className="leading-relaxed text-zinc-600 dark:text-zinc-400">
+          Hallo {applicant.name.split(" ")[0]}, hier buchst du deinen Gesprächstermin und siehst deine Angaben.
         </p>
       </div>
 
-      <dl className="flex flex-col gap-3">
-        <div>
-          <dt className={label}>Name</dt>
-          <dd>{applicant.name}</dd>
-        </div>
-        <div>
-          <dt className={label}>Mailadresse</dt>
-          <dd className="break-all">{applicant.email}</dd>
-        </div>
-        <div>
-          <dt className={label}>Jahrgang</dt>
-          <dd>{applicant.cohort}</dd>
-        </div>
-        {questions.map((q) => (
-          <div key={q.id}>
-            <dt className={label}>{q.text}</dt>
-            <dd className="whitespace-pre-line">{applicant.answers[q.id] ?? ""}</dd>
-          </div>
-        ))}
-        <div>
-          <dt className={label}>Wunsch-Ressort</dt>
-          <dd>{applicant.departmentUnsure ? "weiß ich noch nicht" : chosen.join(", ") || "–"}</dd>
-        </div>
-        <div>
-          <dt className={label}>Lebenslauf</dt>
-          <dd>
-            {applicant.hasCv ? (
-              <a className="underline" href={cvHref} target="_blank" rel="noreferrer">
-                PDF ansehen
-              </a>
-            ) : (
-              "–"
-            )}
-          </dd>
-        </div>
-      </dl>
+      {props.booking}
 
-      {editable && (
-        <div>
-          <button className={button} onClick={() => { setSaved(false); setEditing(true); }}>
-            Bewerbung ändern
-          </button>
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">Deine Angaben</h2>
+          {saved && <p className="font-medium text-green-700" role="status">Änderungen gespeichert.</p>}
+          <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+            {editable
+              ? `Du kannst deine Bewerbung bis zum ${deadline} ändern.`
+              : "Die Bewerbungsphase ist vorbei, Änderungen sind nicht mehr möglich."}
+          </p>
         </div>
-      )}
-      {!editable && <p>Wenn du noch etwas ändern musst, schreib bitte an {mailto}.</p>}
+
+        <dl className="flex flex-col gap-3">
+          <div>
+            <dt className={label}>Name</dt>
+            <dd>{applicant.name}</dd>
+          </div>
+          <div>
+            <dt className={label}>Mailadresse</dt>
+            <dd className="break-all">{applicant.email}</dd>
+          </div>
+          <div>
+            <dt className={label}>Jahrgang</dt>
+            <dd>{applicant.cohort}</dd>
+          </div>
+          {questions.map((q) => (
+            <div key={q.id}>
+              <dt className={label}>{q.text}</dt>
+              <dd className="whitespace-pre-line">{applicant.answers[q.id] ?? ""}</dd>
+            </div>
+          ))}
+          <div>
+            <dt className={label}>Wunsch-Ressort</dt>
+            <dd>{applicant.departmentUnsure ? "weiß ich noch nicht" : chosen.join(", ") || "–"}</dd>
+          </div>
+          <div>
+            <dt className={label}>Lebenslauf</dt>
+            <dd>
+              {applicant.hasCv ? (
+                <a className="underline" href={cvHref} target="_blank" rel="noreferrer">
+                  PDF ansehen
+                </a>
+              ) : (
+                "–"
+              )}
+            </dd>
+          </div>
+        </dl>
+
+        {editable && (
+          <div>
+            <button className={button} onClick={() => { setSaved(false); setEditing(true); }}>
+              Bewerbung ändern
+            </button>
+          </div>
+        )}
+        {!editable && <p>Wenn du noch etwas ändern musst, schreib bitte an {mailto}.</p>}
+      </section>
 
       <section className={box}>
         <h2 className="mb-2 font-semibold">Bewerbung zurückziehen</h2>

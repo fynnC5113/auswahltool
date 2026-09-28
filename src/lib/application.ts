@@ -21,6 +21,7 @@ import {
   type ApplicationFields,
   type FieldErrors,
 } from "@/lib/application-form";
+import { releaseForWithdrawal } from "@/lib/calendar-mail";
 import { sendMail, type MailTransport, type SendOptions } from "@/lib/mail/send";
 import { applicationLinkMail, applicationReceivedMail } from "@/lib/mail/templates";
 
@@ -455,12 +456,17 @@ export async function updateApplication(
 /**
  * Withdrawal = immediate, final deletion (PRD 4.8): first every file of the
  * applicant, then the row (cascade: answers, departments, feedback, conflicts,
- * board). A booked slot becomes free (slots.applicant_id on delete set null);
- * the calendar cancellation follows in Phase 12.
+ * board). A booked slot is freed first and the interviewers get a calendar
+ * cancellation (Phase 12).
  */
-export async function withdrawApplication(db: SupabaseClient, token: string): Promise<boolean> {
+export async function withdrawApplication(
+  db: SupabaseClient,
+  token: string,
+  { send = sendMail }: Pick<Deps, "send"> = {},
+): Promise<boolean> {
   const applicant = await findApplicant(db, token);
   if (!applicant) return false;
+  await releaseForWithdrawal(db, applicant.id, send);
   const folder = applicant.round.id;
 
   const { data: files, error } = await db.storage.from(BUCKET).list(folder, { search: applicant.id, limit: 1000 });

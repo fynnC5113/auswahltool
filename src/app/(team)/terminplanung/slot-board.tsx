@@ -9,6 +9,7 @@ import {
   deleteFreeSlotsAction,
   deleteSlotAction,
   generateSlotsAction,
+  inviteToBookAction,
   saveSlotAction,
   setPairAction,
   setPreferredAction,
@@ -84,6 +85,34 @@ function SlotToolbar({
       {generated.message && !generating && <p className="text-sm text-zinc-600 dark:text-zinc-400">{generated.message}</p>}
       {error && <p className="text-sm text-red-700">{error}</p>}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Ask applicants without a slot to book (Phase 12)
+// ---------------------------------------------------------------------------
+
+export function InviteToBookButton({ roundId, waiting }: { roundId: string; waiting: number }) {
+  const [state, formAction, pending] = useActionState(inviteToBookAction, empty);
+  if (!waiting && !state.message) return null;
+  return (
+    <form
+      action={formAction}
+      className="mt-3 flex flex-col items-start gap-2"
+      onSubmit={(e) => {
+        const who = waiting === 1 ? "1 Bewerber ohne Termin" : `${waiting} Bewerber ohne Termin`;
+        if (!confirm(`${who} per Mail zum Buchen auffordern? Jeder bekommt einen neuen Link, frühere Links gelten dann nicht mehr.`)) {
+          e.preventDefault();
+        }
+      }}
+    >
+      <input type="hidden" name="roundId" value={roundId} />
+      <button disabled={pending || !waiting} className={secondaryButton}>
+        {pending ? "Verschicke …" : "Bewerber ohne Termin zum Buchen auffordern"}
+      </button>
+      {state.error && <p className="text-sm text-red-700">{state.error}</p>}
+      {state.message && !pending && <p className="text-sm text-zinc-600 dark:text-zinc-400">{state.message}</p>}
+    </form>
   );
 }
 
@@ -399,7 +428,7 @@ function SlotForm({
 function PairForm({ slot, members }: { slot: BoardSlot; members: MemberOption[] }) {
   const [state, formAction, pending] = useActionState(async (prev: State, formData: FormData) => {
     const result = await setPairAction(prev, formData);
-    return result.error ? result : { error: "", message: "Paar gespeichert." };
+    return result.error ? result : { error: "", message: result.message ?? "Paar gespeichert." };
   }, empty);
   return (
     <form action={formAction} className="grid gap-3 sm:grid-cols-2">
@@ -438,8 +467,11 @@ function AssignForm({ slot, applicants }: { slot: BoardSlot; applicants: Option[
           Eintragen
         </button>
       </div>
-      {!slot.pair && <p className="text-sm text-zinc-600 dark:text-zinc-400">Das Tool wählt dabei das Paar; ändern kannst du es danach.</p>}
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        {!slot.pair && "Das Tool wählt dabei das Paar; ändern kannst du es danach. "}Bewerber und Paar bekommen eine Kalendereinladung.
+      </p>
       {state.error && <p className="text-sm text-red-700">{state.error}</p>}
+      {state.message && !pending && <p className="text-sm text-amber-800 dark:text-amber-300">{state.message}</p>}
     </form>
   );
 }
@@ -450,7 +482,11 @@ function UnassignForm({ slot }: { slot: BoardSlot }) {
     <form
       action={formAction}
       onSubmit={(e) => {
-        if (!confirm(`${slot.applicant} austragen? Der Termin wird wieder frei, das Paar wird beim nächsten Buchen neu gewählt.`)) {
+        if (
+          !confirm(
+            `${slot.applicant} austragen? Der Termin wird wieder frei, das Paar wird beim nächsten Buchen neu gewählt. Bewerber und Paar bekommen eine Absage.`,
+          )
+        ) {
           e.preventDefault();
         }
       }}
@@ -460,6 +496,7 @@ function UnassignForm({ slot }: { slot: BoardSlot }) {
         Bewerber austragen
       </button>
       {state.error && <p className="mt-2 text-sm text-red-700">{state.error}</p>}
+      {state.message && !pending && <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">{state.message}</p>}
     </form>
   );
 }

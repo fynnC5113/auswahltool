@@ -21,6 +21,7 @@ import {
   unassignApplicant,
   type SchedulingResult,
 } from "@/lib/scheduling";
+import { inviteToBook } from "@/lib/booking";
 import { createClient } from "@/lib/supabase/server";
 
 type State = { error: string; message?: string };
@@ -69,10 +70,11 @@ export async function deleteBlockedTimeAction(_prev: State, formData: FormData):
 // Phase 11: slots
 // ---------------------------------------------------------------------------
 
+/** message: the change is saved, but calendar mails failed. */
 function slotState(result: SchedulingResult): State {
   if ("error" in result) return result;
   revalidatePath("/terminplanung");
-  return { error: "" };
+  return { error: "", message: "warning" in result ? result.warning : undefined };
 }
 
 export async function generateSlotsAction(_prev: State, formData: FormData): Promise<State> {
@@ -131,4 +133,20 @@ export async function setPreferredAction(_prev: State, formData: FormData): Prom
       field(formData, "preferred") === "true",
     ),
   );
+}
+
+// ---------------------------------------------------------------------------
+// Phase 12: ask applicants without a slot to book
+// ---------------------------------------------------------------------------
+
+export async function inviteToBookAction(_prev: State, formData: FormData): Promise<State> {
+  const result = await inviteToBook(await createClient(), field(formData, "roundId"));
+  if ("error" in result) return result;
+  const sent = `${result.sent} ${result.sent === 1 ? "Mail" : "Mails"} verschickt.`;
+  return {
+    error: result.failed
+      ? `${result.failed} ${result.failed === 1 ? "Mail konnte" : "Mails konnten"} nicht verschickt werden; dort gilt weiter der alte Link. ${sent}`
+      : "",
+    message: result.failed ? undefined : sent,
+  };
 }

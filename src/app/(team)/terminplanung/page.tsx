@@ -9,7 +9,7 @@ import { capacity, hintText, isBookable, slotHints } from "@/lib/scheduling-rule
 import { createClient } from "@/lib/supabase/server";
 import { page } from "../../ui";
 import { AddBlockedTimeForm, AddLocationForm, DeleteBlockedTimeButton, LocationActions } from "./planning-forms";
-import { PreferredToggle, SlotBoard, type BoardSlot } from "./slot-board";
+import { InviteToBookButton, PreferredToggle, SlotBoard, type BoardSlot } from "./slot-board";
 
 const when = new Intl.DateTimeFormat("de-DE", {
   weekday: "short",
@@ -114,6 +114,7 @@ export default async function PlanningPage() {
             Verfügbarkeit bitten und danach erneut „Alle möglichen Termine erzeugen“ klicken.
           </p>
         )}
+        <InviteToBookButton roundId={round.id} waiting={cap.withoutSlot} />
       </section>
 
       <section className="mb-10">

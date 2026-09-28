@@ -6,7 +6,9 @@
 // chosen at booking (choosePair) unless an admin fixed one. Overlaps per
 // location (exclusion constraint) and per person (trigger) are rejected by the
 // database and only translated here. Time and location of a booked slot stay
-// fixed until Phase 12 brings rebooking with calendar mails.
+// fixed (Fynn, 29.09.2026: remove the applicant and enter them elsewhere).
+// Entering, removing and changing the pair of a booked slot send calendar
+// mails (calendar-mail.ts) with ics_sequence + 1.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getMember } from "@/lib/auth/member";
 import { normalizeInstant } from "@/lib/availability-grid";
@@ -14,11 +16,12 @@ import { berlinToUtc } from "@/lib/berlin-time";
 import { loadLocations, type Location } from "@/lib/locations";
 import type { HintContext, HintMember, PlannedSlot, SlotStatus } from "@/lib/scheduling-rules";
 import { choosePair, offerTimes } from "@/lib/slot-offers";
+import { mailWarning, sendCancellations, sendInvitations, snapshotSlot, type Deliver } from "@/lib/calendar-mail";
 
 export type SchedulingMember = HintMember & { preferred: boolean };
 
 export type Scheduling = {
-  round: { id: string; interviewMinutes: number; bufferMinutes: number; interviewsFrom: string };
+  round: { id: string; interviewMinutes: number; bufferMinutes: number; interviewsFrom: string; rebookHoursBefore: number };
   /** Active members plus anyone who sits in a slot; by name. */
   members: SchedulingMember[];
   /** Default location first. */
@@ -29,7 +32,8 @@ export type Scheduling = {
   conflicts: { applicantId: string; memberId: string }[];
 };
 
-export type SchedulingResult = { ok: true } | { error: string };
+/** warning: the change is saved, but calendar mails failed. */
+export type SchedulingResult = { ok: true; warning?: string } | { error: string };
 
 const NOT_ALLOWED = { error: "Das dürfen nur Admins." } as const;
 const GONE = { error: "Den Termin gibt es nicht mehr. Bitte Seite neu laden." } as const;
@@ -80,9 +84,9 @@ const toSlot = (row: SlotRow): PlannedSlot => ({
 export async function loadScheduling(session: SupabaseClient, roundId: string): Promise<Scheduling> {
   const round = await session
     .from("rounds")
-    .select("id, interview_minutes, buffer_minutes, interviews_from")
+    .select("id, interview_minutes, buffer_minutes, interviews_from, rebook_hours_before")
     .eq("id", roundId)
-    .single<{ id: string; interview_minutes: number; buffer_minutes: number; interviews_from: string }>();
+    .single<{ id: string; interview_minutes: number; buffer_minutes: number; interviews_from: string; rebook_hours_before: number }>();
   if (round.error) throw new Error(round.error.message);
 
   const [team, settings, cells, slots, applicants, conflicts, locations] = await Promise.all([
@@ -136,6 +140,7 @@ export async function loadScheduling(session: SupabaseClient, roundId: string): 
       interviewMinutes: round.data.interview_minutes,
       bufferMinutes: round.data.buffer_minutes,
       interviewsFrom: round.data.interviews_from,
+      rebookHoursBefore: round.data.rebook_hours_before,
     },
     members,
     locations,
@@ -259,18 +264,47 @@ export async function saveSlot(session: SupabaseClient, input: SlotInput): Promi
   return data.length ? { ok: true } : { error: "Der Termin ist gebucht oder existiert nicht mehr. Bitte Seite neu laden." };
 }
 
-/** Fixes or changes the pair of any slot; both empty frees a free slot's pair again. */
-export async function setPair(session: SupabaseClient, slotId: string, a: string, b: string): Promise<SchedulingResult> {
+/**
+ * Fixes or changes the pair of any slot; both empty frees a free slot's pair
+ * again. On a booked slot, whoever leaves gets a cancellation and the new pair
+ * an invitation.
+ */
+export async function setPair(
+  session: SupabaseClient,
+  slotId: string,
+  a: string,
+  b: string,
+  send?: Deliver,
+): Promise<SchedulingResult> {
   const pair = readPair(a, b);
   if ("error" in pair) return pair;
   if (!(await isAdmin(session))) return NOT_ALLOWED;
+  const before = await snapshotSlot(session, slotId);
+  if (!before) return GONE;
+  const booked = !!before.applicant;
+  if (booked && !pair.pair) return { error: "Ein gebuchter Termin braucht zwei Gesprächsführer." };
+
   const { data, error } = await session
     .from("slots")
-    .update({ interviewer_a: pair.pair?.[0] ?? null, interviewer_b: pair.pair?.[1] ?? null })
+    .update({
+      interviewer_a: pair.pair?.[0] ?? null,
+      interviewer_b: pair.pair?.[1] ?? null,
+      ...(booked && { ics_sequence: before.sequence + 1 }),
+    })
     .eq("id", slotId)
     .select("id");
   if (error) return { error: await translate(session, error) };
-  return data.length ? { ok: true } : GONE;
+  if (!data.length) return GONE;
+  if (!booked) return { ok: true };
+
+  const next = pair.pair!;
+  const left = before.interviewers.map((m) => m.id).filter((id) => !next.includes(id));
+  if (!left.length) return { ok: true };
+  const after = await snapshotSlot(session, slotId);
+  const failed =
+    (await sendCancellations({ ...before, sequence: before.sequence + 1 }, { memberIds: left }, send)) +
+    (after ? await sendInvitations(after, { memberIds: next }, send) : 0);
+  return { ok: true, warning: mailWarning(failed) };
 }
 
 /**
@@ -278,11 +312,20 @@ export async function setPair(session: SupabaseClient, slotId: string, a: string
  * booking will (choosePair, without members conflicted with the applicant).
  * No calendar mail before Phase 12.
  */
-export async function assignApplicant(session: SupabaseClient, slotId: string, applicantId: string): Promise<SchedulingResult> {
+export async function assignApplicant(
+  session: SupabaseClient,
+  slotId: string,
+  applicantId: string,
+  send?: Deliver,
+): Promise<SchedulingResult> {
   if (!applicantId) return { error: "Bitte einen Bewerber wählen." };
   if (!(await isAdmin(session))) return NOT_ALLOWED;
 
-  const slot = await session.from("slots").select(`round_id, ${SLOT_COLUMNS}`).eq("id", slotId).maybeSingle<SlotRow & { round_id: string }>();
+  const slot = await session
+    .from("slots")
+    .select(`round_id, ics_sequence, ${SLOT_COLUMNS}`)
+    .eq("id", slotId)
+    .maybeSingle<SlotRow & { round_id: string; ics_sequence: number }>();
   if (slot.error) return { error: slot.error.message };
   if (!slot.data) return GONE;
   if (slot.data.applicant_id) return { error: "Der Termin ist schon vergeben. Bitte Seite neu laden." };
@@ -308,28 +351,41 @@ export async function assignApplicant(session: SupabaseClient, slotId: string, a
       booked_at: new Date().toISOString(),
       interviewer_a: pair.interviewerA,
       interviewer_b: pair.interviewerB,
+      ics_sequence: slot.data.ics_sequence + 1,
     })
     .eq("id", slotId)
     .is("applicant_id", null)
     .select("id");
   if (error?.code === "23505") return { error: "Dieser Bewerber hat schon einen Termin." };
   if (error) return { error: await translate(session, error) };
-  return data.length ? { ok: true } : { error: "Der Termin ist schon vergeben. Bitte Seite neu laden." };
+  if (!data.length) return { error: "Der Termin ist schon vergeben. Bitte Seite neu laden." };
+
+  // The applicant's token is unknown here, so the mail points to the first mail's link.
+  const after = await snapshotSlot(session, slotId);
+  const failed = after
+    ? await sendInvitations(after, { applicant: { rebooked: false }, memberIds: [pair.interviewerA, pair.interviewerB] }, send)
+    : 0;
+  return { ok: true, warning: mailWarning(failed) };
 }
 
-/**
- * Frees a booked slot and its pair, so the next booking chooses again.
- * From Phase 12 this must also cancel the calendar invitations.
- */
-export async function unassignApplicant(session: SupabaseClient, slotId: string): Promise<SchedulingResult> {
+/** Frees a booked slot and its pair, so the next booking chooses again; everyone gets a cancellation. */
+export async function unassignApplicant(session: SupabaseClient, slotId: string, send?: Deliver): Promise<SchedulingResult> {
   if (!(await isAdmin(session))) return NOT_ALLOWED;
+  const before = await snapshotSlot(session, slotId);
+  if (!before) return GONE;
   const { data, error } = await session
     .from("slots")
-    .update({ applicant_id: null, booked_at: null, interviewer_a: null, interviewer_b: null })
+    .update({ applicant_id: null, booked_at: null, interviewer_a: null, interviewer_b: null, ics_sequence: before.sequence + 1 })
     .eq("id", slotId)
     .select("id");
   if (error) return { error: error.message };
-  return data.length ? { ok: true } : GONE;
+  if (!data.length) return GONE;
+  const failed = await sendCancellations(
+    { ...before, sequence: before.sequence + 1 },
+    { applicant: { rebooked: false }, memberIds: before.interviewers.map((m) => m.id) },
+    send,
+  );
+  return { ok: true, warning: mailWarning(failed) };
 }
 
 export async function setPreferred(

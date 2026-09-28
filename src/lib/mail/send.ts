@@ -1,7 +1,9 @@
 // Mail module (TECH_DESIGN 6.5): one sendMail() for every automatic mail.
 // Both transports deliver the same MIME message: "gmail" via Nodemailer SMTP,
 // "graph" via Microsoft Graph sendMail in MIME format from the function
-// mailbox. Calendar invitations (ics) follow in Phase 12. Server only.
+// mailbox. A calendar invitation (src/lib/calendar.ts) goes as nodemailer's
+// icalEvent: a text/calendar part with the method, no other attachment.
+// Server only.
 import nodemailer, { type SendMailOptions, type Transporter } from "nodemailer";
 
 export type MailTransport = "gmail" | "graph";
@@ -11,6 +13,8 @@ export interface Mail {
   subject: string;
   text: string;
   html: string;
+  /** iCalendar text; its METHOD must match `method`. */
+  ics?: { method: "REQUEST" | "CANCEL"; content: string };
 }
 
 export interface SendOptions {
@@ -42,7 +46,13 @@ export function buildMessage(mail: Mail, options: SendOptions = {}): SendMailOpt
     subject: mail.subject,
     text: mail.text,
     html: mail.html,
+    ...(mail.ics && { icalEvent: { method: mail.ics.method, filename: "termin.ics", content: mail.ics.content } }),
   };
+}
+
+/** The sender, as calendar invitations name it for ORGANIZER. */
+export function organizer(transport: MailTransport = "gmail"): { name: string; email: string } {
+  return { name: FROM_NAME, email: senderAddress(transport) };
 }
 
 // --- gmail -----------------------------------------------------------------
