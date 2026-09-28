@@ -66,7 +66,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
     - Das Löschen einer Runde entfernt alle abhängigen Zeilen.
     - Ein Upload einer Nicht-PDF oder einer Datei über 10 MB wird abgelehnt.
 
-- [ ] **Phase 3: Zugriffsregeln (RLS) mit Tests**
+- [x] **Phase 3: Zugriffsregeln (RLS) mit Tests**
   - Ergebnis:
     - Die Hilfsfunktionen `is_member()` und `is_admin()`
     - Regeln für jede Tabelle nach TECH_DESIGN Abschnitt 5, einschließlich der Sichtsperre und der Board-Sperre
