@@ -156,7 +156,7 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
     - Die Kapazität reicht nicht: Der Rest wird gemeldet.
     - 30 Bewerber und 12 Mitglieder laufen in weniger als 1 Sekunde.
   - Belegt am 28.09.2026: Vitest `src/lib/slot-proposals.test.ts` (18 grün, jedes Ergebnis zusätzlich gegen alle Regeln geprüft): keine Verfügbarkeit → keine Slots; Sperrzeiten; zweiter Ort bei gesperrtem Standardort; Obergrenzen inkl. bestehender Slots; keine Überlappung pro Ort (inkl. Puffer) und pro Person; gleichmäßig (6 Mitglieder, 9 Slots → je 3); Rest gemeldet; Puffer, der nicht auf 15 Minuten aufgeht; Winterzeit; „bevorzugt“; 30 Bewerber/12 Mitglieder/12 Tage in 112 ms. `npm test` 437 grün, Build fehlerfrei.
-  - Festlegungen (Fynn, 28.09.2026): Der Slot belegt den Ort für Gespräch + Puffer (kein Termin im Puffer). Gesprächsführer müssen nur für die Gesprächszeit verfügbar sein, bekommen aber während ihres Puffers kein weiteres Gespräch. Belastung eines Paars = der Stärker belastete der beiden, dann die Summe. Mitglieder können „bevorzugt“ sein (zählen nicht als belastet, gewinnen Gleichstand): Fynn will möglichst viele Gespräche führen.
+  - Festlegungen (Fynn, 28.09.2026): Der Slot belegt den Ort für Gespräch + Puffer (kein Termin im Puffer). Gesprächsführer müssen nur für die Gesprächszeit verfügbar sein, bekommen aber während ihres Puffers kein weiteres Gespräch. Belastung eines Paars = der stärker belastete der beiden, dann die Summe. Mitglieder können „bevorzugt“ sein (zählen nicht als belastet, gewinnen Gleichstand): Fynn will möglichst viele Gespräche führen.
 
 - [ ] **Phase 11: Terminplanung (Admin)**
   - Ergebnis: `/terminplanung` mit folgenden Funktionen:

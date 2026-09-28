@@ -181,7 +181,7 @@ export function AvailabilityGrid({
         })}
       </div>
 
-      <div className="sticky bottom-0 -mx-4 border-t border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] -mx-4 lg:bottom-0 border-t border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-sm">
             Höchstens so viele Gespräche (leer = unbegrenzt)
