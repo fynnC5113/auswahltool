@@ -85,3 +85,13 @@ Schreibt Fynn „Ende“, vor dem Schluss der Session diesen Ablauf durchgehen, 
 3. **CLAUDE.md:** „Stand des Repos“, Befehle, Einstellungen und „Offene Nachweise“ auf den Stand der Session bringen. Neue Festlegungen, die jede spätere Session kennen muss, gehören hierher.
 4. **Gedächtnis:** Entscheidungen und Vorlieben aus der Session, die nicht ins Repo gehören, in Memory ablegen; erledigte oder falsche Einträge löschen.
 5. **Bericht an Fynn:** Was geprüft und gesichert wurde (mit Befehlsausgabe als Beleg), was offen bleibt, womit die nächste Session anfängt. Danach die To-do-Liste.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

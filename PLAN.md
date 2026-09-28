@@ -84,7 +84,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
     - Ein Testskript schickt beide Vorlagen an Fynn. Sie kommen an, nicht im Spam, mit „Antwort an“ auf das Funktionspostfach (Screenshot).
     - **Prüfpunkt klären:** das Gmail-Sendelimit.
 
-- [ ] **Phase 5: Team-Login und Teamverwaltung**
+- [x] **Phase 5: Team-Login und Teamverwaltung**
   - Ergebnis:
     - `/login` und `/auth/confirm` mit Knopf „Anmelden“
     - Schutz aller Team-Seiten
@@ -94,6 +94,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
     - Fynn meldet sich mit dem Link aus der Mail an und bleibt nach einem Neustart des Browsers angemeldet.
     - Eine unbekannte Adresse bekommt dieselbe Meldung, aber keine Mail.
     - Ein deaktiviertes Testmitglied sieht sofort nichts mehr.
+  - Belegt am 28.09.2026: Login per Mail-Link und Anmeldung nach Neustart von Chrome (Fynn, lokal mit Gmail-Adresse); Deaktivieren, Rolle und Selbstschutz (Screenshot); unbekannte/deaktivierte Adresse ohne Mail und deaktiviertes Mitglied sieht nichts (Vitest `src/lib/auth/login.test.ts`, `src/lib/team.test.ts`). Login-Mails an @law-school.de kommen nicht an (vermutlich Quarantäne), siehe Phase 4.
 
 - [ ] **Phase 6: Runde anlegen und konfigurieren**
   - Ergebnis: `/einstellungen/runde` mit allem aus PRD 4.2 sowie Versandweg, Antwortadresse und Datenschutzhinweis.
