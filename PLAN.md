@@ -54,7 +54,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
     - Beide Supabase-Projekte zeigen im Dashboard die Region Frankfurt (Screenshot).
     - `git status` zeigt keine `.env.local`.
 
-- [ ] **Phase 2: Alle Tabellen und Datenbankregeln**
+- [x] **Phase 2: Alle Tabellen und Datenbankregeln**
   - Ergebnis: Migrationen für **alle** Tabellen aus TECH_DESIGN Abschnitt 4, damit spätere Etappen nicht umbauen müssen. Dazu gehören:
     - Kaskaden-Löschung ab `rounds`
     - Eindeutigkeit von `slots.applicant_id` und von Mail pro Runde
