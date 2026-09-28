@@ -37,6 +37,7 @@ export default async function TeamLayout({ children }: LayoutProps<"/">) {
           </Link>
           <nav className="flex gap-4 text-sm">
             <Link href="/">Übersicht</Link>
+            {member.role === "admin" && <Link href="/einstellungen/runde">Runde</Link>}
             {member.role === "admin" && <Link href="/einstellungen/team">Team</Link>}
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm">

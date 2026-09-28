@@ -96,11 +96,12 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
     - Ein deaktiviertes Testmitglied sieht sofort nichts mehr.
   - Belegt am 28.09.2026: Login per Mail-Link und Anmeldung nach Neustart von Chrome (Fynn, lokal mit Gmail-Adresse); Deaktivieren, Rolle und Selbstschutz (Screenshot); unbekannte/deaktivierte Adresse ohne Mail und deaktiviertes Mitglied sieht nichts (Vitest `src/lib/auth/login.test.ts`, `src/lib/team.test.ts`). Live auf auswahltool.vercel.app ebenfalls erfolgreich (Fynn). Login-Mails an @law-school.de: mit localhost-Link nicht angekommen (vermutlich Quarantäne), mit Live-Link angekommen; siehe Phase 4.
 
-- [ ] **Phase 6: Runde anlegen und konfigurieren**
+- [x] **Phase 6: Runde anlegen und konfigurieren**
   - Ergebnis: `/einstellungen/runde` mit allem aus PRD 4.2 sowie Versandweg, Antwortadresse und Datenschutzhinweis.
   - Prüfung:
     - Eine Testrunde wird mit 3 Fragen, 4 Ressorts und 3 gewichteten Kriterien angelegt und bearbeitet.
     - Ungültige Eingaben werden abgewiesen, zum Beispiel ein Ende vor dem Beginn oder ein Gewicht von 0.
+  - Belegt am 28.09.2026: Vitest `src/lib/round.test.ts` gegen `-test` (Runde mit 3 Fragen, 4 Ressorts, 3 gewichteten Kriterien angelegt und bearbeitet; Umsortieren; Entfernen und Skalenänderung trotz vorhandener Daten verweigert, auch bei fremden Entwürfen; Mitglied und deaktivierter Admin dürfen nicht), `src/lib/round-form.test.ts` (Ende vor Beginn, Gewicht 0, leere Namen, Skala verkehrt, Löschdatum nicht nach Gesprächsende), `src/lib/berlin-time.test.ts` (Sommer-/Winterzeit, 25.10.2026); `npm test` 339 grün. Von Hand (Fynn, lokal): Gewicht 0 abgewiesen (Screenshot), Runde „Testlauf“ gespeichert und per Abfrage geprüft (Zeiten korrekt in UTC); Ende vor Beginn laut Fynn abgewiesen.
 
 - [ ] **Phase 7: Öffentliches Formular, persönliche Seite und Erfassung durch den Admin**
   - Ergebnis:
