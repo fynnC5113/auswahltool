@@ -35,9 +35,11 @@ export default async function TeamLayout({ children }: LayoutProps<"/">) {
           <Link href="/" className="font-semibold">
             Auswahltool
           </Link>
-          <nav className="flex gap-4 text-sm">
+          <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
             <Link href="/">Übersicht</Link>
+            <Link href="/verfuegbarkeit">Verfügbarkeit</Link>
             {member.role === "admin" && <Link href="/bewerbungen">Bewerbungen</Link>}
+            {member.role === "admin" && <Link href="/terminplanung">Terminplanung</Link>}
             {member.role === "admin" && <Link href="/einstellungen/erfassen">Erfassen</Link>}
             {member.role === "admin" && <Link href="/einstellungen/runde">Runde</Link>}
             {member.role === "admin" && <Link href="/einstellungen/team">Team</Link>}
