@@ -9,7 +9,7 @@ Stand 28.09.2026 abends: Phase 1, 2, 3, 5, 6 und 7 sind fertig und live. Phase 8
 **Nächster Schritt:** Nach dem Gespräch mit Bian (29.09.) trägt Fynn auf `/einstellungen/runde` (live, `-prod`) die echten Werte der „Runde 2026“ ein: Fragen, Ressorts, Plätze, Löschdatum, fertigen Datenschutztext (Klammern ausfüllen); danach Phase 8 abhaken. Derzeit vorläufig: Beginn 01.10.2026 00:00, Ende 15.10.2026 23:59, Gespräche 20.–31.10., Löschdatum 30.11.2026, Inhalte aus „Testlauf“. Ausstiegspunkt 30.09. abends. Danach Etappe B (Phase 9). Auf `-test` steht weiter die Runde „Testlauf“ für lokale Versuche.
 
 - Repo: https://github.com/fynnC5113/auswahltool (privat)
-- Live: https://auswahltool.vercel.app
+- Live: https://lawclinic-bewerbung.vercel.app (seit 28.09.2026; die alte Adresse https://auswahltool.vercel.app bleibt als zweite Domain aktiv, damit früher verschickte Links funktionieren)
 - Supabase: `auswahltool-test` (ref `oxbryalllwtwxrisozeq`) und `auswahltool-prod` (ref `rdnqtypnpxdukcxboghl`), beide Central EU (Frankfurt)
 
 Planung:
@@ -41,7 +41,7 @@ Entwickelt und getestet wird gegen das Supabase-Projekt `auswahltool-test`, echt
 
 **Deployment:** Vercel ist mit dem GitHub-Repo verbunden. Jeder Push auf `main` geht sofort live (Build dauert etwa 40 s). Funktionsregion `fra1` steht in `vercel.json`; im Betrieb belegt am 28.09.2026: `x-vercel-id: fra1::fra1::…` auf `/login` mit `x-vercel-cache: MISS` (laut Vercel-Doku enthält der Header die Region, in der die Funktion lief).
 
-**Vercel-Umgebungsvariablen** (Production), Namen wie in `.env.example`: `NEXT_PUBLIC_SUPABASE_URL` (zeigt seit 28.09.2026 auf `-prod`; zurück auf `-test` = die drei Supabase-Werte aus `.env.local` eintragen und neu deployen), `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Typ Config), `SUPABASE_SECRET_KEY` (Secret), `GMAIL_USER`, `GMAIL_APP_PASSWORD` (Secret), `MAIL_REPLY_TO`, `APP_URL=https://auswahltool.vercel.app`. `NEXT_PUBLIC_*` als „Config“ anlegen, sonst warnt Vercel. Die alten Einträge `NEXT_PUBLIC_SUPABASE_ANON_KEY` und `SUPABASE_SERVICE_ROLE_KEY` werden nicht benutzt; Fynn hat zugestimmt, sie zu löschen, ob es geschehen ist, ist unbestätigt. Graph-Variablen kommen erst mit der IT-Freigabe. Neue Variablen gelten erst nach dem nächsten Deployment.
+**Vercel-Umgebungsvariablen** (Production), Namen wie in `.env.example`: `NEXT_PUBLIC_SUPABASE_URL` (zeigt seit 28.09.2026 auf `-prod`; zurück auf `-test` = die drei Supabase-Werte aus `.env.local` eintragen und neu deployen), `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Typ Config), `SUPABASE_SECRET_KEY` (Secret), `GMAIL_USER`, `GMAIL_APP_PASSWORD` (Secret), `MAIL_REPLY_TO`, `APP_URL=https://lawclinic-bewerbung.vercel.app`. `NEXT_PUBLIC_*` als „Config“ anlegen, sonst warnt Vercel. Die alten Einträge `NEXT_PUBLIC_SUPABASE_ANON_KEY` und `SUPABASE_SERVICE_ROLE_KEY` werden nicht benutzt; Fynn hat zugestimmt, sie zu löschen, ob es geschehen ist, ist unbestätigt. Graph-Variablen kommen erst mit der IT-Freigabe. Neue Variablen gelten erst nach dem nächsten Deployment.
 
 **Mail:** Gmail-Konto des Tools `lawclinic.orgateam@gmail.com` (Anzeigename „Law Clinic Orga-Team“, App-Passwort), Antwortadresse `termin.lawclinic@law-school.de`. Anrede in allen Mails an Bewerber und Team: „du“.
 
