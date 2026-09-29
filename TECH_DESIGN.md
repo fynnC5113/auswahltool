@@ -265,7 +265,9 @@ Absender ist „Law Clinic Orga-Team“ mit der Gmail-Adresse bzw. dem Funktions
 
 Freigabe durch die IT für **graph** (laut Microsoft-Doku, am 28.09.2026 nachgelesen):
 1. App-Registrierung in Entra ID mit Client Secret. `Mail.Send` dort **nicht** per Admin-Consent freigeben, sonst gilt das Recht für alle Postfächer (Entra- und Exchange-Rechte addieren sich).
-2. In Exchange Online (RBAC for Applications): `New-ServicePrincipal` als Verweis auf die App, eine Management Scope nur für das Funktionspostfach, `New-ManagementRoleAssignment -Role "Application Mail.Send" -CustomResourceScope …`. Prüfbar mit `Test-ServicePrincipalAuthorization`.
+2. In Exchange Online (RBAC for Applications): `New-ServicePrincipal` als Verweis auf die App (IDs aus „Unternehmensanwendungen“, nicht aus „App-Registrierungen“), eine Management Scope nur für das Funktionspostfach, `New-ManagementRoleAssignment -Role "Application Mail.Send" -CustomResourceScope …`. Prüfbar mit `Test-ServicePrincipalAuthorization`.
+
+Nachgelesen am 29.09.2026 (Microsoft Learn): Für den Scope-Filter rät Microsoft von `PrimarySmtpAddress` ab und empfiehlt `EmailAddresses`; genaue Filterzeile legt die IT fest (alternativ Verwaltungseinheit). Rechteänderungen greifen im Betrieb erst nach 30 Minuten bis 2 Stunden (der Test-Befehl umgeht den Cache). Einrichten darf „Organization Management“ bzw. „Exchange Administrator“. `sendMail` im MIME-Format legt **immer** eine Kopie in „Gesendete Elemente“ des Funktionspostfachs ab (`saveToSentItems` gibt es nur im JSON-Format); die Kopien nach der Runde löschen oder per Aufbewahrungsregel.
 
 **Spamfilter der Uni (festgestellt 28.09.2026):** Testmails über **gmail** an @law-school.de landeten im Junk-Ordner (`SCL:5`, `CAT:PHISH`), obwohl SPF, DKIM und DMARC bestanden. Abhilfe bis **graph** läuft: Die IT trägt die Gmail-Adresse in die Tenant Allow/Block List ein. Solche Einträge heben laut Doku Spam und Phishing (nicht hochgradig) auf, laufen aber standardmäßig 45 Tage nach letzter Nutzung ab, also vor jeder Runde erneuern lassen.
 
