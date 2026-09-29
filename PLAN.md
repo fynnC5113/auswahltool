@@ -210,7 +210,7 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
 
 ## Phase D: Design, Ziel 30.09. (vor dem Start der Bewerbungsphase)
 
-- [ ] **Phase D: DESIGN.md und Umstellung aller Seiten**
+- [x] **Phase D: DESIGN.md und Umstellung aller Seiten**
   - Festlegungen (Fynn, 29.09.2026): Vorschau mit zwei Richtungen (Artifact „Auswahltool Designrichtungen“), gewählt: **A „Klar“** (Apple-Listen, Systemschrift, Marineblau aus dem Logo, Weinrot nur für Fehler und endgültige Aktionen) **mit den Feldern und großen Zahlen aus B**. Der dunkle Modus bleibt. Bildmarke des Logos auf den öffentlichen Seiten und im Team-Menü.
   - Ergebnis:
     - `DESIGN.md` (Farben hell/dunkel, fünf Schriftstufen, Abstände, Bausteine, Muster, Handyregeln, „so ja / so nein“), von Fynn freigegeben
@@ -223,6 +223,7 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
     - Bildschirmfotos jeder Seite in 390 und 1280 px, hell und dunkel (Claude, lokal gegen `-test`)
     - Fynn prüft live am Handy den Bewerberweg: Formular mit Upload, Bestätigungsmail, Buchung, Ändern, Rückzug (Screenshots), dazu Übersicht, Bewerbungen und Verfügbarkeit
     - nach dem 01.10. 00:00 an den Bewerberseiten nur noch Fehlerbehebungen
+  - Belegt am 29.09.2026: Commit `dc4e53f`, live. `npm test` 539 grün, 3 übersprungen (wie vorher), `npm run build` und `npm run lint` fehlerfrei, `tsc` 0 Fehler in `src/`; Suche nach alten Farb-, Größen-, Rundungs- und `dark:`-Klassen in `src/app` ohne Treffer. Bildschirmfotos aller Seiten in 390 px hell/dunkel und von `/bewerben`, `/`, `/terminplanung` in 1280 px (Claude, lokal gegen `-test`; vier Kleinigkeiten behoben). Live auf `-prod` am Handy (Fynn, Screenshots 14:54–15:02, dunkel): Runde kurz geöffnet, Verfügbarkeit beider Konten, 2 Termine erzeugt, leeres Formular mit markierten Fehlern, Bewerbung abgeschickt, Mail im Gmail-Posteingang, Uhrzeit-Kacheln mit Leiste, gebucht, „Änderungen gespeichert.“; Rückzug und Aufräumen laut Fynn erfolgreich, danach per Abfrage auf `-prod`: 0 Bewerbungen, 0 Antworten, 0 Termine, 0 Verfügbarkeiten, 0 Befangenheiten, 0 Sperrzeiten, 0 Dateien, Beginn wieder 01.10.2026 00:00.
 
 ---
 
