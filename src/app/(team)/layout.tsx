@@ -4,7 +4,8 @@
 import { redirect } from "next/navigation";
 import { getMember } from "@/lib/auth/member";
 import { createClient } from "@/lib/supabase/server";
-import { page, secondaryButton } from "../ui";
+import { PageHeader } from "../brand";
+import { smallButton, teamPage } from "../ui";
 import { signOut } from "./actions";
 import { TeamNav } from "./team-nav";
 
@@ -14,16 +15,15 @@ export default async function TeamLayout({ children }: LayoutProps<"/">) {
 
   const signOutButton = (
     <form action={signOut}>
-      <button className={secondaryButton}>Abmelden</button>
+      <button className={smallButton}>Abmelden</button>
     </form>
   );
 
   if (!member) {
     return (
-      <main className={page}>
-        <h1 className="mb-4 text-2xl font-semibold">Kein Zugang</h1>
-        <p className="mb-6">Dein Zugang ist nicht (mehr) freigeschaltet. Bitte wende dich an einen Admin.</p>
-        {signOutButton}
+      <main className={teamPage}>
+        <PageHeader heading="Kein Zugang">Dein Zugang ist nicht (mehr) freigeschaltet. Bitte wende dich an einen Admin.</PageHeader>
+        <div>{signOutButton}</div>
       </main>
     );
   }

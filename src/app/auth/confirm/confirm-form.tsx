@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { button } from "../../ui";
+import { button, link } from "../../ui";
 import { confirmLogin } from "./actions";
 
 export function ConfirmForm({ tokenHash }: { tokenHash: string }) {
@@ -12,7 +12,7 @@ export function ConfirmForm({ tokenHash }: { tokenHash: string }) {
     return (
       <p aria-live="polite">
         {state.error}{" "}
-        <Link href="/login" className="underline">
+        <Link href="/login" className={link}>
           Zum Login
         </Link>
       </p>
@@ -22,7 +22,7 @@ export function ConfirmForm({ tokenHash }: { tokenHash: string }) {
   return (
     <form action={formAction}>
       <input type="hidden" name="token_hash" value={tokenHash} />
-      <button disabled={pending} className={button}>
+      <button disabled={pending} className={`${button} sm:w-full`}>
         {pending ? "Anmelden …" : "Anmelden"}
       </button>
     </form>

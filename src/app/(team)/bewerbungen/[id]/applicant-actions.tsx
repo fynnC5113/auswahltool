@@ -2,14 +2,14 @@
 
 // Buttons on /bewerbungen/[id] (variant A, Fynn 29.09.2026).
 import { useActionState, useRef } from "react";
-import { button, secondaryButton } from "../../../ui";
+import { dangerButton, dangerTextButton, dialog as dialogClass, dialogBody, fieldError, lead, readLabel, secondaryButton, sectionTitle } from "../../../ui";
 import { deleteApplicantAction, setConflictAction, setStatusAction } from "./actions";
 
 type State = { error: string };
 const empty: State = { error: "" };
 
 function ErrorText({ state }: { state: State }) {
-  return state.error ? <p className="text-sm text-red-700 dark:text-red-400">{state.error}</p> : null;
+  return state.error ? <p className={fieldError}>{state.error}</p> : null;
 }
 
 export function ConflictButton({ id, mine }: { id: string; mine: boolean }) {
@@ -36,16 +36,16 @@ export function StatusSwitch({ id, status }: { id: string; status: "active" | "n
       value={value}
       disabled={pending}
       aria-pressed={status === value}
-      className="px-3 py-1.5 text-sm aria-pressed:bg-zinc-900 aria-pressed:font-semibold aria-pressed:text-white disabled:opacity-50 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900"
+      className="h-9 rounded-[8px] px-3 text-note text-muted aria-pressed:bg-surface aria-pressed:font-medium aria-pressed:text-fg aria-pressed:shadow-[0_1px_3px_rgba(0,0,0,0.12)] disabled:opacity-50"
     >
       {label}
     </button>
   );
   return (
-    <form action={action} className="flex flex-col gap-1">
-      <span className="text-sm text-zinc-600 dark:text-zinc-400">Status</span>
+    <form action={action} className="flex flex-col gap-1.5">
+      <span className={readLabel}>Status</span>
       <input type="hidden" name="id" value={id} />
-      <div className="inline-flex self-start overflow-hidden rounded border border-zinc-300 dark:border-zinc-700">
+      <div className="inline-flex gap-0.5 self-start rounded-field bg-field p-0.5">
         {option("active", "aktiv")}
         {option("no_show", "nicht erschienen")}
       </div>
@@ -60,29 +60,21 @@ export function DeleteButton({ id, name, booked }: { id: string; name: string; b
   return (
     <>
       <div>
-        <button
-          type="button"
-          onClick={() => dialog.current?.showModal()}
-          className="rounded border border-red-700 px-3 py-1.5 text-sm text-red-700 dark:border-red-400 dark:text-red-400"
-        >
+        <button type="button" onClick={() => dialog.current?.showModal()} className={dangerTextButton}>
           Bewerbung löschen
         </button>
       </div>
       <ErrorText state={state} />
-      <dialog
-        ref={dialog}
-        aria-label="Löschen bestätigen"
-        className="m-0 mt-auto w-full max-w-none rounded-t-xl bg-white p-0 text-zinc-900 backdrop:bg-black/40 dark:bg-zinc-950 dark:text-zinc-100 lg:m-auto lg:max-w-lg lg:rounded-xl"
-      >
-        <form action={action} className="flex flex-col gap-3 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <dialog ref={dialog} aria-label="Löschen bestätigen" className={dialogClass}>
+        <form action={action} className={dialogBody}>
           <input type="hidden" name="id" value={id} />
-          <h2 className="text-lg font-semibold">{name} endgültig löschen?</h2>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <h2 className={sectionTitle}>{name} endgültig löschen?</h2>
+          <p className={lead}>
             Bewerbung, Antworten und Lebenslauf werden gelöscht. Das lässt sich nicht rückgängig machen.
             {booked && " Der Termin wird frei, die Gesprächsführer bekommen eine Absage."}
           </p>
-          <div className="flex gap-2">
-            <button disabled={pending} className={`${button} bg-red-700 dark:bg-red-500 dark:text-white`}>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button disabled={pending} className={dangerButton}>
               {pending ? "Lösche …" : "Endgültig löschen"}
             </button>
             <button type="button" onClick={() => dialog.current?.close()} className={secondaryButton}>

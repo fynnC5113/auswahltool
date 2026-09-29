@@ -16,6 +16,7 @@ Planung:
 
 - `PRD.md`: was gebaut wird. Bei Widerspruch gilt die PRD vor `Konzept.md`.
 - `TECH_DESIGN.md`: Stack, Datenmodell, RLS-Regeln, Abläufe, Routen. Maßgeblich für jede Implementierungsentscheidung.
+- `DESIGN.md`: Farben (hell/dunkel), fünf Schriftstufen, Abstände, Bausteine, „so ja / so nein“. Vor jeder sichtbaren Änderung lesen. Umgesetzt in `src/app/globals.css` (Tailwind-Standardfarben, -größen und -rundungen abgeschaltet) und `src/app/ui.ts` bzw. `src/app/brand.tsx`; Seiten benutzen nur diese Bausteine.
 - `PLAN.md`: Bauplan in Phasen 1–18 plus Phase G, nach den Terminen der Runde 2026 geordnet. Zur Orientierung, in welcher Phase das Projekt steht, dort die Checkboxen lesen.
 - `Konzept.md`: Hintergrund und Begründungen (nicht versioniert).
 

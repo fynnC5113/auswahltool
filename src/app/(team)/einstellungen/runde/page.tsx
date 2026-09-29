@@ -2,7 +2,8 @@ import { getMember } from "@/lib/auth/member";
 import { loadRound } from "@/lib/round";
 import { emptyForm } from "@/lib/round-form";
 import { createClient } from "@/lib/supabase/server";
-import { page } from "../../../ui";
+import { PageHeader } from "../../../brand";
+import { teamPage } from "../../../ui";
 import { RoundEditor } from "./round-form";
 
 export default async function RoundPage() {
@@ -11,7 +12,7 @@ export default async function RoundPage() {
 
   if (member?.role !== "admin") {
     return (
-      <main className={page}>
+      <main className={teamPage}>
         <p>Diese Seite ist nur für Admins.</p>
       </main>
     );
@@ -21,8 +22,8 @@ export default async function RoundPage() {
   const round = await loadRound(supabase);
 
   return (
-    <main className={page}>
-      <h1 className="mb-6 text-2xl font-semibold">{round ? "Runde bearbeiten" : "Runde anlegen"}</h1>
+    <main className={teamPage}>
+      <PageHeader heading={round ? "Runde bearbeiten" : "Runde anlegen"} />
       <RoundEditor initial={round ?? emptyForm(new Date().getFullYear())} />
     </main>
   );

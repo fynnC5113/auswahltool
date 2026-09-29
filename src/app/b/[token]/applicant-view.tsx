@@ -3,7 +3,21 @@
 import { useState, type ReactNode } from "react";
 import type { ApplicationFields } from "@/lib/application-form";
 import { ApplicationForm, type PrepareState, type SubmitState } from "../../bewerben/application-form";
-import { button, secondaryButton } from "../../ui";
+import { PageHeader } from "../../brand";
+import {
+  alertBox,
+  dangerButton,
+  dangerTextButton,
+  lead,
+  link,
+  listGroup,
+  listRow,
+  okText,
+  readLabel,
+  secondaryButton,
+  section,
+  sectionTitle,
+} from "../../ui";
 
 interface Props {
   applicant: Omit<ApplicationFields, "email"> & { email: string; hasCv: boolean };
@@ -21,9 +35,6 @@ interface Props {
   booking: ReactNode;
 }
 
-const label = "text-sm text-zinc-600 dark:text-zinc-400";
-const box = "rounded border border-zinc-200 p-4 dark:border-zinc-800";
-
 export function ApplicantView(props: Props) {
   const { applicant, questions, departments, editable, deadline, replyTo, cvHref } = props;
   const [editing, setEditing] = useState(false);
@@ -31,12 +42,12 @@ export function ApplicantView(props: Props) {
   const [confirming, setConfirming] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [error, setError] = useState("");
-  const mailto = <a className="underline" href={`mailto:${replyTo}`}>{replyTo}</a>;
+  const mailto = <a className={link} href={`mailto:${replyTo}`}>{replyTo}</a>;
 
   if (editing) {
     return (
-      <div>
-        <h1 className="mb-6 text-2xl font-semibold">Bewerbung ändern</h1>
+      <>
+        <PageHeader heading="Bewerbung ändern" />
         <ApplicationForm
           mode="edit"
           questions={questions}
@@ -51,7 +62,7 @@ export function ApplicantView(props: Props) {
             setSaved(true);
           }}
         />
-      </div>
+      </>
     );
   }
 
@@ -72,55 +83,54 @@ export function ApplicantView(props: Props) {
   const chosen = departments.filter((d) => applicant.departmentIds.includes(d.id)).map((d) => d.name);
 
   return (
-    <div className="flex flex-col gap-10">
-      <div>
-        <h1 className="mb-2 text-2xl font-semibold">Deine Bewerbung</h1>
-        <p className="leading-relaxed text-zinc-600 dark:text-zinc-400">
-          Hallo {applicant.name.split(" ")[0]}, hier buchst du deinen Gesprächstermin und siehst deine Angaben.
-        </p>
-      </div>
+    <>
+      <PageHeader heading="Deine Bewerbung">
+        Hallo {applicant.name.split(" ")[0]}, hier buchst du deinen Gesprächstermin und siehst deine Angaben.
+      </PageHeader>
 
       {props.booking}
 
-      <section className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold">Deine Angaben</h2>
-          {saved && <p className="font-medium text-green-700" role="status">Änderungen gespeichert.</p>}
-          <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-            {editable
-              ? `Du kannst deine Bewerbung bis zum ${deadline} ändern.`
-              : "Die Bewerbungsphase ist vorbei, Änderungen sind nicht mehr möglich."}
+      <section className={section}>
+        <h2 className={sectionTitle}>Deine Angaben</h2>
+        {saved && (
+          <p className={okText} role="status">
+            Änderungen gespeichert.
           </p>
-        </div>
+        )}
+        <p className={lead}>
+          {editable
+            ? `Du kannst deine Bewerbung bis zum ${deadline} ändern.`
+            : "Die Bewerbungsphase ist vorbei, Änderungen sind nicht mehr möglich."}
+        </p>
 
-        <dl className="flex flex-col gap-3">
-          <div>
-            <dt className={label}>Name</dt>
+        <dl className={listGroup}>
+          <div className={listRow}>
+            <dt className={readLabel}>Name</dt>
             <dd>{applicant.name}</dd>
           </div>
-          <div>
-            <dt className={label}>Mailadresse</dt>
+          <div className={listRow}>
+            <dt className={readLabel}>Mailadresse</dt>
             <dd className="break-all">{applicant.email}</dd>
           </div>
-          <div>
-            <dt className={label}>Jahrgang</dt>
+          <div className={listRow}>
+            <dt className={readLabel}>Jahrgang</dt>
             <dd>{applicant.cohort}</dd>
           </div>
           {questions.map((q) => (
-            <div key={q.id}>
-              <dt className={label}>{q.text}</dt>
+            <div key={q.id} className={listRow}>
+              <dt className={readLabel}>{q.text}</dt>
               <dd className="whitespace-pre-line">{applicant.answers[q.id] ?? ""}</dd>
             </div>
           ))}
-          <div>
-            <dt className={label}>Wunsch-Ressort</dt>
+          <div className={listRow}>
+            <dt className={readLabel}>Wunsch-Ressort</dt>
             <dd>{applicant.departmentUnsure ? "weiß ich noch nicht" : chosen.join(", ") || "–"}</dd>
           </div>
-          <div>
-            <dt className={label}>Lebenslauf</dt>
+          <div className={listRow}>
+            <dt className={readLabel}>Lebenslauf</dt>
             <dd>
               {applicant.hasCv ? (
-                <a className="underline" href={cvHref} target="_blank" rel="noreferrer">
+                <a className={link} href={cvHref} target="_blank" rel="noreferrer">
                   PDF ansehen
                 </a>
               ) : (
@@ -131,39 +141,45 @@ export function ApplicantView(props: Props) {
         </dl>
 
         {editable && (
-          <div>
-            <button className={button} onClick={() => { setSaved(false); setEditing(true); }}>
+          <div className="pt-2">
+            <button className={secondaryButton} onClick={() => { setSaved(false); setEditing(true); }}>
               Bewerbung ändern
             </button>
           </div>
         )}
-        {!editable && <p>Wenn du noch etwas ändern musst, schreib bitte an {mailto}.</p>}
+        {!editable && <p className={lead}>Wenn du noch etwas ändern musst, schreib bitte an {mailto}.</p>}
       </section>
 
-      <section className={box}>
-        <h2 className="mb-2 font-semibold">Bewerbung zurückziehen</h2>
+      <section className={section}>
+        <h2 className={sectionTitle}>Bewerbung zurückziehen</h2>
         {!confirming ? (
           <>
-            <p className="mb-3 text-sm">Deine Bewerbung und dein Lebenslauf werden sofort und endgültig gelöscht.</p>
-            <button className={secondaryButton} onClick={() => setConfirming(true)}>
-              Bewerbung zurückziehen
-            </button>
+            <p className={lead}>Deine Bewerbung und dein Lebenslauf werden sofort und endgültig gelöscht.</p>
+            <div className="pt-1">
+              <button className={dangerTextButton} onClick={() => setConfirming(true)}>
+                Bewerbung zurückziehen
+              </button>
+            </div>
           </>
         ) : (
-          <>
-            <p className="mb-3 text-sm font-medium">Wirklich zurückziehen? Das lässt sich nicht rückgängig machen.</p>
-            <div className="flex flex-wrap gap-3">
-              <button className="rounded bg-red-700 px-4 py-2 font-medium text-white disabled:opacity-50" onClick={onWithdraw} disabled={withdrawing}>
+          <div className="flex flex-col gap-3 rounded-group bg-surface p-4">
+            <p className="font-medium">Wirklich zurückziehen? Das lässt sich nicht rückgängig machen.</p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button className={dangerButton} onClick={onWithdraw} disabled={withdrawing}>
                 {withdrawing ? "Wird gelöscht …" : "Ja, endgültig zurückziehen"}
               </button>
               <button className={secondaryButton} onClick={() => setConfirming(false)} disabled={withdrawing}>
                 Abbrechen
               </button>
             </div>
-          </>
+          </div>
         )}
-        {error && <p className="mt-3 text-sm text-red-700" role="alert">{error}</p>}
+        {error && (
+          <p className={alertBox} role="alert">
+            {error}
+          </p>
+        )}
       </section>
-    </div>
+    </>
   );
 }

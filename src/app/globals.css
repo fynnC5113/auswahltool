@@ -1,26 +1,167 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Design tokens (DESIGN.md). Only these names are used in the code; the
+   Tailwind default colors, font sizes and radii are switched off so that
+   nothing outside DESIGN.md can slip in. Dark mode follows the device. */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  color-scheme: light dark;
+  --c-bg: #f2f3f6;
+  --c-surface: #ffffff;
+  --c-field: #eef0f4;
+  --c-line: #dde1e7;
+  --c-fg: #151a22;
+  --c-muted: #5b6574;
+  --c-accent: #374b65;
+  --c-on-accent: #ffffff;
+  --c-accent-soft: #e6ebf2;
+  --c-danger: #a21d29;
+  --c-danger-soft: #f8e6e8;
+  --c-warn: #7a4f00;
+  --c-warn-soft: #fbf1dc;
+  --c-ok: #2f6b4f;
+  --c-ok-soft: #e3f1ea;
+  --c-bar: rgba(246, 247, 250, 0.86);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --c-bg: #0a0c10;
+    --c-surface: #16191f;
+    --c-field: #21252e;
+    --c-line: #2a2f39;
+    --c-fg: #eef1f5;
+    --c-muted: #98a2b1;
+    --c-accent: #9db4d6;
+    --c-on-accent: #0a0c10;
+    --c-accent-soft: #1d2633;
+    --c-danger: #ff7a82;
+    --c-danger-soft: #2e1517;
+    --c-warn: #f0c36b;
+    --c-warn-soft: #2b2413;
+    --c-ok: #7fcfa6;
+    --c-ok-soft: #16271f;
+    --c-bar: rgba(18, 21, 27, 0.86);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@theme {
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Five steps, plus the overview numbers and the tab bar labels. */
+  --text-title: 30px;
+  --text-title--line-height: 34px;
+  --text-section: 20px;
+  --text-section--line-height: 25px;
+  --text-body: 17px;
+  --text-body--line-height: 24px;
+  --text-note: 15px;
+  --text-note--line-height: 22px;
+  --text-small: 13px;
+  --text-small--line-height: 18px;
+  --text-stat: 36px;
+  --text-stat--line-height: 38px;
+  --text-tab: 11px;
+  --text-tab--line-height: 14px;
+
+  --radius-group: 14px;
+  --radius-field: 10px;
+  --radius-button: 12px;
+  --radius-check: 6px;
+}
+
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-field: var(--c-field);
+  --color-line: var(--c-line);
+  --color-fg: var(--c-fg);
+  --color-muted: var(--c-muted);
+  --color-accent: var(--c-accent);
+  --color-on-accent: var(--c-on-accent);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-danger: var(--c-danger);
+  --color-danger-soft: var(--c-danger-soft);
+  --color-warn: var(--c-warn);
+  --color-warn-soft: var(--c-warn-soft);
+  --color-ok: var(--c-ok);
+  --color-ok-soft: var(--c-ok-soft);
+  --color-bar: var(--c-bar);
+}
+
+@layer base {
+  body {
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 2px;
+  }
+
+  dialog::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+  }
+}
+
+@layer components {
+  /* Apple-style list: hairline between rows, indented 16px from the left. */
+  .list > * + * {
+    background-image: linear-gradient(var(--c-line), var(--c-line));
+    background-size: calc(100% - 16px) 1px;
+    background-position: 16px 0;
+    background-repeat: no-repeat;
+  }
+
+  /* Checkbox: 22px, accent when checked, the whole row is the label. */
+  .check {
+    appearance: none;
+    flex: none;
+    display: grid;
+    place-content: center;
+    width: 22px;
+    height: 22px;
+    margin: 1px 0 0;
+    border: 1.5px solid var(--c-muted);
+    border-radius: var(--radius-check);
+    cursor: pointer;
+  }
+  .check:checked {
+    background: var(--c-accent);
+    border-color: var(--c-accent);
+  }
+  .check:checked::after {
+    content: "";
+    width: 10px;
+    height: 6px;
+    border: 2px solid var(--c-on-accent);
+    border-top: 0;
+    border-right: 0;
+    transform: rotate(-45deg) translate(1px, -1px);
+  }
+  .check:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  /* Select with its own arrow (the field style removes the native one). */
+  .select-arrow {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%238a94a3' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+
+  /* Availability cell inside a blocked time: hatched, still tappable. */
+  .hatched {
+    background-image: repeating-linear-gradient(135deg, var(--c-line) 0 2px, transparent 2px 7px);
+  }
 }

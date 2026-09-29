@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useEffect } from "react";
-import { button, input, secondaryButton } from "../../../ui";
+import { barButton, fieldError, fieldLabel, formGroup, input, select, smallButton } from "../../../ui";
 import { addMemberAction, setActiveAction, setRoleAction } from "./actions";
 
 export function AddMemberForm() {
@@ -12,26 +12,26 @@ export function AddMemberForm() {
   }, [pending, state]);
 
   return (
-    <form ref={form} action={formAction} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
-      <label className="flex flex-col gap-1">
-        Name
+    <form ref={form} action={formAction} className={`${formGroup} sm:grid sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end`}>
+      <label className="flex min-w-0 flex-col gap-1.5">
+        <span className={fieldLabel}>Name</span>
         <input name="name" required className={input} />
       </label>
-      <label className="flex flex-col gap-1">
-        Mailadresse
+      <label className="flex min-w-0 flex-col gap-1.5">
+        <span className={fieldLabel}>Mailadresse</span>
         <input name="email" type="email" required className={input} />
       </label>
-      <label className="flex flex-col gap-1">
-        Rolle
-        <select name="role" defaultValue="member" className={input}>
+      <label className="flex flex-col gap-1.5">
+        <span className={fieldLabel}>Rolle</span>
+        <select name="role" defaultValue="member" className={select}>
           <option value="member">Mitglied</option>
           <option value="admin">Admin</option>
         </select>
       </label>
-      <button disabled={pending} className={button}>
+      <button disabled={pending} className={`${barButton} h-[46px]`}>
         Anlegen
       </button>
-      {state.error && <p className="text-red-700 sm:col-span-4">{state.error}</p>}
+      {state.error && <p className={`${fieldError} sm:col-span-4`}>{state.error}</p>}
     </form>
   );
 }
@@ -47,19 +47,19 @@ export function MemberActions({ id, active, role }: { id: string; active: boolea
         <form action={roleAction}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="role" value={role === "admin" ? "member" : "admin"} />
-          <button disabled={rolePending} className={secondaryButton}>
+          <button disabled={rolePending} className={smallButton}>
             {role === "admin" ? "Admin entziehen" : "Zum Admin machen"}
           </button>
         </form>
         <form action={activeAction}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="active" value={String(!active)} />
-          <button disabled={activePending} className={secondaryButton}>
+          <button disabled={activePending} className={smallButton}>
             {active ? "Deaktivieren" : "Reaktivieren"}
           </button>
         </form>
       </div>
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error && <p className={fieldError}>{error}</p>}
     </div>
   );
 }

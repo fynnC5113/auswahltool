@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getMember } from "@/lib/auth/member";
 import { createClient } from "@/lib/supabase/server";
+import { Brand, PageHeader } from "../brand";
 import { page } from "../ui";
 import { LoginForm } from "./login-form";
 
@@ -9,8 +10,9 @@ export default async function LoginPage() {
   if (member) redirect("/");
 
   return (
-    <main className={`${page} max-w-sm`}>
-      <h1 className="mb-6 text-2xl font-semibold">Auswahltool Login</h1>
+    <main className={`${page} sm:max-w-[440px]`}>
+      <Brand />
+      <PageHeader heading="Auswahltool Login" />
       <LoginForm />
     </main>
   );

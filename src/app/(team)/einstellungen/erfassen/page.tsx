@@ -4,7 +4,8 @@ import { loadApplicationRound } from "@/lib/application";
 import { getMember } from "@/lib/auth/member";
 import { createClient } from "@/lib/supabase/server";
 import { ApplicationForm } from "../../../bewerben/application-form";
-import { page } from "../../../ui";
+import { PageHeader } from "../../../brand";
+import { teamPage } from "../../../ui";
 import { prepareCapture, submitCapture } from "./actions";
 
 export default async function CapturePage() {
@@ -13,7 +14,7 @@ export default async function CapturePage() {
 
   if (member?.role !== "admin") {
     return (
-      <main className={page}>
+      <main className={teamPage}>
         <p>Diese Seite ist nur für Admins.</p>
       </main>
     );
@@ -22,14 +23,13 @@ export default async function CapturePage() {
   const round = await loadApplicationRound(supabase);
 
   return (
-    <main className={page}>
-      <h1 className="mb-2 text-2xl font-semibold">Bewerbung erfassen</h1>
+    <main className={teamPage}>
       {round ? (
         <>
-          <p className="mb-6 text-zinc-600 dark:text-zinc-400">
+          <PageHeader heading="Bewerbung erfassen">
             Für Bewerbungen, die per Mail oder nach dem Ende der Bewerbungsphase kommen. Die Person bekommt ihren persönlichen Link per Mail.
             Pflicht sind Name, Mail, Jahrgang, Antworten und Lebenslauf; das Ressort ist optional.
-          </p>
+          </PageHeader>
           <ApplicationForm
             mode="admin"
             questions={round.questions}
@@ -41,7 +41,7 @@ export default async function CapturePage() {
           />
         </>
       ) : (
-        <p>Es gibt noch keine Runde. Bitte lege sie zuerst unter „Runde“ an.</p>
+        <PageHeader heading="Bewerbung erfassen">Es gibt noch keine Runde. Bitte lege sie zuerst unter „Runde“ an.</PageHeader>
       )}
     </main>
   );

@@ -208,6 +208,24 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
 
 ---
 
+## Phase D: Design, Ziel 30.09. (vor dem Start der Bewerbungsphase)
+
+- [ ] **Phase D: DESIGN.md und Umstellung aller Seiten**
+  - Festlegungen (Fynn, 29.09.2026): Vorschau mit zwei Richtungen (Artifact „Auswahltool Designrichtungen“), gewählt: **A „Klar“** (Apple-Listen, Systemschrift, Marineblau aus dem Logo, Weinrot nur für Fehler und endgültige Aktionen) **mit den Feldern und großen Zahlen aus B**. Der dunkle Modus bleibt. Bildmarke des Logos auf den öffentlichen Seiten und im Team-Menü.
+  - Ergebnis:
+    - `DESIGN.md` (Farben hell/dunkel, fünf Schriftstufen, Abstände, Bausteine, Muster, Handyregeln, „so ja / so nein“), von Fynn freigegeben
+    - Farben als benannte Werte in `globals.css`, Bausteine zentral in `src/app/ui.ts`; keine `zinc-…`/`dark:`-Klassen mehr in den Seiten
+    - alle Seiten umgestellt, zuerst `/bewerben`, `/b/[token]`, `/b/zurueckgezogen`, `/login`, `/auth/confirm`, dann alle Teamseiten; Funktion unverändert
+    - `/newproject` um den Schritt DESIGN.md ergänzt (erledigt 29.09.2026)
+  - Prüfung:
+    - `npm test` unverändert grün, `npm run build` und `npm run lint` fehlerfrei
+    - `grep` findet in `src/app` keine `zinc-`, `red-`, `amber-`, `green-`, `emerald-`- oder `dark:`-Klassen mehr
+    - Bildschirmfotos jeder Seite in 390 und 1280 px, hell und dunkel (Claude, lokal gegen `-test`)
+    - Fynn prüft live am Handy den Bewerberweg: Formular mit Upload, Bestätigungsmail, Buchung, Ändern, Rückzug (Screenshots), dazu Übersicht, Bewerbungen und Verfügbarkeit
+    - nach dem 01.10. 00:00 an den Bewerberseiten nur noch Fehlerbehebungen
+
+---
+
 ## Etappe C: Feedback bis 19.10.
 
 - [ ] **Phase 14: Meine Gespräche und Feedback; Abnahme C**

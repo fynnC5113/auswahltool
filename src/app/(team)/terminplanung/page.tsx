@@ -7,7 +7,8 @@ import { DEFAULT_LOCATION } from "@/lib/locations";
 import { hintContext, loadScheduling } from "@/lib/scheduling";
 import { capacity, hintText, isBookable, slotHints } from "@/lib/scheduling-rules";
 import { createClient } from "@/lib/supabase/server";
-import { page } from "../../ui";
+import { PageHeader } from "../../brand";
+import { lead, listGroup, noticeBox, section, sectionTitle, teamPage } from "../../ui";
 import { AddBlockedTimeForm, AddLocationForm, DeleteBlockedTimeButton, LocationActions } from "./planning-forms";
 import { InviteToBookButton, PreferredToggle, SlotBoard, type BoardSlot } from "./slot-board";
 
@@ -22,7 +23,6 @@ const when = new Intl.DateTimeFormat("de-DE", {
 const time = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" });
 const berlinDay = (iso: string) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
 const dayLabel = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "Europe/Berlin" });
-const muted = "text-sm text-zinc-600 dark:text-zinc-400";
 
 function period(startsAt: string, endsAt: string): string {
   const end = berlinDay(startsAt) === berlinDay(endsAt) ? time.format(new Date(endsAt)) : when.format(new Date(endsAt));
@@ -35,7 +35,7 @@ export default async function PlanningPage() {
 
   if (member?.role !== "admin") {
     return (
-      <main className={page}>
+      <main className={teamPage}>
         <p>Diese Seite ist nur für Admins.</p>
       </main>
     );
@@ -44,9 +44,8 @@ export default async function PlanningPage() {
   const round = await loadPlanningRound(supabase);
   if (!round) {
     return (
-      <main className={page}>
-        <h1 className="mb-4 text-2xl font-semibold">Terminplanung</h1>
-        <p>Es gibt noch keine Runde. Bitte lege sie zuerst unter „Runde“ an.</p>
+      <main className={teamPage}>
+        <PageHeader heading="Terminplanung">Es gibt noch keine Runde. Bitte lege sie zuerst unter „Runde“ an.</PageHeader>
       </main>
     );
   }
@@ -86,15 +85,15 @@ export default async function PlanningPage() {
   );
 
   return (
-    <main className={page}>
-      <h1 className="mb-6 text-2xl font-semibold">Terminplanung</h1>
+    <main className={teamPage}>
+      <PageHeader heading="Terminplanung" />
 
-      <section className="mb-10">
-        <h2 className="mb-1 text-lg font-medium">Kapazität</h2>
-        <p className={`mb-3 ${muted}`}>
+      <section className={section}>
+        <h2 className={sectionTitle}>Kapazität</h2>
+        <p className={lead}>
           Alle Termine sind sofort buchbar, auch während der Bewerbungsphase. Das Paar wählt das Tool bei der Buchung.
         </p>
-        <dl className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <dl className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
           {[
             ["Bewerbungen", cap.applications],
             ["gebucht", cap.booked],
@@ -102,14 +101,14 @@ export default async function PlanningPage() {
             ["freie Termine", cap.free],
             ["davon buchbar", cap.bookable],
           ].map(([label, value]) => (
-            <div key={label} className="rounded border border-zinc-200 px-3 py-2 dark:border-zinc-800">
-              <dd className="text-xl font-semibold tabular-nums">{value}</dd>
-              <dt className={muted}>{label}</dt>
+            <div key={label} className="flex flex-col-reverse justify-end gap-1 rounded-group bg-surface p-4">
+              <dt className="text-small text-muted">{label}</dt>
+              <dd className="text-stat font-semibold tracking-[-0.02em] tabular-nums">{value}</dd>
             </div>
           ))}
         </dl>
         {cap.bookable < cap.withoutSlot && (
-          <p className="mt-3 rounded bg-amber-100 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+          <p className={noticeBox}>
             Es gibt weniger buchbare Termine ({cap.bookable}) als Bewerber ohne Termin ({cap.withoutSlot}). Bitte das Team um mehr
             Verfügbarkeit bitten und danach erneut „Alle möglichen Termine erzeugen“ klicken.
           </p>
@@ -117,19 +116,19 @@ export default async function PlanningPage() {
         <InviteToBookButton roundId={round.id} waiting={cap.withoutSlot} />
       </section>
 
-      <section className="mb-10">
-        <h2 className="mb-1 text-lg font-medium">Gesprächsführer</h2>
-        <p className={`mb-3 ${muted}`}>
+      <section className={section}>
+        <h2 className={sectionTitle}>Gesprächsführer</h2>
+        <p className={lead}>
           Bei jeder Buchung bekommt das Paar mit den bisher wenigsten Gesprächen den Termin. „Bevorzugt“ zählt dabei als
           unbelastet.
         </p>
         {activeMembers.length ? (
-          <ul className="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+          <ul className={listGroup}>
             {activeMembers.map((m) => (
-              <li key={m.id} className="flex flex-wrap items-center gap-3 py-2.5">
+              <li key={m.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
                 <div className="min-w-0 flex-1">
                   <div>{m.name}</div>
-                  <div className={`${muted} tabular-nums`}>
+                  <div className="text-note text-muted tabular-nums">
                     {(m.cells.length / 4).toLocaleString("de-DE")} Std. verfügbar · Obergrenze {m.maxInterviews ?? "keine"} ·{" "}
                     {bookedCount(m.id)} gebucht
                   </div>
@@ -139,12 +138,12 @@ export default async function PlanningPage() {
             ))}
           </ul>
         ) : (
-          <p className={muted}>Noch keine aktiven Mitglieder.</p>
+          <p className={lead}>Noch keine aktiven Mitglieder.</p>
         )}
       </section>
 
-      <section className="mb-10">
-        <h2 className="mb-3 text-lg font-medium">Termine</h2>
+      <section className={section}>
+        <h2 className={sectionTitle}>Termine</h2>
         {locations.length ? (
           <SlotBoard
             roundId={round.id}
@@ -155,52 +154,56 @@ export default async function PlanningPage() {
             newSlotDefault={`${round.interviewsFrom}T10:00`}
           />
         ) : (
-          <p className={muted}>Lege zuerst unten einen Ort an.</p>
+          <p className={lead}>Lege zuerst unten einen Ort an.</p>
         )}
       </section>
 
-      <section className="mb-10">
-        <h2 className="mb-1 text-lg font-medium">Orte</h2>
-        <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">An einem Ort findet immer nur ein Gespräch gleichzeitig statt.</p>
+      <section className={section}>
+        <h2 className={sectionTitle}>Orte</h2>
+        <p className={lead}>An einem Ort findet immer nur ein Gespräch gleichzeitig statt.</p>
         {locations.length === 0 && (
-          <div className="mb-4">
+          <div className="pt-1">
             <AddLocationForm roundId={round.id} suggestion={DEFAULT_LOCATION} />
           </div>
         )}
-        <ul className="mb-4 divide-y divide-zinc-200 dark:divide-zinc-800">
+        {locations.length > 0 && (
+          <ul className={listGroup}>
           {locations.map((location) => (
-            <li key={location.id} className="py-3">
+            <li key={location.id} className="px-4 py-3">
               <LocationActions id={location.id} name={location.name} isDefault={location.isDefault} />
             </li>
           ))}
-        </ul>
+          </ul>
+        )}
         {locations.length > 0 && <AddLocationForm roundId={round.id} />}
       </section>
 
-      <section>
-        <h2 className="mb-1 text-lg font-medium">Sperrzeiten</h2>
-        <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+      <section className={section}>
+        <h2 className={sectionTitle}>Sperrzeiten</h2>
+        <p className={lead}>
           Zeiten, in denen ein Ort belegt ist, etwa wegen Beratungen. Dort entstehen keine Gesprächstermine; im Raster der
-          Verfügbarkeit erscheinen sie grau.
+          Verfügbarkeit erscheinen sie schraffiert.
         </p>
         {locations.length ? (
           <AddBlockedTimeForm locations={locations.map((l) => ({ id: l.id, name: l.name }))} defaultDay={round.interviewsFrom} />
         ) : (
-          <p className="text-sm">Lege zuerst einen Ort an.</p>
+          <p className={lead}>Lege zuerst einen Ort an.</p>
         )}
-        <ul className="mt-6 divide-y divide-zinc-200 dark:divide-zinc-800">
+        {blocked.length > 0 && (
+        <ul className={`mt-2 ${listGroup}`}>
           {blocked.map((b) => (
-            <li key={b.id} className="flex flex-wrap items-center gap-3 py-3">
+            <li key={b.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
                 <div className="font-medium">
                   {b.location}: {period(b.startsAt, b.endsAt)}
                 </div>
-                {b.note && <div className="text-sm text-zinc-600 dark:text-zinc-400">{b.note}</div>}
+                {b.note && <div className="text-note text-muted">{b.note}</div>}
               </div>
               <DeleteBlockedTimeButton id={b.id} />
             </li>
           ))}
         </ul>
+        )}
       </section>
     </main>
   );

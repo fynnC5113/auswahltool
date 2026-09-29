@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { button, secondaryButton } from "../../ui";
+import { barButton, bottomBar, smallButton } from "../../ui";
 import { saveAvailabilityAction } from "./actions";
 
 export type GridCell = { start: string; label: string; blocked: string[] };
@@ -91,7 +91,7 @@ export function AvailabilityGrid({
 
   return (
     <div onPointerUp={() => (paint.current = null)} onPointerLeave={() => (paint.current = null)}>
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-2" role="tablist" aria-label="Gesprächstage">
+      <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6" role="tablist" aria-label="Gesprächstage">
         {days.map((d, index) => {
           const count = countOn(d);
           return (
@@ -101,21 +101,19 @@ export function AvailabilityGrid({
               role="tab"
               aria-selected={index === dayIndex}
               onClick={() => switchDay(index)}
-              className={`shrink-0 rounded border px-3 py-2 text-sm ${
-                index === dayIndex
-                  ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                  : "border-zinc-300 dark:border-zinc-700"
+              className={`h-11 shrink-0 rounded-field px-3 text-note font-medium tabular-nums ${
+                index === dayIndex ? "bg-accent text-on-accent" : "bg-surface shadow-[inset_0_0_0_1px_var(--c-line)]"
               }`}
             >
               {d.label}
-              {count > 0 && <span className="ml-1 text-xs opacity-75">({count * 15 / 60} h)</span>}
+              {count > 0 && <span className="ml-1 text-small opacity-75">({count * 15 / 60} h)</span>}
             </button>
           );
         })}
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
-        <span>Antippen:</span>
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-note">
+        <span className="text-muted">Antippen:</span>
         {(["single", "range"] as const).map((m) => (
           <button
             key={m}
@@ -125,34 +123,34 @@ export function AvailabilityGrid({
               setMode(m);
               setAnchor(null);
             }}
-            className={`${secondaryButton} ${mode === m ? "bg-zinc-200 dark:bg-zinc-800" : ""}`}
+            className={`${smallButton} aria-pressed:bg-accent aria-pressed:text-on-accent aria-pressed:shadow-none`}
           >
             {m === "single" ? "Einzelnes Feld" : "Von–bis"}
           </button>
         ))}
-        <button type="button" className={secondaryButton} onClick={() => setCells(day.cells.map((c) => c.start), true)}>
+        <button type="button" className={smallButton} onClick={() => setCells(day.cells.map((c) => c.start), true)}>
           Ganzer Tag
         </button>
-        <button type="button" className={secondaryButton} onClick={() => setCells(day.cells.map((c) => c.start), false)}>
+        <button type="button" className={smallButton} onClick={() => setCells(day.cells.map((c) => c.start), false)}>
           Tag leeren
         </button>
       </div>
       {mode === "range" && (
-        <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mb-3 text-note text-muted">
           {anchor
             ? `Beginn ${day.cells.find((c) => c.start === anchor)?.label}. Jetzt das letzte Feld antippen.`
             : "Erstes Feld antippen, dann das letzte."}
         </p>
       )}
 
-      <div className="mb-6 flex select-none flex-col">
+      <div className="mb-6 flex select-none flex-col rounded-group bg-surface px-3 py-2">
         {day.cells.map((cell) => {
           const on = selected.has(cell.start);
           const blocked = cell.blocked.length > 0;
           const fullHour = cell.label.endsWith(":00");
           return (
-            <div key={cell.start} className={`flex items-stretch ${fullHour ? "border-t border-zinc-300 dark:border-zinc-700" : ""}`}>
-              <span className="w-14 shrink-0 py-1 text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
+            <div key={cell.start} className={`flex items-stretch ${fullHour ? "border-t border-line first:border-t-0" : ""}`}>
+              <span className="w-12 shrink-0 py-1 text-small tabular-nums text-muted">
                 {fullHour ? cell.label : ""}
               </span>
               <button
@@ -166,13 +164,9 @@ export function AvailabilityGrid({
                 onPointerEnter={(e) => {
                   if (e.pointerType === "mouse" && paint.current !== null && e.buttons === 1) setCells([cell.start], paint.current);
                 }}
-                className={`my-px flex min-h-9 flex-1 items-center rounded-sm px-2 text-left text-xs ${
-                  on
-                    ? "bg-emerald-600 text-white"
-                    : blocked
-                      ? "bg-zinc-300 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100"
-                      : "bg-zinc-100 dark:bg-zinc-900"
-                } ${anchor === cell.start ? "ring-2 ring-emerald-400 ring-offset-1" : ""}`}
+                className={`my-px flex min-h-9 flex-1 items-center rounded-[6px] px-2 text-left text-small ${
+                  on ? "bg-accent text-on-accent" : blocked ? "hatched bg-field text-muted" : "bg-field"
+                } ${anchor === cell.start ? "outline-2 outline-offset-1 outline-accent" : ""}`}
               >
                 {blocked && <span className="truncate">{cell.blocked.join(", ")}</span>}
               </button>
@@ -181,8 +175,8 @@ export function AvailabilityGrid({
         })}
       </div>
 
-      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] -mx-4 lg:bottom-0 border-t border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="flex items-center gap-2 text-sm">
+      <div className={`sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] -mx-4 px-4 py-3 sm:-mx-6 sm:px-6 lg:bottom-0 ${bottomBar}`}>
+        <div className="flex items-center gap-2 text-note">
           <label htmlFor="max-interviews">Höchstens</label>
           <input
             id="max-interviews"
@@ -194,18 +188,18 @@ export function AvailabilityGrid({
             inputMode="numeric"
             placeholder="–"
             aria-describedby="max-hint"
-            className="w-14 rounded border border-zinc-300 px-2 py-1.5 text-center text-base dark:border-zinc-700 dark:bg-zinc-900"
+            className="h-11 w-14 rounded-field bg-field px-2 text-center text-body"
           />
           <span>Gespräche</span>
-          <button type="button" onClick={save} disabled={pending || !dirty} className={`${button} ml-auto`}>
+          <button type="button" onClick={save} disabled={pending || !dirty} className={`${barButton} ml-auto`}>
             {pending ? "Speichert …" : "Speichern"}
           </button>
         </div>
-        <p id="max-hint" className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+        <p id="max-hint" className="mt-1 text-small text-muted">
           {message ? (
-            <span className={message.error ? "text-red-700" : "text-emerald-700"}>{message.text}</span>
+            <span className={message.error ? "text-danger" : "text-ok"}>{message.text}</span>
           ) : dirty && !pending ? (
-            <span className="text-amber-700 dark:text-amber-400">Nicht gespeichert</span>
+            <span className="text-warn">Nicht gespeichert</span>
           ) : (
             "Leer = unbegrenzt"
           )}

@@ -2,7 +2,8 @@ import { getMember } from "@/lib/auth/member";
 import { blockedIn, dayCells, gridDays } from "@/lib/availability-grid";
 import { loadBlockedTimes, loadMyAvailability, loadPlanningRound } from "@/lib/availability";
 import { createClient } from "@/lib/supabase/server";
-import { page } from "../../ui";
+import { PageHeader } from "../../brand";
+import { teamPage } from "../../ui";
 import { AvailabilityGrid, type GridDay } from "./availability-grid";
 
 const dayLabel = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "UTC" });
@@ -14,9 +15,8 @@ export default async function AvailabilityPage() {
 
   if (!member || !round) {
     return (
-      <main className={page}>
-        <h1 className="mb-4 text-2xl font-semibold">Meine Verfügbarkeit</h1>
-        <p>Es gibt noch keine Runde.</p>
+      <main className={teamPage}>
+        <PageHeader heading="Meine Verfügbarkeit">Es gibt noch keine Runde.</PageHeader>
       </main>
     );
   }
@@ -37,12 +37,11 @@ export default async function AvailabilityPage() {
   }));
 
   return (
-    <main className={page}>
-      <h1 className="mb-2 text-2xl font-semibold">Meine Verfügbarkeit</h1>
-      <p className="mb-6 text-zinc-600 dark:text-zinc-400">
-        Markiere, wann du Gespräche führen kannst. Ein Feld sind 15 Minuten. Grau hinterlegt: Der Raum ist belegt; du kannst das
-        Feld trotzdem markieren, falls ein anderer Raum frei ist.
-      </p>
+    <main className={teamPage}>
+      <PageHeader heading="Meine Verfügbarkeit">
+        Markiere, wann du Gespräche führen kannst. Ein Feld sind 15 Minuten. Schraffiert: Der Raum ist belegt; du kannst das Feld
+        trotzdem markieren, falls ein anderer Raum frei ist.
+      </PageHeader>
       <AvailabilityGrid
         roundId={round.id}
         days={days}

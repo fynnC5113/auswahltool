@@ -5,7 +5,7 @@ import Link from "next/link";
 import { loadTeamApplicant } from "@/lib/applicant-team";
 import { getMember } from "@/lib/auth/member";
 import { createClient } from "@/lib/supabase/server";
-import { button, page } from "../../../ui";
+import { button, chip, lead, link, listGroup, listRow, noticeBox, readLabel, section, sectionTitle, teamPage, title } from "../../../ui";
 import { ConflictButton, DeleteButton, StatusSwitch } from "./applicant-actions";
 
 const when = new Intl.DateTimeFormat("de-DE", {
@@ -16,10 +16,6 @@ const when = new Intl.DateTimeFormat("de-DE", {
   minute: "2-digit",
   timeZone: "Europe/Berlin",
 });
-const muted = "text-sm text-zinc-600 dark:text-zinc-400";
-const section = "flex flex-col gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800";
-const hint = "rounded bg-amber-100 px-2 py-1 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200";
-
 export default async function ApplicantPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -28,9 +24,9 @@ export default async function ApplicantPage({ params }: { params: Promise<{ id: 
 
   if (!member || !applicant) {
     return (
-      <main className={page}>
-        <p className="mb-4">Diese Bewerbung gibt es nicht (mehr).</p>
-        <Link href="/bewerbungen" className="underline">
+      <main className={teamPage}>
+        <p>Diese Bewerbung gibt es nicht (mehr).</p>
+        <Link href="/bewerbungen" className={link}>
           Zu den Bewerbungen
         </Link>
       </main>
@@ -45,86 +41,94 @@ export default async function ApplicantPage({ params }: { params: Promise<{ id: 
     : applicant.departments.join(", ") || "kein Ressort";
 
   return (
-    <main className={page}>
-      <p className="mb-2">
-        <Link href="/bewerbungen" className="text-sm underline">
-          ← Bewerbungen
+    <main className={teamPage}>
+      <div className="flex flex-col gap-1.5">
+        <Link href="/bewerbungen" className={`self-start pb-2 text-note ${link}`}>
+          ‹ Bewerbungen
         </Link>
-      </p>
-      <h1 className="text-2xl font-semibold">{applicant.name}</h1>
-      <p className={`${muted} break-all`}>{applicant.email}</p>
-      <p className={`${muted} mb-4`}>
-        Jahrgang {applicant.cohort} · {departments}
-        {applicant.status === "no_show" && (
-          <>
-            {" · "}
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200">
-              nicht erschienen
-            </span>
-          </>
+        <h1 className={title}>{applicant.name}</h1>
+        <p className={`${lead} break-all`}>{applicant.email}</p>
+        <p className={`${lead} flex flex-wrap items-center gap-x-2`}>
+          <span>
+            Jahrgang {applicant.cohort} · {departments}
+          </span>
+          {applicant.status === "no_show" && <span className={`${chip} bg-warn-soft text-warn`}>nicht erschienen</span>}
+        </p>
+      </div>
+
+      <div>
+        {applicant.hasCv ? (
+          <a href={`/bewerbungen/${applicant.id}/lebenslauf`} target="_blank" rel="noreferrer" className={button}>
+            Lebenslauf öffnen
+          </a>
+        ) : (
+          <p className={lead}>Kein Lebenslauf hochgeladen.</p>
         )}
-      </p>
+      </div>
 
-      <div className="flex flex-col gap-5">
-        <div>
-          {applicant.hasCv ? (
-            <a href={`/bewerbungen/${applicant.id}/lebenslauf`} target="_blank" rel="noreferrer" className={`${button} inline-block`}>
-              Lebenslauf öffnen
-            </a>
-          ) : (
-            <p className={muted}>Kein Lebenslauf hochgeladen.</p>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2">
-          {applicant.conflicts.length > 0 && (
-            <p className={hint}>Befangen: {applicant.conflicts.map((c) => c.name).join(", ")}</p>
-          )}
-          {mine && leading && (
-            <p className={hint}>Du bist für dieses Gespräch eingeteilt. Die Admins sehen einen Hinweis und teilen um.</p>
-          )}
+      <section className={section}>
+        <h2 className={sectionTitle}>Befangenheit</h2>
+        {applicant.conflicts.length > 0 && (
+          <p className={noticeBox}>Befangen: {applicant.conflicts.map((c) => c.name).join(", ")}</p>
+        )}
+        {mine && leading && (
+          <p className={noticeBox}>Du bist für dieses Gespräch eingeteilt. Die Admins sehen einen Hinweis und teilen um.</p>
+        )}
+        <p className={lead}>Wer befangen ist, sieht die Unterlagen weiter, wird aber nicht als Gesprächsführer eingeteilt.</p>
+        <div className="pt-1">
           <ConflictButton id={applicant.id} mine={mine} />
-          <p className={muted}>Wer befangen ist, sieht die Unterlagen weiter, wird aber nicht als Gesprächsführer eingeteilt.</p>
         </div>
+      </section>
 
-        <section className={section}>
-          <h2 className="font-semibold">Termin</h2>
-          {applicant.slot ? (
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-              <dt className="text-zinc-600 dark:text-zinc-400">Wann</dt>
-              <dd>{when.format(new Date(applicant.slot.startsAt))} Uhr</dd>
-              <dt className="text-zinc-600 dark:text-zinc-400">Ort</dt>
+      <section className={section}>
+        <h2 className={sectionTitle}>Termin</h2>
+        {applicant.slot ? (
+          <dl className={listGroup}>
+            <div className={listRow}>
+              <dt className={readLabel}>Wann</dt>
+              <dd className="tabular-nums">{when.format(new Date(applicant.slot.startsAt))} Uhr</dd>
+            </div>
+            <div className={listRow}>
+              <dt className={readLabel}>Ort</dt>
               <dd>{applicant.slot.location}</dd>
-              <dt className="text-zinc-600 dark:text-zinc-400">Gespräch</dt>
+            </div>
+            <div className={listRow}>
+              <dt className={readLabel}>Gespräch</dt>
               <dd>{applicant.slot.interviewers.map((m) => m.name).join(" und ")}</dd>
-            </dl>
-          ) : (
-            <p className={muted}>Noch kein Termin gebucht.</p>
-          )}
-        </section>
+            </div>
+          </dl>
+        ) : (
+          <p className={lead}>Noch kein Termin gebucht.</p>
+        )}
+      </section>
 
-        <section className={section}>
-          <h2 className="font-semibold">Antworten</h2>
+      <section className={section}>
+        <h2 className={sectionTitle}>Antworten</h2>
+        <div className={listGroup}>
           {applicant.answers.map((a, i) => (
-            <div key={i}>
-              <p className={muted}>{a.question}</p>
+            <div key={i} className={listRow}>
+              <p className={readLabel}>{a.question}</p>
               <p className="whitespace-pre-wrap">{a.text || "–"}</p>
             </div>
           ))}
-        </section>
+        </div>
+      </section>
 
-        {isAdmin && (
-          <section className={section}>
-            <h2 className="font-semibold">Nur für Admins</h2>
+      {isAdmin && (
+        <section className={section}>
+          <h2 className={sectionTitle}>Nur für Admins</h2>
+          <div className="flex flex-col gap-4 rounded-group bg-surface p-4">
             <StatusSwitch id={applicant.id} status={applicant.status} />
-            <DeleteButton id={applicant.id} name={applicant.name} booked={!!applicant.slot} />
-            <p className={muted}>
-              Löschen entfernt Bewerbung, Antworten und Lebenslauf endgültig. Ein gebuchter Termin wird frei, die
-              Gesprächsführer bekommen eine Absage.
-            </p>
-          </section>
-        )}
-      </div>
+            <div className="flex flex-col gap-1.5">
+              <DeleteButton id={applicant.id} name={applicant.name} booked={!!applicant.slot} />
+              <p className={lead}>
+                Löschen entfernt Bewerbung, Antworten und Lebenslauf endgültig. Ein gebuchter Termin wird frei, die
+                Gesprächsführer bekommen eine Absage.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

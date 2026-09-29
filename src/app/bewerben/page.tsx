@@ -7,7 +7,8 @@ import { loadApplicationRound } from "@/lib/application";
 import { formatBerlin } from "@/lib/mail/templates";
 import { DEFAULT_REPLY_TO } from "@/lib/round-form";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { page } from "../ui";
+import { Brand, PageHeader } from "../brand";
+import { link, page } from "../ui";
 import { prepareApply, submitApply } from "./actions";
 import { ApplicationForm } from "./application-form";
 
@@ -19,12 +20,13 @@ export default async function ApplyPage() {
   const round = await loadApplicationRound(createAdminClient());
   const replyTo = round?.replyTo ?? DEFAULT_REPLY_TO;
   const state = round ? applicationWindow(round.opensAt, round.closesAt, new Date()) : "closed";
-  const mailto = <a className="underline" href={`mailto:${replyTo}`}>{replyTo}</a>;
+  const mailto = <a className={link} href={`mailto:${replyTo}`}>{replyTo}</a>;
 
   if (!round || state !== "open") {
     return (
       <main className={page}>
-        <h1 className="mb-4 text-2xl font-semibold">Bewerbung für das Orga-Team der Law Clinic</h1>
+        <Brand />
+        <PageHeader heading="Bewerbung für das Orga-Team der Law Clinic" />
         <p>
           {round && state === "before"
             ? `Die Bewerbungsphase beginnt am ${formatBerlin(round.opensAt)}. `
@@ -37,8 +39,10 @@ export default async function ApplyPage() {
 
   return (
     <main className={page}>
-      <h1 className="mb-2 text-2xl font-semibold">Bewerbung für das Orga-Team der Law Clinic</h1>
-      <p className="mb-6 text-zinc-600 dark:text-zinc-400">Bewerbungsschluss: {formatBerlin(round.closesAt)}. Alle Felder sind Pflicht.</p>
+      <Brand />
+      <PageHeader heading="Bewerbung für das Orga-Team der Law Clinic">
+        Bewerbungsschluss: {formatBerlin(round.closesAt)}. Alle Felder sind Pflicht.
+      </PageHeader>
       <ApplicationForm
         mode="apply"
         questions={round.questions}

@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { newCriterion, type FieldErrors, type RoundForm } from "@/lib/round-form";
-import { button, input, secondaryButton } from "../../../ui";
+import { alertBox, button, fieldError, fieldLabel, formGroup, input, okText, secondaryButton, section, select, sectionTitle, smallButton } from "../../../ui";
 import { saveRoundAction } from "./actions";
 
 type ListName = "questions" | "departments" | "criteria";
@@ -17,8 +17,7 @@ const IN_USE: Record<ListName, string> = {
   criteria: "hat schon Bewertungen",
 };
 
-const hint = "text-sm text-zinc-600 dark:text-zinc-400";
-const errorText = "text-sm text-red-700";
+const hint = "text-small text-muted";
 
 function itemLabel(item: Item): string {
   return "text" in item ? String(item.text) : String((item as Item & { name: string }).name);
@@ -33,11 +32,11 @@ function moved<T>(items: T[], from: number, to: number): T[] {
 
 function Field({ label, error, note, children }: { label: string; error?: string; note?: string; children: ReactNode }) {
   return (
-    <label className="flex flex-col gap-1">
-      {label}
+    <label className="flex min-w-0 flex-col gap-1.5">
+      <span className={fieldLabel}>{label}</span>
       {children}
       {note && <span className={hint}>{note}</span>}
-      {error && <span className={errorText}>{error}</span>}
+      {error && <span className={fieldError}>{error}</span>}
     </label>
   );
 }
@@ -50,13 +49,13 @@ function ItemControls({ index, count, onMove, onRemove }: {
 }) {
   return (
     <div className="flex gap-2">
-      <button type="button" className={secondaryButton} disabled={index === 0} onClick={() => onMove(index - 1)} aria-label="Nach oben">
+      <button type="button" className={smallButton} disabled={index === 0} onClick={() => onMove(index - 1)} aria-label="Nach oben">
         ↑
       </button>
-      <button type="button" className={secondaryButton} disabled={index === count - 1} onClick={() => onMove(index + 1)} aria-label="Nach unten">
+      <button type="button" className={smallButton} disabled={index === count - 1} onClick={() => onMove(index + 1)} aria-label="Nach unten">
         ↓
       </button>
-      <button type="button" className={secondaryButton} onClick={onRemove}>
+      <button type="button" className={smallButton} onClick={onRemove}>
         Entfernen
       </button>
     </div>
@@ -174,7 +173,7 @@ export function RoundEditor({ initial }: { initial: RoundForm }) {
     const names = kept[list];
     if (!names?.length) return null;
     return (
-      <p className={errorText}>
+      <p className={alertBox}>
         {names.map((n) => `„${n}“`).join(", ")} {IN_USE[list]} und wurde wiederhergestellt. Umbenennen und Umsortieren geht weiterhin.
       </p>
     );
@@ -183,13 +182,14 @@ export function RoundEditor({ initial }: { initial: RoundForm }) {
   const hasErrors = Object.keys(errors).length > 0;
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-8">
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Grunddaten</h2>
+    <form onSubmit={submit} noValidate className="flex flex-col gap-7 sm:gap-9">
+      <section className={section}>
+        <h2 className={sectionTitle}>Grunddaten</h2>
+        <div className={formGroup}>
         <Field label="Titel" error={errors.title}>
           <input {...text("title")} />
         </Field>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-3 sm:items-end">
           <Field label="Jahr" error={errors.year}>
             <input {...text("year")} inputMode="numeric" />
           </Field>
@@ -206,11 +206,12 @@ export function RoundEditor({ initial }: { initial: RoundForm }) {
             <input {...text("bufferMinutes")} inputMode="numeric" />
           </Field>
         </div>
+        </div>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Termine</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+      <section className={section}>
+        <h2 className={sectionTitle}>Termine</h2>
+        <div className={`${formGroup} sm:grid sm:grid-cols-2`}>
           <Field label="Bewerbungsphase: Beginn" note="Deutsche Zeit" error={errors.applicationOpensAt}>
             <input {...text("applicationOpensAt")} type="datetime-local" />
           </Field>
@@ -229,11 +230,12 @@ export function RoundEditor({ initial }: { initial: RoundForm }) {
         </div>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Mail</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+      <section className={section}>
+        <h2 className={sectionTitle}>Mail</h2>
+        <div className={formGroup}>
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Versandweg" error={errors.mailTransport}>
-            <select {...text("mailTransport")}>
+            <select {...text("mailTransport")} className={select}>
               <option value="gmail">Gmail-Konto des Tools</option>
               <option value="graph">Funktionspostfach (Microsoft Graph)</option>
             </select>
@@ -245,13 +247,14 @@ export function RoundEditor({ initial }: { initial: RoundForm }) {
         <Field label="Datenschutzhinweis" note="Erscheint im Bewerbungsformular." error={errors.privacyNotice}>
           <textarea {...text("privacyNotice")} rows={6} />
         </Field>
+        </div>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Bewerbungsfragen</h2>
+      <section className={section}>
+        <h2 className={sectionTitle}>Bewerbungsfragen</h2>
         {keptNote("questions")}
         {form.questions.map((q, i) => (
-          <div key={q.key} className="flex flex-col gap-2 rounded border border-zinc-200 p-3 dark:border-zinc-800">
+          <div key={q.key} className={formGroup}>
             <Field label={`Frage ${i + 1}`} error={errors[`questions.${i}.text`]}>
               <textarea {...itemText("questions", i, "text")} rows={2} />
             </Field>
@@ -267,11 +270,11 @@ export function RoundEditor({ initial }: { initial: RoundForm }) {
         </button>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Ressorts</h2>
+      <section className={section}>
+        <h2 className={sectionTitle}>Ressorts</h2>
         {keptNote("departments")}
         {form.departments.map((d, i) => (
-          <div key={d.key} className="flex flex-col gap-2 rounded border border-zinc-200 p-3 dark:border-zinc-800">
+          <div key={d.key} className={formGroup}>
             <Field label="Name" error={errors[`departments.${i}.name`]}>
               <input {...itemText("departments", i, "name")} />
             </Field>
@@ -292,11 +295,11 @@ export function RoundEditor({ initial }: { initial: RoundForm }) {
         </button>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Feedback-Kriterien</h2>
+      <section className={section}>
+        <h2 className={sectionTitle}>Feedback-Kriterien</h2>
         {keptNote("criteria")}
         {form.criteria.map((c, i) => (
-          <div key={c.key} className="flex flex-col gap-2 rounded border border-zinc-200 p-3 dark:border-zinc-800">
+          <div key={c.key} className={formGroup}>
             <Field label="Name" error={errors[`criteria.${i}.name`]}>
               <input {...itemText("criteria", i, "name")} />
             </Field>
@@ -327,9 +330,9 @@ export function RoundEditor({ initial }: { initial: RoundForm }) {
       </section>
 
       <div className="flex flex-col gap-2">
-        {errors.form && <p className={errorText}>{errors.form}</p>}
-        {hasErrors && !errors.form && <p className={errorText}>Bitte die markierten Felder prüfen. Nichts gespeichert.</p>}
-        {notice && <p className="text-green-700">{notice}</p>}
+        {errors.form && <p className={alertBox}>{errors.form}</p>}
+        {hasErrors && !errors.form && <p className={alertBox}>Bitte die markierten Felder prüfen. Nichts gespeichert.</p>}
+        {notice && <p className={okText}>{notice}</p>}
         <button disabled={pending} className={`${button} self-start`}>
           {pending ? "Speichern …" : "Speichern"}
         </button>

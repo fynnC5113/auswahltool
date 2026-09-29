@@ -13,7 +13,22 @@ import {
   type ApplicationFields,
   type FieldErrors,
 } from "@/lib/application-form";
-import { button, input } from "../ui";
+import {
+  alertBox,
+  button,
+  checkRow,
+  fieldError,
+  fieldLabel,
+  formGroup,
+  input,
+  lead,
+  link,
+  listGroup,
+  noticeBox,
+  secondaryButton,
+  section,
+  sectionTitle,
+} from "../ui";
 
 export type PrepareState =
   | { status: "closed" }
@@ -46,17 +61,17 @@ interface Props {
   onSaved?: () => void;
 }
 
-const hint = "text-sm text-zinc-600 dark:text-zinc-400";
-const errorText = "text-sm text-red-700";
-const box = "rounded border border-zinc-200 p-4 dark:border-zinc-800";
+const hint = "text-small text-muted";
 
 function Field({ label, error, note, children }: { label: string; error?: string; note?: string; children: ReactNode }) {
   return (
-    <label className="flex flex-col gap-1">
-      <span className="font-medium">{label}</span>
-      {note && <span className={hint}>{note}</span>}
+    <label className="flex min-w-0 flex-col gap-1.5">
+      <span className={fieldLabel}>
+        {label}
+        {note && <span className={`block font-normal ${hint}`}>{note}</span>}
+      </span>
       {children}
-      {error && <span className={errorText}>{error}</span>}
+      {error && <span className={fieldError}>{error}</span>}
     </label>
   );
 }
@@ -165,127 +180,145 @@ export function ApplicationForm({ mode, questions, departments, initial, replyTo
   const departmentsDisabled = fields.departmentUnsure;
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
-      <section className="flex flex-col gap-4">
-        <Field label="Name" error={errors.name}>
-          <input className={input} value={fields.name} autoComplete="name" onChange={(e) => set("name", e.target.value)} aria-invalid={!!errors.name || undefined} />
-        </Field>
-        {mode !== "edit" && (
-          <Field label="Mailadresse" error={errors.email} note={mode === "apply" ? "An diese Adresse schicken wir deinen persönlichen Link." : undefined}>
-            <input
-              className={input}
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              value={fields.email}
-              onChange={(e) => set("email", e.target.value)}
-              aria-invalid={!!errors.email || undefined}
-            />
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-7 sm:gap-9">
+      <section className={section}>
+        <h2 className={sectionTitle}>{mode === "admin" ? "Angaben" : "Über dich"}</h2>
+        <div className={`${formGroup} sm:grid sm:grid-cols-2 sm:items-end`}>
+          <Field label="Name" error={errors.name}>
+            <input className={input} value={fields.name} autoComplete="name" onChange={(e) => set("name", e.target.value)} aria-invalid={!!errors.name || undefined} />
           </Field>
-        )}
-        <Field label="Jahrgang" error={errors.cohort} note="Zum Beispiel 2024">
-          <input className={input} value={fields.cohort} onChange={(e) => set("cohort", e.target.value)} aria-invalid={!!errors.cohort || undefined} />
-        </Field>
+          {mode !== "edit" && (
+            <Field label="Mailadresse" error={errors.email} note={mode === "apply" ? "An diese Adresse schicken wir deinen persönlichen Link." : undefined}>
+              <input
+                className={input}
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                value={fields.email}
+                onChange={(e) => set("email", e.target.value)}
+                aria-invalid={!!errors.email || undefined}
+              />
+            </Field>
+          )}
+          <Field label="Jahrgang" error={errors.cohort} note="Zum Beispiel 2024">
+            <input className={input} inputMode="numeric" value={fields.cohort} onChange={(e) => set("cohort", e.target.value)} aria-invalid={!!errors.cohort || undefined} />
+          </Field>
+        </div>
       </section>
 
       {questions.length > 0 && (
-        <section className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold">Fragen</h2>
-          {questions.map((q) => (
-            <Field key={q.id} label={q.text} error={errors[`answers.${q.id}`]}>
-              <textarea
-                className={`${input} min-h-32`}
-                value={fields.answers[q.id] ?? ""}
-                onChange={(e) => set("answers", { ...fields.answers, [q.id]: e.target.value }, `answers.${q.id}`)}
-                aria-invalid={!!errors[`answers.${q.id}`] || undefined}
-              />
-            </Field>
-          ))}
+        <section className={section}>
+          <h2 className={sectionTitle}>{mode === "admin" ? "Antworten" : "Deine Antworten"}</h2>
+          <div className={formGroup}>
+            {questions.map((q) => (
+              <Field key={q.id} label={q.text} error={errors[`answers.${q.id}`]}>
+                <textarea
+                  className={`${input} min-h-32 resize-y`}
+                  value={fields.answers[q.id] ?? ""}
+                  onChange={(e) => set("answers", { ...fields.answers, [q.id]: e.target.value }, `answers.${q.id}`)}
+                  aria-invalid={!!errors[`answers.${q.id}`] || undefined}
+                />
+              </Field>
+            ))}
+          </div>
         </section>
       )}
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-2 text-lg font-semibold">Wunsch-Ressort</legend>
-        <p className={hint}>Du kannst mehrere wählen.{mode === "admin" && " Bei der Erfassung optional."}</p>
-        {departments.map((d) => (
-          <label key={d.id} className={`flex gap-3 ${departmentsDisabled ? "opacity-50" : ""}`}>
+      <fieldset className={section}>
+        <legend className={`${sectionTitle} mb-2`}>Wunsch-Ressort</legend>
+        <p className={lead}>Du kannst mehrere wählen.{mode === "admin" && " Bei der Erfassung optional."}</p>
+        <div className={listGroup}>
+          {departments.map((d) => (
+            <label key={d.id} className={`${checkRow} ${departmentsDisabled ? "opacity-50" : ""}`}>
+              <input
+                type="checkbox"
+                className="check"
+                checked={fields.departmentIds.includes(d.id)}
+                disabled={departmentsDisabled}
+                onChange={(e) => toggleDepartment(d.id, e.target.checked)}
+              />
+              <span>
+                {d.name}
+                {d.description && <span className={`block ${hint}`}>{d.description}</span>}
+              </span>
+            </label>
+          ))}
+          <label className={checkRow}>
             <input
               type="checkbox"
-              className="mt-1 h-5 w-5 shrink-0"
-              checked={fields.departmentIds.includes(d.id)}
-              disabled={departmentsDisabled}
-              onChange={(e) => toggleDepartment(d.id, e.target.checked)}
+              className="check"
+              checked={fields.departmentUnsure}
+              onChange={(e) => {
+                setFields((f) => ({ ...f, departmentUnsure: e.target.checked, departmentIds: e.target.checked ? [] : f.departmentIds }));
+                setErrors((er) => ({ ...er, departments: "" }));
+              }}
             />
-            <span>
-              <span className="font-medium">{d.name}</span>
-              {d.description && <span className={`block ${hint}`}>{d.description}</span>}
-            </span>
+            <span>weiß ich noch nicht</span>
           </label>
-        ))}
-        <label className="flex gap-3">
-          <input
-            type="checkbox"
-            className="mt-1 h-5 w-5 shrink-0"
-            checked={fields.departmentUnsure}
-            onChange={(e) => {
-              setFields((f) => ({ ...f, departmentUnsure: e.target.checked, departmentIds: e.target.checked ? [] : f.departmentIds }));
-              setErrors((er) => ({ ...er, departments: "" }));
-            }}
-          />
-          <span className="font-medium">weiß ich noch nicht</span>
-        </label>
-        {errors.departments && <span className={errorText}>{errors.departments}</span>}
+        </div>
+        {errors.departments && <span className={fieldError}>{errors.departments}</span>}
       </fieldset>
 
-      <Field
-        label={mode === "edit" ? "Neuer Lebenslauf (optional)" : "Lebenslauf"}
-        note={mode === "edit" ? "Nur wählen, wenn du ihn ersetzen willst. PDF, höchstens 10 MB." : "PDF, höchstens 10 MB."}
-        error={errors.cv}
-      >
-        <input
-          type="file"
-          accept="application/pdf,.pdf"
-          className="text-base"
-          onChange={(e) => {
-            setFile(e.target.files?.[0] ?? null);
-            setErrors((er) => ({ ...er, cv: "" }));
-          }}
-          aria-invalid={!!errors.cv || undefined}
-        />
-      </Field>
+      <section className={section}>
+        <h2 className={sectionTitle}>{mode === "edit" ? "Neuer Lebenslauf" : "Lebenslauf"}</h2>
+        <div className={formGroup}>
+          <Field
+            label={mode === "edit" ? "PDF-Datei (optional)" : "PDF-Datei"}
+            note={mode === "edit" ? "Nur wählen, wenn du ihn ersetzen willst. Höchstens 10 MB." : "Höchstens 10 MB."}
+            error={errors.cv}
+          >
+            <input
+              type="file"
+              accept="application/pdf,.pdf"
+              className="w-full text-note text-muted file:mr-3 file:h-11 file:cursor-pointer file:rounded-button file:border-0 file:bg-field file:px-4 file:text-note file:font-medium file:text-accent"
+              onChange={(e) => {
+                setFile(e.target.files?.[0] ?? null);
+                setErrors((er) => ({ ...er, cv: "" }));
+              }}
+              aria-invalid={!!errors.cv || undefined}
+            />
+          </Field>
+        </div>
+      </section>
 
       {mode === "apply" && privacyNotice?.trim() && (
-        <section className={`${box} flex flex-col gap-3`}>
-          <details>
-            <summary className="cursor-pointer font-semibold">Datenschutzhinweis lesen</summary>
-            <p className="mt-2 whitespace-pre-line text-sm">{privacyNotice}</p>
+        <section className={section}>
+          <h2 className={sectionTitle}>Datenschutz</h2>
+          <details className="group rounded-group bg-surface">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-[11px] font-medium [&::-webkit-details-marker]:hidden">
+              Datenschutzhinweis lesen
+              <span aria-hidden className="mr-1 size-2 rotate-45 border-r-2 border-b-2 border-muted transition-transform group-open:-rotate-135" />
+            </summary>
+            <p className="px-4 pb-4 text-note whitespace-pre-line text-muted">{privacyNotice}</p>
           </details>
-          <label className="flex gap-3">
-            <input
-              type="checkbox"
-              className="mt-1 h-5 w-5 shrink-0"
-              checked={fields.privacyConfirmed}
-              onChange={(e) => set("privacyConfirmed", e.target.checked, "privacy")}
-              aria-invalid={!!errors.privacy || undefined}
-            />
-            <span>Ich habe den Datenschutzhinweis zur Kenntnis genommen.</span>
-          </label>
-          {errors.privacy && <span className={errorText}>{errors.privacy}</span>}
+          <div className={listGroup}>
+            <label className={checkRow}>
+              <input
+                type="checkbox"
+                className="check"
+                checked={fields.privacyConfirmed}
+                onChange={(e) => set("privacyConfirmed", e.target.checked, "privacy")}
+                aria-invalid={!!errors.privacy || undefined}
+              />
+              <span>Ich habe den Datenschutzhinweis zur Kenntnis genommen.</span>
+            </label>
+          </div>
+          {errors.privacy && <span className={fieldError}>{errors.privacy}</span>}
         </section>
       )}
 
       {Object.values(errors).some(Boolean) && (
-        <p className={errorText} role="alert">
+        <p className={alertBox} role="alert">
           {errors.form || "Bitte prüfe die markierten Felder."}
         </p>
       )}
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <button className={button} disabled={pending}>
           {pending ? "Wird gesendet …" : mode === "apply" ? "Bewerbung absenden" : mode === "admin" ? "Bewerbung erfassen" : "Änderungen speichern"}
         </button>
         {onCancel && (
-          <button type="button" className="px-4 py-2" onClick={onCancel} disabled={pending}>
+          <button type="button" className={secondaryButton} onClick={onCancel} disabled={pending}>
             Abbrechen
           </button>
         )}
@@ -301,30 +334,30 @@ function Result({ mode, result, email, replyTo, onReset }: {
   replyTo: string;
   onReset: () => void;
 }) {
-  const title = "mb-4 text-2xl font-semibold";
-  const mailto = <a className="underline" href={`mailto:${replyTo}`}>{replyTo}</a>;
+  const box = "flex flex-col gap-3 rounded-group bg-surface p-4";
+  const mailto = <a className={link} href={`mailto:${replyTo}`}>{replyTo}</a>;
 
   if (result.status === "closed") {
     return (
-      <div>
-        <h1 className={title}>{mode === "edit" ? "Änderungen nicht mehr möglich" : "Bewerbungsphase beendet"}</h1>
+      <section className={box}>
+        <h2 className={sectionTitle}>{mode === "edit" ? "Änderungen nicht mehr möglich" : "Bewerbungsphase beendet"}</h2>
         <p>
           {mode === "edit" ? "Die Bewerbungsphase ist vorbei, Änderungen sind nicht mehr möglich." : "Die Bewerbungsphase ist vorbei."} Bitte wende dich an {mailto}.
         </p>
-      </div>
+      </section>
     );
   }
 
   if (result.status === "exists") {
     return (
-      <div>
-        <h1 className={title}>Bewerbung schon vorhanden</h1>
-        <p className="mb-3">
-          Für <strong>{email.trim()}</strong> gibt es bereits eine Bewerbung. Wir haben dir deinen persönlichen Link erneut an diese Adresse
-          geschickt. Über ihn kannst du deine Bewerbung ansehen und ändern.
+      <section className={box}>
+        <h2 className={sectionTitle}>Bewerbung schon vorhanden</h2>
+        <p>
+          Für <strong className="font-semibold">{email.trim()}</strong> gibt es bereits eine Bewerbung. Wir haben dir deinen persönlichen Link erneut an
+          diese Adresse geschickt. Über ihn kannst du deine Bewerbung ansehen und ändern.
         </p>
-        <p>Bitte schau auch im Junk- oder Spam-Ordner nach. Frühere Links gelten nicht mehr.</p>
-      </div>
+        <p className={lead}>Bitte schau auch im Junk- oder Spam-Ordner nach. Frühere Links gelten nicht mehr.</p>
+      </section>
     );
   }
 
@@ -332,38 +365,41 @@ function Result({ mode, result, email, replyTo, onReset }: {
 
   if (mode === "admin") {
     return (
-      <div>
-        <h1 className={title}>Bewerbung erfasst</h1>
-        <p className="mb-4">
+      <section className={box}>
+        <h2 className={sectionTitle}>Bewerbung erfasst</h2>
+        <p>
           {result.mailSent
             ? `Der persönliche Link ist an ${email.trim()} unterwegs.`
             : `Die Bewerbung ist gespeichert, aber die Mail mit dem Link an ${email.trim()} ging nicht raus. Über /bewerben mit derselben Adresse lässt sich ein neuer Link anfordern, solange die Bewerbungsphase läuft.`}
         </p>
-        <button className={button} onClick={onReset}>
-          Weitere Bewerbung erfassen
-        </button>
-      </div>
+        <div>
+          <button className={button} onClick={onReset}>
+            Weitere Bewerbung erfassen
+          </button>
+        </div>
+      </section>
     );
   }
 
   return (
-    <div>
-      <h1 className={title}>Danke für deine Bewerbung!</h1>
+    <section className={box}>
+      <h2 className={sectionTitle}>Danke für deine Bewerbung!</h2>
       {result.mailSent ? (
         <>
-          <p className="mb-3">
-            Deine Bewerbung ist bei uns eingegangen. Wir haben dir eine Bestätigung mit deinem persönlichen Link an <strong>{email.trim()}</strong>{" "}
-            geschickt. Über den Link kannst du deine Bewerbung ansehen, bis zum Ende der Bewerbungsphase ändern und später deinen Gesprächstermin buchen.
+          <p>
+            Deine Bewerbung ist bei uns eingegangen. Wir haben dir eine Bestätigung mit deinem persönlichen Link an{" "}
+            <strong className="font-semibold">{email.trim()}</strong> geschickt. Über den Link kannst du deine Bewerbung ansehen, bis zum Ende der
+            Bewerbungsphase ändern und später deinen Gesprächstermin buchen.
           </p>
-          <p className="mb-3 font-medium">Keine Mail bekommen? Bitte schau auch im Junk- oder Spam-Ordner nach.</p>
+          <p className={noticeBox}>Keine Mail bekommen? Bitte schau auch im Junk- oder Spam-Ordner nach.</p>
         </>
       ) : (
-        <p className="mb-3">
+        <p>
           Deine Bewerbung ist gespeichert, aber die Bestätigungsmail konnte gerade nicht verschickt werden. Schick das Formular später einfach noch
           einmal mit derselben Mailadresse ab, dann bekommst du deinen Link, oder schreib an {mailto}.
         </p>
       )}
-      <p>Fragen? Schreib an {mailto}.</p>
-    </div>
+      <p className={lead}>Fragen? Schreib an {mailto}.</p>
+    </section>
   );
 }

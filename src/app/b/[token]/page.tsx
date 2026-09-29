@@ -5,7 +5,8 @@ import { canEdit, findApplicant, loadApplicationRound } from "@/lib/application"
 import { formatBerlin } from "@/lib/mail/templates";
 import { DEFAULT_REPLY_TO } from "@/lib/round-form";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { page } from "../../ui";
+import { Brand, PageHeader } from "../../brand";
+import { link, page } from "../../ui";
 import { loadBooking } from "@/lib/booking";
 import { book, prepareEdit, saveEdit, withdraw } from "./actions";
 import { ApplicantView } from "./applicant-view";
@@ -24,10 +25,11 @@ export default async function ApplicantPage({ params }: { params: Promise<{ toke
     const replyTo = (await loadApplicationRound(db))?.replyTo ?? DEFAULT_REPLY_TO;
     return (
       <main className={page}>
-        <h1 className="mb-4 text-2xl font-semibold">Link ungültig</h1>
+        <Brand />
+        <PageHeader heading="Link ungültig" />
         <p>
           Dieser Link ist ungültig oder nicht mehr gültig. Wenn du Fragen zu deiner Bewerbung hast, wende dich bitte an{" "}
-          <a className="underline" href={`mailto:${replyTo}`}>{replyTo}</a>.
+          <a className={link} href={`mailto:${replyTo}`}>{replyTo}</a>.
         </p>
       </main>
     );
@@ -37,6 +39,7 @@ export default async function ApplicantPage({ params }: { params: Promise<{ toke
   const booking = await loadBooking(db, applicant);
   return (
     <main className={page}>
+      <Brand />
       <ApplicantView
         applicant={{
           name: applicant.name,

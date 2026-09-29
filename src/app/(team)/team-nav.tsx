@@ -6,7 +6,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import type { Role } from "@/lib/auth/member";
-import { secondaryButton } from "../ui";
+import { BrandMark } from "../brand";
+import { smallButton } from "../ui";
 import { signOut } from "./actions";
 
 type Icon = "home" | "calendar" | "list";
@@ -51,7 +52,7 @@ function Svg({ name }: { name: Icon | "more" }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className="h-6 w-6"
+      className="size-6"
     >
       {ICONS[name]}
     </svg>
@@ -64,7 +65,7 @@ const isActive = (pathname: string, href: string) =>
 function SignOut() {
   return (
     <form action={signOut}>
-      <button className={secondaryButton}>Abmelden</button>
+      <button className={smallButton}>Abmelden</button>
     </form>
   );
 }
@@ -79,25 +80,26 @@ export function TeamNav({ role, name }: { role: Role; name: string }) {
 
   return (
     <>
-      {/* Top: brand everywhere, full row from lg. */}
-      <header className="border-b border-zinc-200 dark:border-zinc-800">
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-x-6 px-4 py-3">
-          <Link href="/" className="font-semibold">
-            Auswahltool
+      {/* Top: mark everywhere, full menu row from lg. */}
+      <header className="lg:sticky lg:top-0 lg:z-30 lg:border-b lg:border-line lg:bg-bar lg:backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-x-6 px-4 pt-4 lg:px-6 lg:py-2.5">
+          <Link href="/" className="flex shrink-0 items-center gap-2 text-note font-semibold">
+            <BrandMark className="h-[18px] w-auto" />
+            Orga-Team
           </Link>
-          <nav className="hidden gap-x-4 text-sm lg:flex" aria-label="Hauptmenü">
+          <nav className="hidden gap-x-1 lg:flex" aria-label="Hauptmenü">
             {items.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 aria-current={isActive(pathname, item.href) ? "page" : undefined}
-                className="aria-[current=page]:font-semibold aria-[current=page]:underline aria-[current=page]:underline-offset-4"
+                className="rounded-field px-2.5 py-1.5 text-note text-muted hover:text-fg aria-[current=page]:bg-field aria-[current=page]:font-medium aria-[current=page]:text-fg"
               >
                 {item.label}
               </Link>
             ))}
           </nav>
-          <div className="ml-auto hidden items-center gap-3 text-sm lg:flex">
+          <div className="ml-auto hidden items-center gap-3 text-note text-muted lg:flex">
             <span>{name}</span>
             <SignOut />
           </div>
@@ -110,36 +112,36 @@ export function TeamNav({ role, name }: { role: Role; name: string }) {
           type="button"
           aria-label="Menü schließen"
           onClick={() => setMoreOpen(false)}
-          className="fixed inset-0 z-30 bg-black/30 lg:hidden"
+          className="fixed inset-0 z-30 bg-[rgba(0,0,0,0.35)] lg:hidden"
         />
       )}
       {moreOpen && (
         <div
           id="more-menu"
-          className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 rounded-t-xl border-t border-zinc-200 bg-white px-4 pb-3 pt-2 shadow-lg lg:hidden dark:border-zinc-800 dark:bg-zinc-950"
+          className="fixed inset-x-2 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 rounded-group bg-surface py-1 shadow-[0_12px_40px_rgba(0,0,0,0.25)] lg:hidden"
         >
-          <nav aria-label="Weitere Seiten" className="flex flex-col">
+          <nav aria-label="Weitere Seiten" className="list flex flex-col">
             {rest.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setMoreOpen(false)}
                 aria-current={isActive(pathname, item.href) ? "page" : undefined}
-                className="rounded px-2 py-3 text-base aria-[current=page]:font-semibold"
+                className="px-4 py-3 aria-[current=page]:font-semibold aria-[current=page]:text-accent"
               >
                 {item.label}
               </Link>
             ))}
           </nav>
-          <div className="mt-2 flex items-center gap-3 border-t border-zinc-200 px-2 pt-3 text-sm dark:border-zinc-800">
-            <span className="flex-1 text-zinc-600 dark:text-zinc-400">{name}</span>
+          <div className="flex items-center gap-3 border-t border-line px-4 py-2 text-note">
+            <span className="flex-1 text-muted">{name}</span>
             <SignOut />
           </div>
         </div>
       )}
       <nav
         aria-label="Hauptmenü"
-        className="fixed inset-x-0 bottom-0 z-40 grid border-t border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden dark:border-zinc-800 dark:bg-zinc-950"
+        className="fixed inset-x-0 bottom-0 z-40 grid border-t border-line bg-bar pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
         style={{ gridTemplateColumns: `repeat(${tabs.length + 1}, minmax(0, 1fr))` }}
       >
         {tabs.map((item) => (
@@ -148,7 +150,7 @@ export function TeamNav({ role, name }: { role: Role; name: string }) {
             href={item.href}
             onClick={() => setMoreOpen(false)}
             aria-current={isActive(pathname, item.href) ? "page" : undefined}
-            className="flex h-16 flex-col items-center justify-center gap-0.5 text-xs text-zinc-500 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:aria-[current=page]:text-zinc-100"
+            className="flex h-16 flex-col items-center justify-center gap-0.5 text-tab text-muted aria-[current=page]:font-semibold aria-[current=page]:text-accent"
           >
             <Svg name={item.tab!} />
             {item.label}
@@ -159,8 +161,8 @@ export function TeamNav({ role, name }: { role: Role; name: string }) {
           onClick={() => setMoreOpen((open) => !open)}
           aria-expanded={moreOpen}
           aria-controls="more-menu"
-          className={`flex h-16 flex-col items-center justify-center gap-0.5 text-xs ${
-            restActive || moreOpen ? "font-semibold text-zinc-900 dark:text-zinc-100" : "text-zinc-500 dark:text-zinc-400"
+          className={`flex h-16 flex-col items-center justify-center gap-0.5 text-tab ${
+            restActive || moreOpen ? "font-semibold text-accent" : "text-muted"
           }`}
         >
           <Svg name="more" />

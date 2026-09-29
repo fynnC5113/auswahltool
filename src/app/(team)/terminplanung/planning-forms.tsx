@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { button, input, secondaryButton } from "../../ui";
+import { barButton, button, fieldError, fieldLabel, formGroup, input, select, smallButton, smallDangerButton } from "../../ui";
 import {
   addBlockedTimeAction,
   addLocationAction,
@@ -22,7 +22,7 @@ export function AddLocationForm({ roundId, suggestion }: { roundId: string; sugg
   }, [pending, state]);
 
   return (
-    <form ref={form} action={formAction} className="flex flex-wrap items-end gap-3">
+    <form ref={form} action={formAction} className={suggestion ? "flex flex-col gap-2" : `${formGroup} sm:flex-row sm:flex-wrap sm:items-end`}>
       <input type="hidden" name="roundId" value={roundId} />
       {suggestion ? (
         <>
@@ -33,16 +33,16 @@ export function AddLocationForm({ roundId, suggestion }: { roundId: string; sugg
         </>
       ) : (
         <>
-          <label className="flex flex-1 flex-col gap-1">
-            Weiterer Ort
+          <label className="flex flex-1 flex-col gap-1.5">
+            <span className={fieldLabel}>Weiterer Ort</span>
             <input name="name" required className={input} />
           </label>
-          <button disabled={pending} className={button}>
+          <button disabled={pending} className={barButton}>
             Anlegen
           </button>
         </>
       )}
-      {state.error && <p className="w-full text-red-700">{state.error}</p>}
+      {state.error && <p className={`w-full ${fieldError}`}>{state.error}</p>}
     </form>
   );
 }
@@ -64,25 +64,25 @@ export function LocationActions({ id, name, isDefault }: { id: string; name: str
         <form action={renameAction} className="flex flex-wrap items-center gap-2">
           <input type="hidden" name="id" value={id} />
           <input name="name" defaultValue={name} required autoFocus className={`${input} max-w-xs flex-1`} />
-          <button disabled={renamePending} className={secondaryButton}>
+          <button disabled={renamePending} className={barButton}>
             Speichern
           </button>
-          <button type="button" onClick={() => setEditing(false)} className={secondaryButton}>
+          <button type="button" onClick={() => setEditing(false)} className={smallButton}>
             Abbrechen
           </button>
         </form>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
           <span className="flex-1 font-medium">
-            {name} {isDefault && <span className="text-sm font-normal">(Standard)</span>}
+            {name} {isDefault && <span className="text-note font-normal text-muted">(Standard)</span>}
           </span>
-          <button type="button" onClick={() => setEditing(true)} className={secondaryButton}>
+          <button type="button" onClick={() => setEditing(true)} className={smallButton}>
             Umbenennen
           </button>
           {!isDefault && (
             <form action={defaultAction}>
               <input type="hidden" name="id" value={id} />
-              <button disabled={defaultPending} className={secondaryButton}>
+              <button disabled={defaultPending} className={smallButton}>
                 Als Standard
               </button>
             </form>
@@ -94,13 +94,13 @@ export function LocationActions({ id, name, isDefault }: { id: string; name: str
             }}
           >
             <input type="hidden" name="id" value={id} />
-            <button disabled={deletePending} className={secondaryButton}>
+            <button disabled={deletePending} className={smallDangerButton}>
               Löschen
             </button>
           </form>
         </div>
       )}
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error && <p className={fieldError}>{error}</p>}
     </div>
   );
 }
@@ -113,10 +113,10 @@ export function AddBlockedTimeForm({ locations, defaultDay }: { locations: { id:
   }, [pending, state]);
 
   return (
-    <form ref={form} action={formAction} className="grid gap-3 sm:grid-cols-2">
-      <label className="flex flex-col gap-1">
-        Ort
-        <select name="locationId" className={input}>
+    <form ref={form} action={formAction} className={`${formGroup} sm:grid sm:grid-cols-2`}>
+      <label className="flex flex-col gap-1.5">
+        <span className={fieldLabel}>Ort</span>
+        <select name="locationId" className={select}>
           {locations.map((l) => (
             <option key={l.id} value={l.id}>
               {l.name}
@@ -124,23 +124,23 @@ export function AddBlockedTimeForm({ locations, defaultDay }: { locations: { id:
           ))}
         </select>
       </label>
-      <label className="flex flex-col gap-1">
-        Notiz (optional)
+      <label className="flex flex-col gap-1.5">
+        <span className={fieldLabel}>Notiz (optional)</span>
         <input name="note" placeholder="z. B. Beratung" className={input} />
       </label>
-      <label className="flex flex-col gap-1">
-        Beginn
+      <label className="flex flex-col gap-1.5">
+        <span className={fieldLabel}>Beginn</span>
         <input name="startsAt" type="datetime-local" step={900} required defaultValue={`${defaultDay}T10:00`} className={input} />
       </label>
-      <label className="flex flex-col gap-1">
-        Ende
+      <label className="flex flex-col gap-1.5">
+        <span className={fieldLabel}>Ende</span>
         <input name="endsAt" type="datetime-local" step={900} required defaultValue={`${defaultDay}T12:00`} className={input} />
       </label>
       <div className="sm:col-span-2">
         <button disabled={pending} className={button}>
           Sperrzeit eintragen
         </button>
-        {state.error && <p className="mt-2 text-red-700">{state.error}</p>}
+        {state.error && <p className={`mt-2 ${fieldError}`}>{state.error}</p>}
       </div>
     </form>
   );
@@ -151,10 +151,10 @@ export function DeleteBlockedTimeButton({ id }: { id: string }) {
   return (
     <form action={formAction} className="flex flex-col items-end gap-1">
       <input type="hidden" name="id" value={id} />
-      <button disabled={pending} className={secondaryButton}>
+      <button disabled={pending} className={smallDangerButton}>
         Löschen
       </button>
-      {state.error && <p className="text-sm text-red-700">{state.error}</p>}
+      {state.error && <p className={fieldError}>{state.error}</p>}
     </form>
   );
 }

@@ -3,7 +3,22 @@
 // Slot list for /terminplanung (variant B, Fynn 29.09.2026): one quiet row per
 // slot, tapping it opens a <dialog> with every action for that slot.
 import { useActionState, useEffect, useRef, useState } from "react";
-import { button, input, secondaryButton } from "../../ui";
+import {
+  barButton,
+  button,
+  chip,
+  dangerTextButton,
+  dialog as dialogClass,
+  fieldError,
+  fieldLabel,
+  input,
+  lead,
+  listGroup,
+  noticeBox,
+  secondaryButton,
+  select,
+  textButton,
+} from "../../ui";
 import {
   assignApplicantAction,
   deleteFreeSlotsAction,
@@ -58,7 +73,7 @@ function SlotToolbar({
 
   return (
     <div className="mb-4 flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <form action={generate}>
           <input type="hidden" name="roundId" value={roundId} />
           <button disabled={generating} className={button}>
@@ -82,8 +97,8 @@ function SlotToolbar({
           </form>
         )}
       </div>
-      {generated.message && !generating && <p className="text-sm text-zinc-600 dark:text-zinc-400">{generated.message}</p>}
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {generated.message && !generating && <p className="text-note text-muted">{generated.message}</p>}
+      {error && <p className={fieldError}>{error}</p>}
     </div>
   );
 }
@@ -110,8 +125,8 @@ export function InviteToBookButton({ roundId, waiting }: { roundId: string; wait
       <button disabled={pending || !waiting} className={secondaryButton}>
         {pending ? "Verschicke …" : "Bewerber ohne Termin zum Buchen auffordern"}
       </button>
-      {state.error && <p className="text-sm text-red-700">{state.error}</p>}
-      {state.message && !pending && <p className="text-sm text-zinc-600 dark:text-zinc-400">{state.message}</p>}
+      {state.error && <p className={fieldError}>{state.error}</p>}
+      {state.message && !pending && <p className="text-note text-muted">{state.message}</p>}
     </form>
   );
 }
@@ -128,17 +143,17 @@ export function PreferredToggle({ roundId, memberId, preferred }: { roundId: str
       <input type="hidden" name="roundId" value={roundId} />
       <input type="hidden" name="memberId" value={memberId} />
       <input type="hidden" name="preferred" value={String(!preferred)} />
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex cursor-pointer items-center gap-2 text-note">
         <input
           type="checkbox"
           checked={preferred}
           disabled={pending}
           onChange={() => form.current?.requestSubmit()}
-          className="h-4 w-4"
+          className="check"
         />
         bevorzugt
       </label>
-      {state.error && <p className="text-sm text-red-700">{state.error}</p>}
+      {state.error && <p className={fieldError}>{state.error}</p>}
     </form>
   );
 }
@@ -181,36 +196,36 @@ export function SlotBoard({ roundId, slots, members, locations, applicants, newS
       <SlotToolbar roundId={roundId} hasFree={slots.some((s) => !s.applicant)} onAdd={() => setOpen("new")} />
 
       {slots.length === 0 && (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className={lead}>
           Noch keine Termine. Sobald das Team seine Verfügbarkeit eingetragen hat: „Alle möglichen Termine erzeugen“.
         </p>
       )}
 
       {[...days].map(([day, list]) => (
         <div key={day} className="mb-6">
-          <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400">{day}</h3>
-          <ul className="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+          <h3 className="mb-2 text-note font-semibold">{day}</h3>
+          <ul className={`${listGroup} overflow-hidden`}>
             {list.map((s) => (
               <li key={s.id}>
                 <button
                   type="button"
                   onClick={() => setOpen(s.id)}
-                  className="grid w-full grid-cols-[3.5rem_1fr_auto] items-start gap-x-3 gap-y-1 px-1 py-2.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                  className="grid w-full grid-cols-[3.5rem_1fr_auto] items-start gap-x-3 gap-y-1 px-4 py-3 text-left hover:bg-field"
                 >
-                  <span className="font-semibold tabular-nums">{s.time}</span>
-                  <span className="min-w-0 text-sm text-zinc-600 dark:text-zinc-400">
+                  <span className="font-medium tabular-nums">{s.time}</span>
+                  <span className="min-w-0 pt-px text-note text-muted">
                     {s.location}
                     {s.applicant && (
                       <>
                         {" · "}
-                        <span className="font-medium text-zinc-900 dark:text-zinc-100">{s.applicant}</span>
+                        <span className="font-medium text-fg">{s.applicant}</span>
                         {s.pair && ` · ${s.pair}`}
                       </>
                     )}
                   </span>
                   <StatusPill slot={s} />
                   {s.hints.length > 0 && (
-                    <span className="col-start-2 col-end-4 text-sm text-amber-800 dark:text-amber-300">
+                    <span className="col-start-2 col-end-4 text-note text-warn">
                       ⚠ {s.hints.length === 1 ? s.hints[0] : `${s.hints.length} Hinweise`}
                     </span>
                   )}
@@ -228,9 +243,9 @@ export function SlotBoard({ roundId, slots, members, locations, applicants, newS
           // A click on the backdrop closes.
           if (e.target === dialog.current) setOpen(null);
         }}
-        className="m-0 mt-auto w-full max-w-none rounded-t-xl bg-white p-0 text-zinc-900 backdrop:bg-black/40 dark:bg-zinc-950 dark:text-zinc-100 lg:m-auto lg:max-w-lg lg:rounded-xl"
+        className={dialogClass}
       >
-        <div className="max-h-[85vh] overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="max-h-[85vh] overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
           {shown === "new" && (
             <>
               <DialogHeader title="Termin anlegen" onClose={() => setOpen(null)} />
@@ -262,17 +277,16 @@ export function SlotBoard({ roundId, slots, members, locations, applicants, newS
 }
 
 function StatusPill({ slot }: { slot: BoardSlot }) {
-  const base = "whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium";
-  if (slot.applicant) return <span className={`${base} bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900`}>gebucht</span>;
-  if (slot.bookable) return <span className={`${base} bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300`}>frei</span>;
-  return <span className={`${base} bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300`}>nicht buchbar</span>;
+  if (slot.applicant) return <span className={`${chip} bg-accent-soft text-accent`}>gebucht</span>;
+  if (slot.bookable) return <span className={`${chip} bg-ok-soft text-ok`}>frei</span>;
+  return <span className={`${chip} text-muted`}>nicht buchbar</span>;
 }
 
 function DialogHeader({ title, onClose }: { title: string; onClose: () => void }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <button type="button" onClick={onClose} className={secondaryButton}>
+      <h2 className="text-section font-semibold">{title}</h2>
+      <button type="button" onClick={onClose} className={textButton}>
         Schließen
       </button>
     </div>
@@ -302,13 +316,13 @@ function SlotDetails({
           <StatusPill slot={slot} />
           {slot.applicant && (
             <span>
-              Bewerber: <strong>{slot.applicant}</strong>
+              Bewerber: <strong className="font-semibold">{slot.applicant}</strong>
             </span>
           )}
         </div>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">{slot.pair ?? "Das Paar wählt das Tool bei der Buchung."}</p>
+        <p className="text-note text-muted">{slot.pair ?? "Das Paar wählt das Tool bei der Buchung."}</p>
         {slot.hints.map((h) => (
-          <p key={h} className="rounded bg-amber-100 px-2 py-1 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+          <p key={h} className={noticeBox}>
             {h}
           </p>
         ))}
@@ -322,11 +336,11 @@ function SlotDetails({
       ) : (
         <>
           <section className="flex flex-col gap-2">
-            <h3 className="font-medium">Bewerber eintragen</h3>
+            <h3 className="font-semibold">Bewerber eintragen</h3>
             <AssignForm slot={slot} applicants={applicants} />
           </section>
           <section className="flex flex-col gap-2">
-            <h3 className="font-medium">Termin ändern</h3>
+            <h3 className="font-semibold">Termin ändern</h3>
             <SlotForm
               roundId={roundId}
               id={slot.id}
@@ -358,15 +372,15 @@ function PairSelects({ members, a, b, required }: { members: MemberOption[]; a: 
   );
   return (
     <>
-      <label className="flex flex-col gap-1 text-sm">
-        Gesprächsführer 1
-        <select name="interviewerA" defaultValue={a ?? ""} className={input}>
+      <label className="flex flex-col gap-1.5">
+        <span className={fieldLabel}>Gesprächsführer 1</span>
+        <select name="interviewerA" defaultValue={a ?? ""} className={select}>
           {options(a)}
         </select>
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        Gesprächsführer 2
-        <select name="interviewerB" defaultValue={b ?? ""} className={input}>
+      <label className="flex flex-col gap-1.5">
+        <span className={fieldLabel}>Gesprächsführer 2</span>
+        <select name="interviewerB" defaultValue={b ?? ""} className={select}>
           {options(b)}
         </select>
       </label>
@@ -399,13 +413,13 @@ function SlotForm({
     <form action={formAction} className="grid gap-3 sm:grid-cols-2">
       <input type="hidden" name="roundId" value={roundId} />
       {id && <input type="hidden" name="id" value={id} />}
-      <label className="flex flex-col gap-1 text-sm">
-        Beginn
+      <label className="flex flex-col gap-1.5">
+        <span className={fieldLabel}>Beginn</span>
         <input name="startsAt" type="datetime-local" step={900} required defaultValue={defaults.local} className={input} />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        Ort
-        <select name="locationId" defaultValue={defaults.locationId} className={input}>
+      <label className="flex flex-col gap-1.5">
+        <span className={fieldLabel}>Ort</span>
+        <select name="locationId" defaultValue={defaults.locationId} className={select}>
           {locations.map((l) => (
             <option key={l.id} value={l.id}>
               {l.name}
@@ -418,8 +432,8 @@ function SlotForm({
         <button disabled={pending} className={button}>
           {id ? "Speichern" : "Anlegen"}
         </button>
-        {state.error && <p className="mt-2 text-sm text-red-700">{state.error}</p>}
-        {state.message && !pending && <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{state.message}</p>}
+        {state.error && <p className={`mt-2 ${fieldError}`}>{state.error}</p>}
+        {state.message && !pending && <p className="mt-2 text-note text-muted">{state.message}</p>}
       </div>
     </form>
   );
@@ -432,15 +446,15 @@ function PairForm({ slot, members }: { slot: BoardSlot; members: MemberOption[] 
   }, empty);
   return (
     <form action={formAction} className="grid gap-3 sm:grid-cols-2">
-      <h3 className="font-medium sm:col-span-2">Paar ändern</h3>
+      <h3 className="font-semibold sm:col-span-2">Paar ändern</h3>
       <input type="hidden" name="id" value={slot.id} />
       <PairSelects members={members} a={slot.interviewerA} b={slot.interviewerB} required />
       <div className="sm:col-span-2">
         <button disabled={pending} className={button}>
           Paar speichern
         </button>
-        {state.error && <p className="mt-2 text-sm text-red-700">{state.error}</p>}
-        {state.message && !pending && <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{state.message}</p>}
+        {state.error && <p className={`mt-2 ${fieldError}`}>{state.error}</p>}
+        {state.message && !pending && <p className="mt-2 text-note text-muted">{state.message}</p>}
       </div>
     </form>
   );
@@ -448,12 +462,12 @@ function PairForm({ slot, members }: { slot: BoardSlot; members: MemberOption[] 
 
 function AssignForm({ slot, applicants }: { slot: BoardSlot; applicants: Option[] }) {
   const [state, formAction, pending] = useActionState(assignApplicantAction, empty);
-  if (!applicants.length) return <p className="text-sm text-zinc-600 dark:text-zinc-400">Alle Bewerber haben schon einen Termin.</p>;
+  if (!applicants.length) return <p className="text-note text-muted">Alle Bewerber haben schon einen Termin.</p>;
   return (
     <form action={formAction} className="flex flex-col gap-2">
       <input type="hidden" name="id" value={slot.id} />
       <div className="flex flex-wrap gap-2">
-        <select name="applicantId" required defaultValue="" aria-label="Bewerber" className={`${input} min-w-0 flex-1`}>
+        <select name="applicantId" required defaultValue="" aria-label="Bewerber" className={`${select} min-w-0 flex-1`}>
           <option value="" disabled>
             Bewerber wählen …
           </option>
@@ -463,15 +477,15 @@ function AssignForm({ slot, applicants }: { slot: BoardSlot; applicants: Option[
             </option>
           ))}
         </select>
-        <button disabled={pending} className={button}>
+        <button disabled={pending} className={barButton}>
           Eintragen
         </button>
       </div>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-note text-muted">
         {!slot.pair && "Das Tool wählt dabei das Paar; ändern kannst du es danach. "}Bewerber und Paar bekommen eine Kalendereinladung.
       </p>
-      {state.error && <p className="text-sm text-red-700">{state.error}</p>}
-      {state.message && !pending && <p className="text-sm text-amber-800 dark:text-amber-300">{state.message}</p>}
+      {state.error && <p className={fieldError}>{state.error}</p>}
+      {state.message && !pending && <p className="text-note text-warn">{state.message}</p>}
     </form>
   );
 }
@@ -495,8 +509,8 @@ function UnassignForm({ slot }: { slot: BoardSlot }) {
       <button disabled={pending} className={secondaryButton}>
         Bewerber austragen
       </button>
-      {state.error && <p className="mt-2 text-sm text-red-700">{state.error}</p>}
-      {state.message && !pending && <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">{state.message}</p>}
+      {state.error && <p className={`mt-2 ${fieldError}`}>{state.error}</p>}
+      {state.message && !pending && <p className="mt-2 text-note text-warn">{state.message}</p>}
     </form>
   );
 }
@@ -510,10 +524,10 @@ function DeleteForm({ slot, onDone }: { slot: BoardSlot; onDone: () => void }) {
   return (
     <form action={formAction}>
       <input type="hidden" name="id" value={slot.id} />
-      <button disabled={pending} className={secondaryButton}>
+      <button disabled={pending} className={dangerTextButton}>
         Termin löschen
       </button>
-      {state.error && <p className="mt-2 text-sm text-red-700">{state.error}</p>}
+      {state.error && <p className={`mt-2 ${fieldError}`}>{state.error}</p>}
     </form>
   );
 }
