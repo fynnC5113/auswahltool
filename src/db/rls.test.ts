@@ -429,17 +429,19 @@ describe("conflicts: members read, own marking only", () => {
   );
 });
 
-describe("feedback, feedback_scores: sight lock read, own writes while open", () => {
+// Phase 14: members write feedback only through public.save_feedback
+// (src/lib/feedback.test.ts); direct writes are revoked.
+describe("feedback, feedback_scores: sight lock read, no direct writes", () => {
   rule("read a released entry", MEMBERS, (c) => canSelect(c, "feedback", { id: f.partnerFeedback }));
   rule("read its scores", MEMBERS, (c) => canSelect(c, "feedback_scores", { feedback_id: f.partnerFeedback }));
-  rule("write own entry", MEMBERS, async (c, role) =>
+  rule("write own entry directly", NOBODY, async (c, role) =>
     canInsert(c, "feedback", { applicant_id: await createApplicant(f.round), member_id: ownId(role) }),
   );
   rule("write an entry as someone else", NOBODY, async (c) =>
     canInsert(c, "feedback", { applicant_id: await createApplicant(f.round), member_id: id.interviewerA }),
   );
   rule("change someone else's entry", NOBODY, (c) => canUpdate(c, "feedback", { overall_text: "geändert" }, { id: f.partnerFeedback }));
-  rule("write own scores", MEMBERS, (c, role) =>
+  rule("write own scores directly", NOBODY, (c, role) =>
     canInsert(c, "feedback_scores", { feedback_id: f.ownFeedback[role], criterion_id: f.criterion, score: 3 }),
   );
   rule("write scores into someone else's entry", NOBODY, (c) =>
@@ -535,12 +537,14 @@ describe("sight lock", () => {
 
   it("condition 2: the interviewer reads it after submitting their own, not with a draft", async () => {
     const { applicantId, feedbackId } = await lockedCase();
+    // Written with the secret key: members save through save_feedback, which
+    // only accepts interviews that have started (these slots lie ahead).
     const own = ok(
-      await as.interviewerA.from("feedback").insert({ applicant_id: applicantId, member_id: id.interviewerA }).select("id").single(),
+      await db.from("feedback").insert({ applicant_id: applicantId, member_id: id.interviewerA }).select("id").single(),
     ).id;
     expect(await readsEntry(as.interviewerA, feedbackId)).toBe(false);
 
-    ok(await as.interviewerA.from("feedback").update({ submitted_at: new Date().toISOString() }).eq("id", own));
+    ok(await db.from("feedback").update({ submitted_at: new Date().toISOString() }).eq("id", own));
     expect(await readsEntry(as.interviewerA, feedbackId)).toBe(true);
     expect(await readsScores(as.interviewerA, feedbackId)).toBe(true);
   });

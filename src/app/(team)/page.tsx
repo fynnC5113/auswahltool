@@ -1,12 +1,24 @@
 // Overview (Phase 13, variant A, Fynn 29.09.2026): where the round stands,
-// four numbers, and hints for admins. Missing feedback follows in Phase 14.
+// five numbers, and hints for admins. Phase 14: missing feedback with
+// "Sperre aufheben" and "Auswahlrunde starten" for admins.
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { getMember } from "@/lib/auth/member";
+import { loadMissingFeedback } from "@/lib/feedback";
 import { loadOverview } from "@/lib/overview";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "../brand";
-import { link, listGroup, listRow, okText, section, sectionTitle, teamPage } from "../ui";
+import { lead, link, listGroup, listRow, okText, section, sectionTitle, teamPage } from "../ui";
+import { LiftButton, StartSelectionButton } from "./feedback-admin";
+
+const when = new Intl.DateTimeFormat("de-DE", {
+  weekday: "short",
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Europe/Berlin",
+});
 
 function Stat({ value, label }: { value: number; label: string }) {
   return (
@@ -30,6 +42,7 @@ export default async function OverviewPage() {
   const supabase = await createClient();
   const { member } = await getMember(supabase);
   const overview = member ? await loadOverview(supabase) : null;
+  const feedback = overview ? await loadMissingFeedback(supabase, overview.roundId) : null;
   const isAdmin = member?.role === "admin";
 
   return (
@@ -45,11 +58,12 @@ export default async function OverviewPage() {
           </div>
 
           <section className={section}>
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
               <Stat value={overview.capacity.applications} label="Bewerbungen" />
               <Stat value={overview.capacity.booked} label="mit Termin" />
               <Stat value={overview.capacity.withoutSlot} label="ohne Termin" />
               <Stat value={overview.capacity.bookable} label="freie Termine buchbar" />
+              <Stat value={feedback?.count ?? 0} label={feedback?.count === 1 ? "Feedback fehlt" : "Feedbacks fehlen"} />
             </div>
             <p className="pt-1 text-note">
               <Link href="/bewerbungen" className={link}>
@@ -82,6 +96,49 @@ export default async function OverviewPage() {
                   </p>
                 </>
               )}
+            </section>
+          )}
+
+          {isAdmin && feedback && (
+            <section className={section}>
+              <h2 className={sectionTitle}>Feedback fehlt</h2>
+              <p className={lead}>
+                Beendete Gespräche ohne „nicht erschienen“. „Sperre aufheben“ zeigt das vorhandene Feedback auch dem
+                Gesprächsführer, der noch nicht abgegeben hat.
+              </p>
+              {feedback.rows.length === 0 ? (
+                <p className={okText}>Kein Feedback offen.</p>
+              ) : (
+                <div className={listGroup}>
+                  {feedback.rows.map((r) => (
+                    <div key={r.applicantId} className={`flex items-center gap-3 ${listRow}`}>
+                      <div className="min-w-0 flex-1">
+                        <Link href={`/bewerbungen/${r.applicantId}`} className="font-medium">
+                          {r.applicantName}
+                        </Link>
+                        <p className="text-small text-muted tabular-nums">
+                          {when.format(new Date(r.startsAt))} · fehlt von{" "}
+                          {r.missing.map((m) => (m.draft ? `${m.name} (Entwurf)` : m.name)).join(" und ")}
+                        </p>
+                        {r.lifted && <p className="text-small font-medium text-ok">Sperre aufgehoben</p>}
+                      </div>
+                      {!r.lifted && !overview.selectionStarted && <LiftButton applicantId={r.applicantId} />}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {isAdmin && !overview.selectionStarted && (
+            <section className={section}>
+              <h2 className={sectionTitle}>Auswahlrunde</h2>
+              <p className={lead}>
+                Mit dem Start sieht jedes Mitglied jedes abgegebene Feedback. Das lässt sich nicht rückgängig machen.
+              </p>
+              <div className="pt-1">
+                <StartSelectionButton roundId={overview.roundId} missing={feedback?.count ?? 0} />
+              </div>
             </section>
           )}
         </>

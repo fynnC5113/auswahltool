@@ -10,13 +10,14 @@ import { BrandMark } from "../brand";
 import { smallButton } from "../ui";
 import { signOut } from "./actions";
 
-type Icon = "home" | "calendar" | "list";
+type Icon = "home" | "calendar" | "talk" | "list";
 type Item = { href: string; label: string; adminOnly?: boolean; tab?: Icon };
 
 // Order = order in the top row and in "Mehr". tab: shown in the bottom bar.
 const ITEMS: Item[] = [
   { href: "/", label: "Übersicht", tab: "home" },
   { href: "/verfuegbarkeit", label: "Verfügbarkeit", tab: "calendar" },
+  { href: "/gespraeche", label: "Gespräche", tab: "talk" },
   { href: "/bewerbungen", label: "Bewerbungen", tab: "list" },
   { href: "/terminplanung", label: "Terminplanung", adminOnly: true },
   { href: "/einstellungen/erfassen", label: "Erfassen", adminOnly: true },
@@ -32,6 +33,7 @@ const ICONS: Record<Icon | "more", ReactNode> = {
       <path d="M3 9h18M8 2v4M16 2v4" />
     </>
   ),
+  talk: <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />,
   list: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />,
   more: (
     <>
@@ -82,25 +84,26 @@ export function TeamNav({ role, name }: { role: Role; name: string }) {
     <>
       {/* Top: mark everywhere, full menu row from lg. */}
       <header className="lg:sticky lg:top-0 lg:z-30 lg:border-b lg:border-line lg:bg-bar lg:backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-x-6 px-4 pt-4 lg:px-6 lg:py-2.5">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-x-4 px-4 pt-4 lg:px-6 lg:py-2.5 xl:max-w-7xl">
           <Link href="/" className="flex shrink-0 items-center gap-2 text-note font-semibold">
             <BrandMark className="h-[18px] w-auto" />
             Orga-Team
           </Link>
-          <nav className="hidden gap-x-1 lg:flex" aria-label="Hauptmenü">
+          <nav className="hidden gap-x-0.5 lg:flex" aria-label="Hauptmenü">
             {items.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 aria-current={isActive(pathname, item.href) ? "page" : undefined}
-                className="rounded-field px-2.5 py-1.5 text-note text-muted hover:text-fg aria-[current=page]:bg-field aria-[current=page]:font-medium aria-[current=page]:text-fg"
+                className="rounded-field px-2 py-1.5 text-note text-muted hover:text-fg aria-[current=page]:bg-field aria-[current=page]:font-medium aria-[current=page]:text-fg"
               >
                 {item.label}
               </Link>
             ))}
           </nav>
           <div className="ml-auto hidden items-center gap-3 text-note text-muted lg:flex">
-            <span>{name}</span>
+            {/* One line; hidden where the menu row needs the room (Phase 14 added "Gespräche"). */}
+            <span className="hidden max-w-40 truncate whitespace-nowrap xl:inline">{name}</span>
             <SignOut />
           </div>
         </div>

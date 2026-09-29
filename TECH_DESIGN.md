@@ -200,7 +200,7 @@ Hilfsfunktionen in der Datenbank:
 | availabilities, member_round_settings | Mitglied | nur die eigenen Einträge |
 | locations, blocked_times, slots | Mitglied | Admin. Die Buchung macht der Server. |
 | conflicts | Mitglied | nur die eigene Markierung |
-| feedback, feedback_scores | Mitglied, **außer bei der Sichtsperre** (unten) | nur das eigene, und nur solange das Board nicht eingefroren ist |
+| feedback, feedback_scores | Mitglied, **außer bei der Sichtsperre** (unten) | nur das eigene, nur als Gesprächsführer des gebuchten Termins ab Gesprächsbeginn, und nur solange das Board nicht eingefroren ist. Seit Phase 14 **nur über `public.save_feedback`** (security definer, prüft das alles gegen `auth.uid()`; beim Abgeben und danach: jede Skala, jede Begründung, Gesamteindruck). Direkte Schreibrechte sind entzogen. `public.feedback_progress(round_id)` liefert Mitgliedern nur „abgegeben/Entwurf“ ohne Inhalt für „Feedback fehlt“. |
 | board_positions, board_events | Mitglied | Mitglied, solange nicht eingefroren. Einfrieren darf nur der Admin. |
 | round_stats | Mitglied | nur der Zeitplan-Job |
 

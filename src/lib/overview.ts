@@ -7,7 +7,10 @@ import { hintContext, loadScheduling } from "@/lib/scheduling";
 import { capacity, hintText, slotHints, type Capacity } from "@/lib/scheduling-rules";
 
 export type Overview = {
+  roundId: string;
   title: string;
+  /** Sight lock ended for everyone ("Auswahlrunde starten"). */
+  selectionStarted: boolean;
   phase: { title: string; text: string };
   capacity: Capacity;
   /** Slots needing a new pair; shown to admins only. */
@@ -63,7 +66,9 @@ export async function loadOverview(session: SupabaseClient, now = new Date(), ro
     );
 
   return {
+    roundId: round.id,
     title: round.title,
+    selectionStarted: !!round.selection_started_at && new Date(round.selection_started_at) <= now,
     phase: phaseText(
       {
         opensAt: new Date(round.application_opens_at),

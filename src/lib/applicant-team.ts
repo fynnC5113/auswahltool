@@ -36,6 +36,7 @@ const APPLICANT_COLUMNS = `id, round_id, name, email, cohort, department_unsure,
   answers (question_id, text), applicant_departments (department_id)`;
 
 type SlotRow = {
+  id: string;
   applicant_id: string;
   starts_at: string;
   interview_ends_at: string;
@@ -136,6 +137,7 @@ export type TeamApplicant = {
   /** Every question of the round, in order; text "" if unanswered. */
   answers: { question: string; text: string }[];
   slot: {
+    id: string;
     startsAt: string;
     interviewEndsAt: string;
     location: string;
@@ -155,7 +157,7 @@ export async function loadTeamApplicant(session: SupabaseClient, id: string): Pr
     loadApplicationRound(session, a.round_id),
     session
       .from("slots")
-      .select("applicant_id, starts_at, interview_ends_at, interviewer_a, interviewer_b, locations (name)")
+      .select("id, applicant_id, starts_at, interview_ends_at, interviewer_a, interviewer_b, locations (name)")
       .eq("applicant_id", id)
       .maybeSingle<SlotRow>(),
     session.from("conflicts").select("member_id").eq("applicant_id", id).returns<{ member_id: string }[]>(),
@@ -183,6 +185,7 @@ export async function loadTeamApplicant(session: SupabaseClient, id: string): Pr
     createdAt: a.created_at,
     answers: round.questions.map((q) => ({ question: q.text, text: text.get(q.id) ?? "" })),
     slot: s && {
+      id: s.id,
       startsAt: s.starts_at,
       interviewEndsAt: s.interview_ends_at,
       location: roomLabel(s.locations?.name ?? ""),

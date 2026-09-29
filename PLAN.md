@@ -230,16 +230,19 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
 ## Etappe C: Feedback bis 19.10.
 
 - [ ] **Phase 14: Meine Gespräche und Feedback; Abnahme C**
+  - Festlegungen (Fynn, 29.09.2026): Vorschau „Feedback-Vorschau Phase 14“ (https://claude.ai/artifact/8peL6rxEmrqpaprSULH6dd), gewählt **Formular A** (alles auf einer Seite; Laptop zweispaltig mit Hakenliste und „Abgeben“ rechts, Handy mit Leiste unten). Laptop ist der häufigste Fall, Handy muss gut gehen. Feedback schreiben nur die beiden Gesprächsführer des Termins, ab Gesprächsbeginn. Beim Abgeben Pflicht: jede Skala, zu jeder Punktzahl eine Begründung, Gesamteindruck. Entwurf speichert automatisch beim Tippen. „Feedback fehlt“ zählt erst nach Gesprächsende; „nicht erschienen“ braucht kein Feedback. „Auswahlrunde starten“ ist nicht rückgängig zu machen. Keine Zeitvorgabe fürs Ausfüllen (Prüfung „unter 3 Minuten“ gestrichen).
   - Ergebnis:
-    - `/gespraeche` für das Handy
-    - Feedback-Formular mit Entwurf und Abgabe
-    - Sichtsperre in der Oberfläche
-    - Admin-Übersicht über fehlendes Feedback mit „Sperre aufheben“
-    - Knopf „Auswahlrunde starten“
+    - `/gespraeche` (Heute, Kommende, Vorbei mit Stand), Menüeintrag „Gespräche“ (auch als Reiter unten)
+    - Feedback-Formular mit Entwurf und Abgabe (`/gespraeche/[slotId]/feedback`)
+    - Sichtsperre in der Oberfläche (`/bewerbungen/[id]`, Abschnitt „Feedback“)
+    - Admin-Übersicht über fehlendes Feedback mit „Sperre aufheben“ (auch auf der Bewerbung)
+    - Knopf „Auswahlrunde starten“ mit Rückfrage
+    - Migration `20261001100000_feedback.sql`: Schreiben nur über `public.save_feedback`, `public.feedback_progress` für „Feedback fehlt“
   - Prüfung:
-    - Am Handy dauert das Ausfüllen unter 3 Minuten.
     - A sieht den Eintrag von B erst nach der eigenen Abgabe, ein Dritter sieht ihn sofort.
     - Nach „Sperre aufheben“ und nach „Auswahlrunde starten“ ist der Eintrag sichtbar.
+    - Bewerber sehen kein Feedback (Zugriff ohne Anmeldung liest und schreibt nichts).
+  - Stand 29.09.2026 (noch nicht abgehakt): Migration auf `-test` (laut Fynn „Success“). Vitest `src/lib/feedback-rules.test.ts` (10), `src/lib/feedback.test.ts` gegen `-test` (13: Entwurf nur für den Verfasser, unvollständige Abgabe abgelehnt mit Liste, Dritter/zukünftiges Gespräch/Direktschreiben abgelehnt, A sieht B erst nach eigener Abgabe und Dritter sofort, abgegebenes Feedback bleibt vollständig, „Sperre aufheben“ nur Admin, „Feedback fehlt“ ohne nicht erschienene und zukünftige, Entwurf markiert, „Auswahlrunde starten“ nur Admin und einmal, eingefroren keine Änderung, ohne Anmeldung nichts lesbar oder speicherbar), `src/db/rls.test.ts` 270 (Direktschreiben für alle Rollen verboten). `npm test` 561 grün, 1 an „Request rate limit reached“ gescheitert und einzeln wiederholt grün (`team.test.ts` 10/10), 3 übersprungen. Build, Lint, `tsc` fehlerfrei. Fotos in 390 und 1280 px hell/dunkel lokal gegen `-test` mit Beispieldaten (danach entfernt); Formular im Browser ausgefüllt: Lücken markiert, Entwurf gespeichert, abgegeben, Dialog „Feedback abgegeben“. Menüzeile oben nach Messung verdichtet (sonst ragte sie mit acht Einträgen bei 1024 und 1280 px über den Rand). **Offen:** Migration auf `-prod`, Push, Abnahme C durch Fynn.
 
 ---
 

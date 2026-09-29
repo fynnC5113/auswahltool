@@ -1,12 +1,15 @@
 // One application for the team (Phase 13, variant A, Fynn 29.09.2026): one
 // long page with CV, conflict of interest, slot, answers; status and deletion
-// for admins. Feedback follows in Phase 14.
+// for admins. Phase 14: feedback (sight lock) and "Sperre aufheben".
 import Link from "next/link";
 import { loadTeamApplicant } from "@/lib/applicant-team";
 import { getMember } from "@/lib/auth/member";
+import { loadApplicantFeedback } from "@/lib/feedback";
 import { createClient } from "@/lib/supabase/server";
 import { button, chip, lead, link, listGroup, listRow, noticeBox, readLabel, section, sectionTitle, teamPage, title } from "../../../ui";
+import { LiftButton } from "../../feedback-admin";
 import { ConflictButton, DeleteButton, StatusSwitch } from "./applicant-actions";
+import { FeedbackSection } from "./feedback-section";
 
 const when = new Intl.DateTimeFormat("de-DE", {
   weekday: "short",
@@ -33,7 +36,14 @@ export default async function ApplicantPage({ params }: { params: Promise<{ id: 
     );
   }
 
+  const feedback = await loadApplicantFeedback(supabase, applicant.id, applicant.roundId);
+  const now = new Date();
+  const selectionStarted = !!feedback.selectionStartedAt && new Date(feedback.selectionStartedAt) <= now;
   const isAdmin = member.role === "admin";
+  // Seen from here: an admin who interviewed and has not submitted may not see the partner's entry.
+  const allSubmitted = !!applicant.slot?.interviewers.every((m) =>
+    feedback.entries.some((e) => e.memberId === m.id && e.submittedAt),
+  );
   const mine = applicant.conflicts.some((c) => c.memberId === member.id);
   const leading = !!applicant.slot?.interviewers.some((m) => m.id === member.id);
   const departments = applicant.departmentUnsure
@@ -102,6 +112,8 @@ export default async function ApplicantPage({ params }: { params: Promise<{ id: 
         )}
       </section>
 
+      <FeedbackSection feedback={feedback} memberId={member.id} slot={applicant.slot} now={now} />
+
       <section className={section}>
         <h2 className={sectionTitle}>Antworten</h2>
         <div className={listGroup}>
@@ -119,6 +131,21 @@ export default async function ApplicantPage({ params }: { params: Promise<{ id: 
           <h2 className={sectionTitle}>Nur für Admins</h2>
           <div className="flex flex-col gap-4 rounded-group bg-surface p-4">
             <StatusSwitch id={applicant.id} status={applicant.status} />
+            {applicant.slot && (
+              <div className="flex flex-col gap-1.5">
+                <span className={readLabel}>Sichtsperre</span>
+                {feedback.lifted || selectionStarted ? (
+                  <p className="text-note">{selectionStarted ? "Aufgehoben (Auswahlrunde läuft)." : "Aufgehoben."}</p>
+                ) : allSubmitted ? (
+                  <p className="text-note">Beide Gesprächsführer haben abgegeben.</p>
+                ) : (
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className={lead}>Zeigt den Gesprächsführern das Feedback des anderen, auch ohne eigene Abgabe.</p>
+                    <LiftButton applicantId={applicant.id} />
+                  </div>
+                )}
+              </div>
+            )}
             <div className="flex flex-col gap-1.5">
               <DeleteButton id={applicant.id} name={applicant.name} booked={!!applicant.slot} />
               <p className={lead}>
