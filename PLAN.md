@@ -190,7 +190,7 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
   - Fehler bei der Prüfung behoben: Nach dem Zurückziehen zeigte die Seite „Link ungültig“ statt der Bestätigung (Neurendern im selben Aufruf, Ursache vermutlich das Auffrischen der Team-Session). Jetzt leitet die Server Action auf `/b/zurueckgezogen` weiter.
   - **Offen (nach dem Gespräch mit der IT):** Probe an eine zweite Law-School-Adresse, die den Absender nicht kennt; Fynns Postfach kennt ihn eventuell schon. Gmail trägt Einladungen nur ein, wenn der Empfänger das eingestellt hat (Karte mit Ja/Nein erscheint).
 
-- [ ] **Phase 13: Bewerbungen im Team, Befangenheit und Übersicht; Abnahme B**
+- [x] **Phase 13: Bewerbungen im Team, Befangenheit und Übersicht; Abnahme B**
   - Ergebnis:
     - `/bewerbungen` mit Suche und Filter
     - `/bewerbungen/[id]` mit Antworten, PDF (signierter Link) und dem Knopf „Ich bin befangen“
@@ -203,6 +203,8 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
     - Die PDF öffnet sich, ein abgelaufener Link nicht mehr.
     - Die Befangenheit ist für andere sichtbar und blendet die betroffenen Slots für diesen Bewerber aus.
     - Abnahme B: Auf `-test` läuft ein Durchlauf von der Verfügbarkeit bis zur Buchung mit Kalendereinladung.
+  - Festlegungen (Fynn, 29.09.2026): Seiten nach Variante A der Vorschau (ruhige Liste, Filter als drei Auswahlfelder, Bewerbung als lange Seite, Übersicht mit vier Zahlen). `/bewerbungen` für alle Mitglieder. Bei der Admin-Löschung bekommt der Bewerber keine Mail, nur die Gesprächsführer die Absage. Befangenheit nach der Buchung löst nichts automatisch aus, Admins sehen den Hinweis und teilen um. „Fehlendes Feedback“ in der Übersicht kommt mit Phase 14.
+  - Belegt am 29.09.2026: Commit `b73c0bf`, live, keine Migration. Vitest `src/lib/applicant-filter.test.ts` (8: Suche in Antworten, Name, Mail, mehrere Wörter, Umlaute; Filter), `src/lib/round-phase.test.ts` (3), `src/lib/applicant-team.test.ts` gegen `-test` (8: Suche findet Antworttext, PDF-Link öffnet und abgelaufener nicht, Befangenheit für andere sichtbar und Termin mit festem Paar nicht mehr angeboten, Hinweis in der Übersicht, Status nur Admin, Mitglied darf nicht löschen, Admin-Löschung entfernt Zeile, Antworten und beide PDFs, gibt den Termin frei und sagt beiden Gesprächsführern ab); `npm test` 539 grün, 3 übersprungen (Probeversände), Build und Lint fehlerfrei. Von Hand live auf `-prod` am Handy (Fynn, Screenshots 08:52–08:54): Suche „Kaktus“ mit markiertem Antworttext, PDF geöffnet, „nicht erschienen“ in der Liste, Übersicht „Vor Beginn“, Löschen; danach per Abfrage 0 Bewerbungen, 0 Dateien. **Abnahme B** lokal gegen `-test` (Screenshots 09:02–09:10): Ort 0.23, Verfügbarkeit Gmail-Konto (Uni-Konto von Claude eingetragen, weil localhost-Links die Uni nicht erreichen), 2 Termine erzeugt, Bewerbung über `/bewerben`, Buchung 01.10. 10:00 mit Paar, Bestätigung an den Bewerber, Einladung an Gmail und im Outlook-Kalender (Posteingang, nicht Junk); „Ich bin befangen“ mit Hinweis auf der Bewerbung und in der Übersicht; Löschen mit Absage in Gmail („Aus Google Kalender entfernt“) und Outlook („Aus dem Kalender entfernen“); per Abfrage 0 Bewerbungen, 0 Dateien, Termin frei mit `ics_sequence` 2.
 
 ---
 
