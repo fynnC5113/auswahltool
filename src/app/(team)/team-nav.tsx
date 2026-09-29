@@ -16,7 +16,7 @@ type Item = { href: string; label: string; adminOnly?: boolean; tab?: Icon };
 const ITEMS: Item[] = [
   { href: "/", label: "Übersicht", tab: "home" },
   { href: "/verfuegbarkeit", label: "Verfügbarkeit", tab: "calendar" },
-  { href: "/bewerbungen", label: "Bewerbungen", adminOnly: true, tab: "list" },
+  { href: "/bewerbungen", label: "Bewerbungen", tab: "list" },
   { href: "/terminplanung", label: "Terminplanung", adminOnly: true },
   { href: "/einstellungen/erfassen", label: "Erfassen", adminOnly: true },
   { href: "/einstellungen/runde", label: "Runde", adminOnly: true },

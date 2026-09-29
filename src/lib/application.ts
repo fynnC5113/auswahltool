@@ -466,8 +466,22 @@ export async function withdrawApplication(
 ): Promise<boolean> {
   const applicant = await findApplicant(db, token);
   if (!applicant) return false;
+  await deleteApplicant(db, { id: applicant.id, roundId: applicant.round.id, cvPath: applicant.cvPath }, send);
+  return true;
+}
+
+/**
+ * The deletion itself, shared by the withdrawal (secret-key client) and the
+ * admin's "Bewerbung löschen" (admin session, RLS decides; Phase 13): free and
+ * cancel the slot, remove every file <round_id>/<applicant_id>*, then the row.
+ */
+export async function deleteApplicant(
+  db: SupabaseClient,
+  applicant: { id: string; roundId: string; cvPath: string | null },
+  send: typeof sendMail = sendMail,
+): Promise<void> {
   await releaseForWithdrawal(db, applicant.id, send);
-  const folder = applicant.round.id;
+  const folder = applicant.roundId;
 
   const { data: files, error } = await db.storage.from(BUCKET).list(folder, { search: applicant.id, limit: 1000 });
   if (error) throw new Error(error.message);
@@ -477,56 +491,4 @@ export async function withdrawApplication(
 
   const del = await db.from("applicants").delete().eq("id", applicant.id);
   if (del.error) throw new Error(del.error.message);
-  return true;
-}
-
-// ---------------------------------------------------------------------------
-// Admin list (/bewerbungen), with the member's session
-// ---------------------------------------------------------------------------
-
-export interface ApplicationListItem {
-  id: string;
-  name: string;
-  email: string;
-  cohort: string;
-  source: Source;
-  hasCv: boolean;
-  departments: string[];
-  departmentUnsure: boolean;
-  createdAt: string;
-}
-
-export async function listApplications(session: SupabaseClient, roundId: string): Promise<ApplicationListItem[]> {
-  const { data, error } = await session
-    .from("applicants")
-    .select("id, name, email, cohort, source, cv_path, department_unsure, created_at, applicant_departments (departments (name, position))")
-    .eq("round_id", roundId)
-    .order("created_at", { ascending: true });
-  if (error) throw new Error(error.message);
-  type Row = {
-    id: string;
-    name: string;
-    email: string;
-    cohort: string;
-    source: Source;
-    cv_path: string | null;
-    department_unsure: boolean;
-    created_at: string;
-    applicant_departments: { departments: { name: string; position: number } | null }[];
-  };
-  return ((data ?? []) as unknown as Row[]).map((r) => ({
-    id: r.id,
-    name: r.name,
-    email: r.email,
-    cohort: r.cohort,
-    source: r.source,
-    hasCv: !!r.cv_path,
-    departments: r.applicant_departments
-      .map((d) => d.departments)
-      .filter((d): d is { name: string; position: number } => !!d)
-      .sort(byPosition)
-      .map((d) => d.name),
-    departmentUnsure: r.department_unsure,
-    createdAt: r.created_at,
-  }));
 }
