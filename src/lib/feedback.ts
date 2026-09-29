@@ -371,7 +371,7 @@ export async function liftSightLock(session: SupabaseClient, applicantId: string
   return data.length ? { ok: true } : { error: "Diese Bewerbung gibt es nicht mehr. Bitte Seite neu laden." };
 }
 
-/** "Auswahlrunde starten": the sight lock ends for everyone. Once; cannot be undone. */
+/** "Auswahlrunde starten": the sight lock ends for everyone (undo: stopSelection). */
 export async function startSelection(session: SupabaseClient, roundId: string): Promise<AdminResult> {
   const { member } = await getMember(session);
   if (member?.role !== "admin") return NOT_ALLOWED;
@@ -383,4 +383,23 @@ export async function startSelection(session: SupabaseClient, roundId: string): 
     .select("id");
   if (error) throw new Error(error.message);
   return data.length ? { ok: true } : { error: "Die Auswahlrunde läuft schon." };
+}
+
+/**
+ * "Auswahlrunde zurücknehmen" (Fynn, 29.09.2026: for a start by mistake):
+ * the sight lock applies again; locks lifted one by one stay lifted. Only
+ * while the board is not frozen.
+ */
+export async function stopSelection(session: SupabaseClient, roundId: string): Promise<AdminResult> {
+  const { member } = await getMember(session);
+  if (member?.role !== "admin") return NOT_ALLOWED;
+  const { data, error } = await session
+    .from("rounds")
+    .update({ selection_started_at: null })
+    .eq("id", roundId)
+    .not("selection_started_at", "is", null)
+    .is("board_frozen_at", null)
+    .select("id");
+  if (error) throw new Error(error.message);
+  return data.length ? { ok: true } : { error: "Die Auswahlrunde läuft nicht, oder das Board ist schon eingefroren." };
 }

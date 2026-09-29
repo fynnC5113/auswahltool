@@ -3,7 +3,7 @@
 // Admin actions around feedback (Phase 14), used on the overview and on
 // /bewerbungen/[id]. The member's session, RLS decides (src/lib/feedback.ts).
 import { revalidatePath } from "next/cache";
-import { liftSightLock, startSelection, type AdminResult } from "@/lib/feedback";
+import { liftSightLock, startSelection, stopSelection, type AdminResult } from "@/lib/feedback";
 import { createClient } from "@/lib/supabase/server";
 
 type State = { error: string };
@@ -23,4 +23,8 @@ export async function liftSightLockAction(_prev: State, formData: FormData): Pro
 
 export async function startSelectionAction(_prev: State, formData: FormData): Promise<State> {
   return toState(await startSelection(await createClient(), String(formData.get("roundId") ?? "")));
+}
+
+export async function stopSelectionAction(_prev: State, formData: FormData): Promise<State> {
+  return toState(await stopSelection(await createClient(), String(formData.get("roundId") ?? "")));
 }

@@ -13,6 +13,7 @@ import {
   loadMyInterviews,
   saveFeedback,
   startSelection,
+  stopSelection,
 } from "./feedback";
 import { OVERALL, type FeedbackInput } from "./feedback-rules";
 
@@ -241,12 +242,23 @@ describe("selection round and freeze", () => {
     expect(await visibleAuthors(as.b, people.P2)).toEqual([ids.b]);
   });
 
+  it("taking the selection round back (admin only) locks again; lifted locks stay lifted", async () => {
+    expect(await stopSelection(as.a, roundId)).toEqual({ error: "Das dürfen nur Admins." });
+    expect(await stopSelection(as.admin, roundId)).toEqual({ ok: true });
+    expect(await visibleAuthors(as.a, people.P3)).toEqual([]);
+    // P2 was lifted one by one.
+    expect(await visibleAuthors(as.a, people.P2)).toContain(ids.b);
+    expect(await stopSelection(as.admin, roundId)).toMatchObject({ error: expect.stringContaining("läuft nicht") });
+    expect(await startSelection(as.admin, roundId)).toEqual({ ok: true });
+  });
+
   it("no changes after the board is frozen", async () => {
     await admin.from("rounds").update({ board_frozen_at: new Date().toISOString() }).eq("id", roundId);
     expect(await saveFeedback(as.a, people.P1, complete("a4"), false)).toEqual({
       error: "Das Board ist eingefroren. Feedback lässt sich nicht mehr ändern.",
     });
     expect((await loadFeedbackForm(as.a, slots.P1))?.frozen).toBe(true);
+    expect(await stopSelection(as.admin, roundId)).toMatchObject({ error: expect.stringContaining("eingefroren") });
   });
 });
 

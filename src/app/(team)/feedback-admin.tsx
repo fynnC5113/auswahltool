@@ -1,10 +1,10 @@
 "use client";
 
 // Admin buttons around feedback (Phase 14): "Sperre aufheben" and
-// "Auswahlrunde starten" with a confirmation.
+// "Auswahlrunde starten" and "Auswahlrunde zurücknehmen", each with a confirmation.
 import { useActionState, useRef } from "react";
-import { button, dialog as dialogClass, dialogBody, fieldError, lead, secondaryButton, sectionTitle, smallButton } from "../ui";
-import { liftSightLockAction, startSelectionAction } from "./feedback-actions";
+import { button, dialog as dialogClass, dialogBody, fieldError, lead, secondaryButton, sectionTitle, smallButton, textButton } from "../ui";
+import { liftSightLockAction, startSelectionAction, stopSelectionAction } from "./feedback-actions";
 
 type State = { error: string };
 const empty: State = { error: "" };
@@ -48,11 +48,44 @@ export function StartSelectionButton({ roundId, missing }: { roundId: string; mi
               </>
             )}
             Nach dem Start sieht jedes Mitglied alle abgegebenen Feedbacks, auch wo der Partner noch nicht abgegeben hat.
-            Das lässt sich nicht rückgängig machen.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <button disabled={pending} className={button}>
               {pending ? "Starte …" : "Auswahlrunde starten"}
+            </button>
+            <button type="button" onClick={() => dialog.current?.close()} className={secondaryButton}>
+              Abbrechen
+            </button>
+          </div>
+          {state.error && <p className={fieldError}>{state.error}</p>}
+        </form>
+      </dialog>
+    </>
+  );
+}
+
+export function StopSelectionButton({ roundId }: { roundId: string }) {
+  const [state, action, pending] = useActionState(stopSelectionAction, empty);
+  const dialog = useRef<HTMLDialogElement>(null);
+  return (
+    <>
+      <div>
+        <button type="button" onClick={() => dialog.current?.showModal()} className={textButton}>
+          Auswahlrunde zurücknehmen
+        </button>
+      </div>
+      {state.error && <p className={fieldError}>{state.error}</p>}
+      <dialog ref={dialog} aria-label="Auswahlrunde zurücknehmen" className={dialogClass}>
+        <form action={action} className={dialogBody}>
+          <input type="hidden" name="roundId" value={roundId} />
+          <h2 className={sectionTitle}>Auswahlrunde zurücknehmen?</h2>
+          <p className={lead}>
+            Die Sichtsperre gilt dann wieder. Wer in der Zwischenzeit Feedback gesehen hat, hat es gesehen. Einzeln
+            aufgehobene Sperren bleiben aufgehoben.
+          </p>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button disabled={pending} className={button}>
+              {pending ? "Nehme zurück …" : "Auswahlrunde zurücknehmen"}
             </button>
             <button type="button" onClick={() => dialog.current?.close()} className={secondaryButton}>
               Abbrechen

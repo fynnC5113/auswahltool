@@ -1,6 +1,6 @@
 // Overview (Phase 13, variant A, Fynn 29.09.2026): where the round stands,
 // five numbers, and hints for admins. Phase 14: missing feedback with
-// "Sperre aufheben" and "Auswahlrunde starten" for admins.
+// "Sperre aufheben" and "Auswahlrunde starten"/"zurücknehmen" for admins.
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { getMember } from "@/lib/auth/member";
@@ -9,7 +9,7 @@ import { loadOverview } from "@/lib/overview";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "../brand";
 import { lead, link, listGroup, listRow, okText, section, sectionTitle, teamPage } from "../ui";
-import { LiftButton, StartSelectionButton } from "./feedback-admin";
+import { LiftButton, StartSelectionButton, StopSelectionButton } from "./feedback-admin";
 
 const when = new Intl.DateTimeFormat("de-DE", {
   weekday: "short",
@@ -130,15 +130,26 @@ export default async function OverviewPage() {
             </section>
           )}
 
-          {isAdmin && !overview.selectionStarted && (
+          {isAdmin && !overview.boardFrozen && (
             <section className={section}>
               <h2 className={sectionTitle}>Auswahlrunde</h2>
-              <p className={lead}>
-                Mit dem Start sieht jedes Mitglied jedes abgegebene Feedback. Das lässt sich nicht rückgängig machen.
-              </p>
-              <div className="pt-1">
-                <StartSelectionButton roundId={overview.roundId} missing={feedback?.count ?? 0} />
-              </div>
+              {overview.selectionStarted ? (
+                <>
+                  <p className={lead}>
+                    Die Sichtsperre ist für alle aufgehoben. Aus Versehen gestartet? Dann gilt sie nach dem Zurücknehmen wieder.
+                  </p>
+                  <div className="pt-1">
+                    <StopSelectionButton roundId={overview.roundId} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className={lead}>Mit dem Start sieht jedes Mitglied jedes abgegebene Feedback.</p>
+                  <div className="pt-1">
+                    <StartSelectionButton roundId={overview.roundId} missing={feedback?.count ?? 0} />
+                  </div>
+                </>
+              )}
             </section>
           )}
         </>
