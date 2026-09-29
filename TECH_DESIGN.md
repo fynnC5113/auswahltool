@@ -169,7 +169,7 @@ Zusatzregel in der Datenbank: Zwei Slots am selben Ort dürfen sich zeitlich nic
 | :---- | :---- | :---- |
 | round_id, applicant_id | uuid | ein Eintrag pro Bewerber |
 | zone | `pool` \| `seat` \| `also` \| `reject` | |
-| position | int | nur bei `seat` (1…N) und `also` (Reihenfolge) von Bedeutung |
+| position | int | nur bei `seat` (1…N) und `also` (Reihenfolge) von Bedeutung. `seat` = feste Kästen: ein Platz bleibt leer, wenn seine Karte geht, andere behalten ihre Nummer (Fynn, 29.09.2026). `also` = lückenlose Liste. |
 | updated_at, updated_by | | |
 
 **board_events**: der Verlauf, nur Anfügen

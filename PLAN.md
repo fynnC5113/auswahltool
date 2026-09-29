@@ -248,14 +248,16 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
 
 ## Etappe D: Draft Board bis ca. 01.11.
 
-- [ ] **Phase 15: Rechenregeln**
-  - Ergebnis: Reine Funktionen für:
+- [x] **Phase 15: Rechenregeln**
+  - Festlegungen (Fynn, 29.09.2026): **Plätze sind feste Kästen 1–N** (wie das analoge Board 2025: alle Plätze sichtbar, ein frei gewordener Platz bleibt leer, andere Karten behalten ihre Nummer). Ablegen auf einem belegten Platz wird mit Hinweis abgelehnt (auch wenn alle voll sind), es wird nie getauscht. Der Admin kann N während der Auswahl mit Plus/Minus ändern; Minus nimmt nur den letzten Platz weg und nur, wenn er leer ist, sonst Hinweis. Rückgängig wird mit Hinweis abgelehnt, wenn die Karte seitdem bewegt wurde (auch innerhalb von „Auch gern“) oder ihr alter Platz belegt bzw. weggefallen ist. „Auch gern“ bleibt eine lückenlose Liste. Kurzbewertung nur aus abgegebenem Feedback, eine Nachkommastelle. Menü: Admin-Seiten kommen unter einen Eintrag „Einstellungen“, Terminplanung vermutlich nicht; was genau hinein soll, zu Beginn von Phase 16 besprechen.
+  - Ergebnis: Reine Funktionen (`src/lib/board-rules.ts`) für:
     - die Kurzbewertung (gewichtet, auf eine Skala umgerechnet)
     - die Zusammensetzungsleiste
     - die Board-Verschiebung mit Neunummerierung der Positionen
     - Rückgängig
   - Prüfung:
     - Vitest-Fälle laufen grün, darunter Kriterien mit unterschiedlicher Skala, fehlendes Feedback ergibt „–“, und ein Rückgängig stellt genau den vorherigen Zustand her.
+  - Belegt am 29.09.2026: Vitest `src/lib/board-rules.test.ts` 30/30 (unterschiedliche Skalen, Entwürfe zählen nicht, ohne abgegebenes Feedback „–“, Rückgängig stellt für neun Arten von Verschiebung genau den vorherigen Zustand her, Rückgängig vom Rückgängig, belegter/weggefallener Platz, seitdem bewegt, Plus/Minus, Leiste nach Jahrgang und Ressort inkl. „weiß noch nicht“ und „keine Angabe“). `npm test` 593 grün, 3 übersprungen. Lint und `tsc` fehlerfrei.
 
 - [ ] **Phase 16: Draft Board für einen Nutzer**
   - Ergebnis: `/board` mit
@@ -263,7 +265,9 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
     - Karten mit Name, Jahrgang, Ressort und Kurzbewertung
     - Detail-Seitenleiste: Feedback oben, Antworten und PDF darunter
     - Zusammensetzungsleiste
+    - Plus/Minus für die Zahl der Plätze (Admin, Regel `changeSeats`; ob die Änderung im Verlauf erscheint, in Phase 16 klären)
     - Ansicht für den Beamer
+    - Menüeintrag „Board“, Admin-Seiten unter „Einstellungen“ (Inhalt mit Fynn klären)
   - Prüfung: Mit 15 Testbewerbern auf N = 10 Plätzen:
     - Karten lassen sich in alle Zonen verschieben.
     - Die Reihenfolge von „Auch gern“ bleibt nach dem Neuladen erhalten.
