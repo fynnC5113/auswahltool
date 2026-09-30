@@ -22,6 +22,15 @@
   --c-ok: #2f6b4f;
   --c-ok-soft: #e3f1ea;
   --c-bar: rgba(246, 247, 250, 0.86);
+  /* Departments on the board (Phase 16): a dot, always next to the name. */
+  --c-dept-0: #2f7d7a;
+  --c-dept-1: #a8701a;
+  --c-dept-2: #6d5bb0;
+  --c-dept-3: #b0566f;
+  --c-dept-4: #5f7d2f;
+  --c-dept-5: #3f6fb0;
+  --c-dept-6: #8a5a3c;
+  --c-dept-7: #4f6470;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -42,6 +51,14 @@
     --c-ok: #7fcfa6;
     --c-ok-soft: #16271f;
     --c-bar: rgba(18, 21, 27, 0.86);
+    --c-dept-0: #6cc3bf;
+    --c-dept-1: #e0b25e;
+    --c-dept-2: #a996e6;
+    --c-dept-3: #e58fa6;
+    --c-dept-4: #a6c46a;
+    --c-dept-5: #8fb3ea;
+    --c-dept-6: #d2a07e;
+    --c-dept-7: #9fb0bb;
   }
 }
 

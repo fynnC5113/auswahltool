@@ -14,7 +14,7 @@ function validForm(): RoundForm {
     interviewsUntil: "2026-10-30",
     deletionDate: "2027-01-31",
     questions: [{ key: "q", id: null, text: " Warum? " }],
-    departments: [{ key: "d", id: null, name: "Finanzen", description: "" }],
+    departments: [{ key: "d", id: null, name: "Finanzen", shortName: "", description: "" }],
     criteria: [{ ...newCriterion("c"), name: "Motivation", weight: "1,5" }],
   };
 }
@@ -82,7 +82,7 @@ describe("validateRound", () => {
   it("rejects empty names and texts, with the error at the right item", () => {
     const form = validForm();
     form.questions.push({ key: "q2", id: null, text: "   " });
-    form.departments.unshift({ key: "d0", id: null, name: "", description: "x" });
+    form.departments.unshift({ key: "d0", id: null, name: "", shortName: "", description: "x" });
     form.criteria[0].name = "";
     expect(errorsOf(form)).toEqual({
       "questions.1.text": "Bitte einen Fragetext eingeben.",

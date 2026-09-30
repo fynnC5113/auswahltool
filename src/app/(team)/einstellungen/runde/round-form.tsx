@@ -287,6 +287,9 @@ export function RoundEditor({ initial }: { initial: RoundForm }) {
             <Field label="Name" error={errors[`departments.${i}.name`]}>
               <input {...itemText("departments", i, "name")} />
             </Field>
+            <Field label="Kurzname fürs Board" note="Zum Beispiel „ÖA“. Leer = voller Name." error={errors[`departments.${i}.shortName`]}>
+              <input {...itemText("departments", i, "shortName")} />
+            </Field>
             <Field label="Beschreibung (ein Satz)">
               <input {...itemText("departments", i, "description")} />
             </Field>
@@ -297,7 +300,7 @@ export function RoundEditor({ initial }: { initial: RoundForm }) {
           type="button"
           className={`${secondaryButton} self-start`}
           onClick={() =>
-            changeList("departments", [...form.departments, { key: crypto.randomUUID(), id: null, name: "", description: "" }])
+            changeList("departments", [...form.departments, { key: crypto.randomUUID(), id: null, name: "", shortName: "", description: "" }])
           }
         >
           + Ressort hinzufügen

@@ -26,7 +26,7 @@ type Row = {
   privacy_notice: string;
   required_answers: number | null;
   questions: { id: string; position: number; text: string }[];
-  departments: { id: string; position: number; name: string; description: string }[];
+  departments: { id: string; position: number; name: string; short_name: string; description: string }[];
   criteria: {
     id: string;
     position: number;
@@ -49,7 +49,7 @@ export async function loadRound(session: SupabaseClient, roundId?: string): Prom
        application_opens_at, application_closes_at, interviews_from, interviews_until,
        deletion_date, mail_transport, reply_to, privacy_notice, required_answers,
        questions (id, position, text),
-       departments (id, position, name, description),
+       departments (id, position, name, short_name, description),
        criteria (id, position, name, description, weight, scale_min, scale_max)`,
     );
   if (roundId) query = query.eq("id", roundId);
@@ -77,7 +77,7 @@ export async function loadRound(session: SupabaseClient, roundId?: string): Prom
     questions: [...data.questions].sort(byPosition).map((q) => ({ key: q.id, id: q.id, text: q.text })),
     departments: [...data.departments]
       .sort(byPosition)
-      .map((d) => ({ key: d.id, id: d.id, name: d.name, description: d.description })),
+      .map((d) => ({ key: d.id, id: d.id, name: d.name, shortName: d.short_name, description: d.description })),
     criteria: [...data.criteria].sort(byPosition).map((c) => ({
       key: c.id,
       id: c.id,
@@ -105,6 +105,9 @@ export async function saveRound(session: SupabaseClient, raw: unknown): Promise<
       errors: { form: "Nichts gespeichert: Einträge mit vorhandenen Daten lassen sich nicht entfernen." },
       inUse: (error.details ?? "").split(",").filter(Boolean),
     };
+  }
+  if (error.hint === "seat_taken") {
+    return { errors: { seats: `Auf dem Board liegt eine Karte auf Platz ${error.details}. Erst verschieben, dann weniger Plätze eintragen.` } };
   }
   if (error.hint === "scale_in_use") {
     const index = form.criteria.findIndex((c) => c.id === error.details);

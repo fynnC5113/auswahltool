@@ -113,7 +113,7 @@ Alle Tabellen hängen über `round_id` an `rounds`, mit `on delete cascade`. Lö
 | deletion_reminder_sent_at | timestamptz, null | |
 
 **questions**: `round_id`, `position`, `text`
-**departments**: `round_id`, `position`, `name`, `description`
+**departments**: `round_id`, `position`, `name`, `description`, `short_name` (Kurzname fürs Board, z. B. „ÖA“; leer = voller Name; Phase 16)
 **criteria**: `round_id`, `position`, `name`, `description`, `weight` (numeric > 0), `scale_min`, `scale_max`
 
 **applicants**
@@ -170,15 +170,20 @@ Zusatzregel in der Datenbank: Zwei Slots am selben Ort dürfen sich zeitlich nic
 | Feld | Typ | Bedeutung |
 | :---- | :---- | :---- |
 | round_id, applicant_id | uuid | ein Eintrag pro Bewerber |
-| zone | `pool` \| `seat` \| `also` \| `reject` | |
-| position | int | nur bei `seat` (1…N) und `also` (Reihenfolge) von Bedeutung. `seat` = feste Kästen: ein Platz bleibt leer, wenn seine Karte geht, andere behalten ihre Nummer (Fynn, 29.09.2026). `also` = lückenlose Liste. |
+| zone | `pool` \| `seat` \| `reject` | „Auch gern“ entfällt (Fynn, 30.09.2026): Was am Ende im Pool liegt, ist in dieser Reihenfolge die Nachrückerliste. |
+| position | int | `seat` = feste Kästen 1…N: ein Platz bleibt leer, wenn seine Karte geht, andere behalten ihre Nummer (Fynn, 29.09.2026); eindeutig je Runde (Index `board_positions_seat`). `pool` = lückenlose Reihenfolge 1…n, sobald jemand eine Karte in oder innerhalb des Pools verschiebt; vorher ohne Position (Anzeige dann nach Kurzbewertung, beste zuerst, dann Name). `reject` = keine Position. |
 | updated_at, updated_by | | |
+
+**board_departments** (Phase 16): vom Team zugeteilte Ressorts einer Karte auf einem Platz, höchstens zwei (Fynn, 30.09.2026). `round_id`, `applicant_id`, `department_id`. Unabhängig vom Wunsch aus der Bewerbung, nie vorbelegt. Bleibt gespeichert, wenn die Karte den Platz verlässt, zählt aber nur auf einem Platz.
 
 **board_events**: der Verlauf, nur Anfügen
 | Feld | Typ |
 | :---- | :---- |
-| round_id, applicant_id, actor_id | uuid |
-| from_zone, from_position, to_zone, to_position | |
+| kind | `move` \| `seats` \| `departments` |
+| round_id, applicant_id (null bei `seats`), actor_id | uuid |
+| from_zone, from_position, to_zone, to_position | bei `move` |
+| from_seats, to_seats | bei `seats` (Plus/Minus, erscheint im Verlauf; Fynn, 30.09.2026) |
+| from_department_ids, to_department_ids | uuid[], bei `departments` |
 | created_at | timestamptz |
 | undoes_event_id | uuid, null. Rückgängig ist ein neuer Eintrag, der den alten umkehrt. |
 
@@ -186,7 +191,7 @@ Zusatzregel in der Datenbank: Zwei Slots am selben Ort dürfen sich zeitlich nic
 
 - **Kurzbewertung** = Σ(score × weight) / Σ(weight) über alle abgegebenen Werte beider Gesprächsführer. Damit sie über Kriterien mit unterschiedlicher Skala vergleichbar ist, wird jede Skala vorher auf 0 bis 1 umgerechnet. Angezeigt wird auf der Skala des ersten Kriteriums. Fehlt Feedback ganz, steht „–“ auf der Karte.
 - **Kapazität**: Bewerbungen ohne Termin (= Bewerbungen minus gebuchte Slots), freie Slots und davon derzeit buchbare (Paar festgelegt oder noch eines zu finden).
-- **Zusammensetzungsleiste** = Anzahl in der Zone `seat`, gruppiert nach `cohort` und nach Wunsch-Ressort.
+- **Zusammensetzungsleiste** = Anzahl in der Zone `seat`, gruppiert nach `cohort` und nach den auf dem Board zugeteilten Ressorts (`board_departments`; zwei Ressorts zählen in beiden, dazu „ohne Ressort“). Der Wunsch aus der Bewerbung zählt nicht (Fynn, 30.09.2026).
 
 ## 5. Zugriffsregeln (RLS)
 
@@ -203,7 +208,7 @@ Hilfsfunktionen in der Datenbank:
 | locations, blocked_times, slots | Mitglied | Admin. Die Buchung macht der Server. |
 | conflicts | Mitglied | nur die eigene Markierung |
 | feedback, feedback_scores | Mitglied, **außer bei der Sichtsperre** (unten) | nur das eigene, nur als Gesprächsführer des gebuchten Termins ab Gesprächsbeginn, und nur solange das Board nicht eingefroren ist. Seit Phase 14 **nur über `public.save_feedback`** (security definer, prüft das alles gegen `auth.uid()`; beim Abgeben und danach: jede Skala, jede Begründung, Gesamteindruck). Direkte Schreibrechte sind entzogen. `public.feedback_progress(round_id)` liefert Mitgliedern nur „abgegeben/Entwurf“ ohne Inhalt für „Feedback fehlt“. |
-| board_positions, board_events | Mitglied | Mitglied, solange nicht eingefroren. Einfrieren darf nur der Admin. |
+| board_positions, board_events, board_departments | Mitglied | Seit Phase 16 **nur über `public.move_card`, `public.set_seats` (nur Admin) und `public.set_board_departments`** (security definer): Mitglied, Auswahlrunde gestartet (`private.board_active`), nicht eingefroren; Sperre je Runde, Regeln erneut geprüft. Direkte Schreibrechte sind entzogen. Einfrieren darf nur der Admin. |
 | round_stats | Mitglied | nur der Zeitplan-Job |
 
 **Sichtsperre**, als Regel für das Lesen von `feedback`: Ein Mitglied darf den Feedback-Eintrag eines anderen zu Bewerber X lesen, wenn eine der folgenden Bedingungen zutrifft:
@@ -276,7 +281,8 @@ Nachgelesen am 29.09.2026 (Microsoft Learn): Für den Scope-Filter rät Microsof
 Mails an Bewerber und Team enthalten keine Lebensläufe und keine Bewertungen, nur Namen, Termine und Links.
 
 ### 6.6 Board live
-- Eine Verschiebung speichert in einem Schritt (Transaktion) die neue Position, gleicht die Positionen der betroffenen Zonen an und schreibt einen Eintrag in `board_events`.
+- Eine Verschiebung speichert in einem Schritt (Transaktion) die neue Position, gleicht die Positionen der betroffenen Zonen an und schreibt einen Eintrag in `board_events` (`public.move_card`, Phase 16). Der Aufrufer schickt den Pool in der Reihenfolge mit, die er sieht; weicht er vom gespeicherten ab, lehnt die Datenbank mit „Seite neu laden“ ab (Hinweis `stale`, Fehlercode P0001: Den Code 40001 wiederholt PostgREST bei Supabase so lange, bis das Gateway nach etwa 125 s abbricht, gemessen am 30.09.2026).
+- Das Board öffnet erst mit „Auswahlrunde starten“; vorher wären die Kurzbewertungen wegen der Sichtsperre für jeden anders (Fynn, 30.09.2026).
 - Alle offenen Boards hören über Supabase Realtime auf Änderungen. Laut Doku liefert Realtime nur Zeilen aus, die der Empfänger nach RLS lesen darf. Die Doku empfiehlt für mehr Leistung „Broadcast“ statt direkter Tabellenänderungen. Welche Variante es wird, entscheidet die Phase „Board“. Bei 20 Geräten reicht vermutlich beides, geprüft ist das nicht.
 - Die letzte Bewegung gilt. Jede Bewegung wird kurz eingeblendet („Anna → Platz 3: Max M.“).
 - Rückgängig macht die Bewegung eines Verlaufseintrags umgekehrt und schreibt dafür einen neuen Eintrag.

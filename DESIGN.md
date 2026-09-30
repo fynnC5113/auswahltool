@@ -29,7 +29,8 @@ Alle Farben sind benannte Werte in `src/app/globals.css` (je einmal hell, einmal
 
 Regeln:
 - **Eine** Akzentfarbe. Marineblau heißt „hier kann ich etwas tun“.
-- Weinrot nur für Fehler und endgültige Aktionen. Nie als Schmuck, nie für Überschriften.
+- Weinrot nur für Fehler und endgültige Aktionen. Nie als Schmuck, nie für Überschriften. **Ausnahme Board** (Fynn, 30.09.2026): Die Zone „Nicht aufnehmen“ liegt auf `danger-soft`, die Plätze auf `ok-soft`, der Pool auf `field`.
+- **Ressortfarben** (nur Board, Phase 16): `--c-dept-0` bis `--c-dept-7` in `globals.css` (hell und dunkel), nach der Reihenfolge der Ressorts in der Runde. Nur als Punkt von 8 px, immer mit dem Namen daneben, nie als Fläche.
 - Status braucht immer auch Text oder Form, nie nur Farbe.
 
 ## 2. Schrift
@@ -100,6 +101,7 @@ Alle Bausteine liegen zentral (`src/app/ui.ts` bzw. kleine Komponenten daneben).
 - **Menü Team:**
   - Unter 1024 px unten, `bar`, Symbol + Beschriftung (11 px), aktiv in `accent`.
   - Ab 1024 px oben: Bildmarke + „Orga-Team“, Einträge in Erklärung, aktiv mit `field`-Grund, rechts Name und „Abmelden“.
+- **Board** (Phase 16, Vorschau „Board-Vorschau Phase 16“, Fassung 3): Laptop drei Spalten (Pool 280 px, Plätze, „Nicht aufnehmen“ 240 px), Seite bis 1600 px breit und so hoch wie das Fenster, jede Zone scrollt für sich. Karte: `surface`, Rundung Feld, feine Kontur; Name (Erklärung, 600), rechts Kurzbewertung (`muted`, `tabular-nums`), darunter Jahrgang · Wunsch (Klein, `muted`); auf einem Platz Nummer oben rechts, „Ressort wählen ▾“ bzw. die Ressorte mit Punkt unten links, Kurzbewertung unten rechts. Freier Platz: gestrichelte Kontur `line`, „frei“. Leiste oben als Textzeile (Klein, Zahlen `fg`). Details rechts als Leiste (440 px), am Handy ganzseitig. Handy: Zonen untereinander, Sprungknöpfe oben, Antippen öffnet das Blatt „Verschieben“. Beamer-Modus: ohne Menü, Namen Abschnitt, Rest Erklärung/Text, Plätze in drei Spalten. Hinweise nach einer Aktion als Zeile unten (Fehler `danger`).
 - **Raster Verfügbarkeit:** Feld frei = `field`, gewählt = `accent`, in einer Sperrzeit schräg schraffiert (`line`) mit dem Grund in `muted`, bleibt antippbar. Volle Stunden mit Trennlinie `line`.
 - **Leerer Zustand:** ein Satz, was fehlt, und die Aktion, die es ändert („Noch keine Termine. Alle möglichen Termine erzeugen“).
 - **Fokus:** 2 px Kontur in `accent`, 2 px Abstand, bei allem, was man bedienen kann.

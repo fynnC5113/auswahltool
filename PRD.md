@@ -118,25 +118,27 @@ Pro Jahr gibt es eine Runde. Konfigurierbar sind:
 
 ### 4.6 Auswahlrunde: Draft Board
 
-- **Vier Zonen:**
-  - **Pool**
+- **Drei Zonen** (Fynn, 30.09.2026; „Auch gern“ entfällt):
+  - **Pool:** geordnet; das Team sortiert. Was am Ende dort liegt, ist in dieser Reihenfolge die Nachrückerliste.
   - **Plätze 1 bis N:** gleichwertig, die Nummer bedeutet keine Rangfolge
-  - **„Auch gern“:** geordnete Nachrückerliste, der Erste rückt zuerst nach
   - **„Nicht aufnehmen“**
+- **Ressort zuteilen:** Karten auf einem Platz bekommen vom Team ein oder zwei Ressorts. Der Wunsch aus der Bewerbung bleibt sichtbar, wird aber nicht vorbelegt; die Zuteilung des Teams gilt.
+- Das Board öffnet erst, wenn ein Admin die Auswahlrunde startet.
+- **Beamer-Modus:** dasselbe Board ohne Menü und größer; diskutiert wird am Beamer.
 - Die Karten werden per Drag & Drop verschoben.
 - **Karte:** Name, Jahrgang, Wunsch-Ressort und Kurzbewertung. Die Kurzbewertung ist der **gewichtete Durchschnitt** der Skalenwerte beider Gesprächsführer mit den Gewichten aus der Runde.
 - Wer nicht zum Gespräch erschienen ist, hat einen sichtbaren Status auf der Karte.
 - **Detailansicht per Klick:** oben das Feedback beider Gesprächsführer, darunter die Antworten und der Lebenslauf.
-- **Zusammensetzungsleiste:** zeigt live, wie sich die vergebenen Plätze nach Jahrgang und Wunsch-Ressort verteilen.
+- **Zusammensetzungsleiste:** zeigt live, wie sich die vergebenen Plätze nach Jahrgang und zugeteiltem Ressort verteilen.
 - **Live:** Alle Mitglieder öffnen das Board auf ihrem eigenen Gerät und sehen jede Änderung sofort.
 - **Gemeinsames Verschieben:** Alle Mitglieder können verschieben.
   - Jede Verschiebung wird kurz für alle angezeigt: wer, welche Karte, wohin.
   - Jede Verschiebung landet in einem Verlauf und lässt sich rückgängig machen.
 - **Einfrieren:** Ein Admin friert das Board ein. Erst dann gilt es als Ergebnis, und danach sind keine Verschiebungen mehr möglich.
 - **Ergebnis:** Nach dem Einfrieren zeigt das Tool drei Gruppen mit Namen und Mailadressen:
-  - Zusage (die Plätze)
-  - Nachrücker („Auch gern“ in Reihenfolge)
-  - Absage (alle übrigen)
+  - Zusage (die Plätze, mit zugeteiltem Ressort)
+  - Nachrücker (der Pool in Reihenfolge)
+  - Absage („Nicht aufnehmen“)
 
   Die Mails zu Zu- und Absage schreibt das Team außerhalb des Tools in Outlook.
 
@@ -216,7 +218,7 @@ Keine festgelegt. Neue Ideen werden erst nach der Fertigstellung der drei Stufen
   │     └─ [Feedback]         Kriterien: Skala + Freitext, Gesamtfeld, Abgeben
   ├─ [Terminplanung] Admin    Orte, Sperrzeiten, Slots erzeugen/ändern,
   │                           Kapazitätsanzeige, Bewerber einem Slot zuordnen
-  ├─ [Draft Board]            vier Zonen, Zusammensetzungsleiste, Verlauf
+  ├─ [Draft Board]            drei Zonen, Ressort-Zuteilung, Zusammensetzungsleiste, Verlauf
   │     ├─ [Detail]           Seitenleiste: Feedback oben, Antworten + CV darunter
   │     └─ [Ergebnis]         nach Einfrieren: Zusage / Nachrücker / Absage
   └─ [Einstellungen] Admin

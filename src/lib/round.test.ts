@@ -59,6 +59,7 @@ function testRound(title = `Phase 6 ${randomUUID()}`): RoundForm {
       key: k(),
       id: null,
       name,
+      shortName: name === "Kommunikation" ? "Komm" : "",
       description: `${name} in einem Satz.`,
     })),
     criteria: [

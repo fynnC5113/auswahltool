@@ -265,6 +265,7 @@ beforeAll(async () => {
   f.ownFeedback.anon = f.ownFeedback.member;
 
   ok(await db.from("board_positions").insert({ round_id: f.round, applicant_id: f.applicant }));
+  ok(await db.from("board_departments").insert({ round_id: f.round, applicant_id: f.applicant, department_id: f.department }));
   f.event = ok(
     await db
       .from("board_events")
@@ -455,16 +456,23 @@ describe("feedback, feedback_scores: sight lock read, no direct writes", () => {
   );
 });
 
-describe("board_positions, board_events: members write while open", () => {
+// Phase 16: members read; writes only through move_card, set_seats and
+// set_board_departments (tested in src/lib/board.test.ts).
+describe("board_positions, board_events, board_departments: members read, no direct writes", () => {
   rule("read board_positions", MEMBERS, (c) => canSelect(c, "board_positions", { applicant_id: f.applicant }));
-  rule("move a card", MEMBERS, (c, role) =>
+  rule("move a card directly", NOBODY, (c, role) =>
     canUpdate(c, "board_positions", { zone: "seat", position: 1, updated_by: ownId(role) }, { applicant_id: f.applicant }),
   );
-  rule("place a new card", MEMBERS, async (c) =>
+  rule("place a new card directly", NOBODY, async (c) =>
     canInsert(c, "board_positions", { round_id: f.round, applicant_id: await createApplicant(f.round) }),
   );
+  rule("read board_departments", MEMBERS, (c) => canSelect(c, "board_departments", { applicant_id: f.applicant }));
+  rule("give a department directly", NOBODY, async (c) =>
+    canInsert(c, "board_departments", { round_id: f.round, applicant_id: await createApplicant(f.round), department_id: f.department }),
+  );
+  rule("remove a department directly", NOBODY, (c) => canDelete(c, "board_departments", { applicant_id: f.applicant }));
   rule("read board_events", MEMBERS, (c) => canSelect(c, "board_events", { id: f.event }));
-  rule("append own event", MEMBERS, (c, role) =>
+  rule("append own event directly", NOBODY, (c, role) =>
     canInsert(c, "board_events", {
       round_id: f.round,
       applicant_id: f.applicant,

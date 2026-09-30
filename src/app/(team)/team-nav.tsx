@@ -20,9 +20,9 @@ const ITEMS: Item[] = [
   { href: "/gespraeche", label: "Gespräche", tab: "talk" },
   { href: "/bewerbungen", label: "Bewerbungen", tab: "list" },
   { href: "/terminplanung", label: "Terminplanung", adminOnly: true },
-  { href: "/einstellungen/erfassen", label: "Erfassen", adminOnly: true },
-  { href: "/einstellungen/runde", label: "Runde", adminOnly: true },
-  { href: "/einstellungen/team", label: "Team", adminOnly: true },
+  { href: "/board", label: "Board" },
+  // Runde, Team, Erfassen (Phase 16, Fynn 30.09.2026).
+  { href: "/einstellungen", label: "Einstellungen", adminOnly: true },
 ];
 
 const ICONS: Record<Icon | "more", ReactNode> = {
@@ -77,7 +77,8 @@ export function TeamNav({ role, name }: { role: Role; name: string }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const items = ITEMS.filter((item) => !item.adminOnly || role === "admin");
   const tabs = items.filter((item) => item.tab);
-  const rest = items.filter((item) => !item.tab);
+  // Under "Mehr" the board comes first (Fynn, 30.09.2026).
+  const rest = items.filter((item) => !item.tab).sort((a, b) => Number(b.href === "/board") - Number(a.href === "/board"));
   const restActive = rest.some((item) => isActive(pathname, item.href));
 
   return (

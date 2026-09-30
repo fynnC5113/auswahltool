@@ -7,7 +7,8 @@ export const DEFAULT_REPLY_TO = "termin.lawclinic@law-school.de";
 
 /** key: stable React key (the id for saved items, random for new ones). */
 export type QuestionItem = { key: string; id: string | null; text: string };
-export type DepartmentItem = { key: string; id: string | null; name: string; description: string };
+/** shortName: for the board ("ÖA"); "" = the full name. */
+export type DepartmentItem = { key: string; id: string | null; name: string; shortName: string; description: string };
 export type CriterionItem = {
   key: string;
   id: string | null;
@@ -49,7 +50,7 @@ export type FieldErrors = Record<string, string>;
 export interface SaveRoundArgs {
   p_round: Record<string, string | number | null>;
   p_questions: { id: string | null; text: string }[];
-  p_departments: { id: string | null; name: string; description: string }[];
+  p_departments: { id: string | null; name: string; short_name: string; description: string }[];
   p_criteria: {
     id: string | null;
     name: string;
@@ -129,6 +130,7 @@ export function toRoundForm(raw: unknown): RoundForm {
       key: str(d.key),
       id: idOf(d.id),
       name: str(d.name),
+      shortName: str(d.shortName),
       description: str(d.description),
     })),
     criteria: list(r.criteria).map((c) => ({
@@ -219,7 +221,9 @@ export function validateRound(form: RoundForm): { errors: FieldErrors } | { valu
   const departments = form.departments.map((d, i) => {
     const name = d.name.trim();
     if (!name) errors[`departments.${i}.name`] = "Bitte einen Namen eingeben.";
-    return { id: d.id, name, description: d.description.trim() };
+    const shortName = d.shortName.trim();
+    if (shortName.length > 20) errors[`departments.${i}.shortName`] = "Höchstens 20 Zeichen.";
+    return { id: d.id, name, short_name: shortName, description: d.description.trim() };
   });
 
   const criteria = form.criteria.map((c, i) => {

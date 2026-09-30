@@ -51,7 +51,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
 
 Variante C in Wellen würde 2, 3 und 4 gemeinsam lösen, weil das Tool viele Wünsche auf einmal verteilt.
 
-**Nachbar-Variante (Fynns Idee, 29.09.2026, Ausbau von B):** Bewerber sehen pro Tag und Ort nur freie Termine direkt vor oder nach bereits gebuchten; ohne Buchung einen Startpunkt (frühester Termin oder vom Admin gesetzt). Offen: wie viele Nachbarn sichtbar (Einstellung der Runde?), Ausweg für Bewerber mit festen Zeiten („alle Termine anzeigen“ oder „schreib uns“), Datenbank prüft, dass nur angebotene Termine buchbar sind. Dazu `choosePair`: Nachbartermin bevorzugt mit demselben Paar (Blöcke, Thema 2). Sofortige Buchung bleibt; deutlich kleiner als C. Claudes Empfehlung als Mittelweg. **Stand 30.09.2026:** Fynn bespricht 2–4 im Call mit weiteren Hauptamtlichen; bis zur Entscheidung weiter mit Phase 15, später anpassen. Aus dem Call am 30.09. hat Fynn nur die Wünsche unter „Nachtrag 30.09.“ berichtet, nicht die Entscheidung zu 2–4: zu Beginn der nächsten Session fragen.
+**Nachbar-Variante (Fynns Idee, 29.09.2026, Ausbau von B):** Bewerber sehen pro Tag und Ort nur freie Termine direkt vor oder nach bereits gebuchten; ohne Buchung einen Startpunkt (frühester Termin oder vom Admin gesetzt). Offen: wie viele Nachbarn sichtbar (Einstellung der Runde?), Ausweg für Bewerber mit festen Zeiten („alle Termine anzeigen“ oder „schreib uns“), Datenbank prüft, dass nur angebotene Termine buchbar sind. Dazu `choosePair`: Nachbartermin bevorzugt mit demselben Paar (Blöcke, Thema 2). Sofortige Buchung bleibt; deutlich kleiner als C. Claudes Empfehlung als Mittelweg. **Stand 30.09.2026:** Fynn bespricht 2–4 im Call mit weiteren Hauptamtlichen; bis zur Entscheidung weiter mit Phase 15, später anpassen. **Entschieden (Fynn, 30.09.2026 abends):** Im Call wurde nicht darüber gesprochen; Bian meinte, Fynn solle es nicht von ihr abhängig machen. Die Terminvergabe bleibt, wie sie ist (Phase 11/12).
 
 ---
 
@@ -274,7 +274,7 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
 ## Etappe D: Draft Board bis ca. 01.11.
 
 - [x] **Phase 15: Rechenregeln**
-  - Festlegungen (Fynn, 29.09.2026): **Plätze sind feste Kästen 1–N** (wie das analoge Board 2025: alle Plätze sichtbar, ein frei gewordener Platz bleibt leer, andere Karten behalten ihre Nummer). Ablegen auf einem belegten Platz wird mit Hinweis abgelehnt (auch wenn alle voll sind), es wird nie getauscht. Der Admin kann N während der Auswahl mit Plus/Minus ändern; Minus nimmt nur den letzten Platz weg und nur, wenn er leer ist, sonst Hinweis. Rückgängig wird mit Hinweis abgelehnt, wenn die Karte seitdem bewegt wurde (auch innerhalb von „Auch gern“) oder ihr alter Platz belegt bzw. weggefallen ist. „Auch gern“ bleibt eine lückenlose Liste. Kurzbewertung nur aus abgegebenem Feedback, eine Nachkommastelle. Menü: Admin-Seiten kommen unter einen Eintrag „Einstellungen“, Terminplanung vermutlich nicht; was genau hinein soll, zu Beginn von Phase 16 besprechen.
+  - Festlegungen (Fynn, 29.09.2026): **Plätze sind feste Kästen 1–N** (wie das analoge Board 2025: alle Plätze sichtbar, ein frei gewordener Platz bleibt leer, andere Karten behalten ihre Nummer). Ablegen auf einem belegten Platz wird mit Hinweis abgelehnt (auch wenn alle voll sind), es wird nie getauscht. Der Admin kann N während der Auswahl mit Plus/Minus ändern; Minus nimmt nur den letzten Platz weg und nur, wenn er leer ist, sonst Hinweis. Rückgängig wird mit Hinweis abgelehnt, wenn die Karte seitdem bewegt wurde (auch innerhalb von „Auch gern“) oder ihr alter Platz belegt bzw. weggefallen ist. „Auch gern“ bleibt eine lückenlose Liste (in Phase 16 entfallen, der Pool ist jetzt die geordnete Liste). Kurzbewertung nur aus abgegebenem Feedback, eine Nachkommastelle. Menü: Admin-Seiten kommen unter einen Eintrag „Einstellungen“, Terminplanung vermutlich nicht; was genau hinein soll, zu Beginn von Phase 16 besprechen.
   - Ergebnis: Reine Funktionen (`src/lib/board-rules.ts`) für:
     - die Kurzbewertung (gewichtet, auf eine Skala umgerechnet)
     - die Zusammensetzungsleiste
@@ -284,19 +284,18 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
     - Vitest-Fälle laufen grün, darunter Kriterien mit unterschiedlicher Skala, fehlendes Feedback ergibt „–“, und ein Rückgängig stellt genau den vorherigen Zustand her.
   - Belegt am 29.09.2026: Vitest `src/lib/board-rules.test.ts` 30/30 (unterschiedliche Skalen, Entwürfe zählen nicht, ohne abgegebenes Feedback „–“, Rückgängig stellt für neun Arten von Verschiebung genau den vorherigen Zustand her, Rückgängig vom Rückgängig, belegter/weggefallener Platz, seitdem bewegt, Plus/Minus, Leiste nach Jahrgang und Ressort inkl. „weiß noch nicht“ und „keine Angabe“). `npm test` 593 grün, 3 übersprungen. Lint und `tsc` fehlerfrei.
 
-- [ ] **Phase 16: Draft Board für einen Nutzer**
-  - Ergebnis: `/board` mit
-    - vier Zonen und Drag & Drop per Maus, Touch und Tastatur
-    - Karten mit Name, Jahrgang, Ressort und Kurzbewertung
-    - Detail-Seitenleiste: Feedback oben, Antworten und PDF darunter
-    - Zusammensetzungsleiste
-    - Plus/Minus für die Zahl der Plätze (Admin, Regel `changeSeats`; ob die Änderung im Verlauf erscheint, in Phase 16 klären)
-    - Ansicht für den Beamer
-    - Menüeintrag „Board“, Admin-Seiten unter „Einstellungen“ (Inhalt mit Fynn klären)
+- [x] **Phase 16: Draft Board für einen Nutzer**
+  - Festlegungen (Fynn, 30.09.2026, nach Vorschau „Board-Vorschau Phase 16“, https://claude.ai/artifact/YRqWciby77eYtgjAq6tUnq, Fassung 3): **drei Zonen** Pool, Plätze, „Nicht aufnehmen“ („Auch gern“ entfällt). Der Pool ist geordnet und wird vom Team sortiert; was am Ende dort liegt, ist in dieser Reihenfolge die Nachrückerliste. Anfangs nach Kurzbewertung sortiert. Karten auf einem Platz bekommen **ein oder zwei Ressorts** vom Team (nicht vorbelegt, Wunsch bleibt sichtbar), die Leiste zählt die Zuteilung. **Kurznamen** der Ressorts (Runde 2026: Termine, Anwälte, Curriculum, ÖA, SBS) unter „Runde“. Board erst nach „Auswahlrunde starten“ sichtbar. Menü: Übersicht · Verfügbarkeit · Gespräche · Bewerbungen · Terminplanung · Board · Einstellungen (Runde, Team, Erfassen); am Handy Board unter „Mehr“ zuerst. Handy: Zonen untereinander, Antippen → „Verschieben“. Plus/Minus der Plätze erscheint im Verlauf; auch die Ressort-Zuteilung (in Phase 17 rückgängig machbar). **Keine eigene Beamer-Seite**, sondern „Beamer-Modus“: dasselbe Board mit allen Informationen, ohne Menü, größer (diskutiert wird am Beamer). Farben: Plätze leicht grün, „Nicht aufnehmen“ hellrot, Ressorts mit Farbpunkt. Minimalistisch.
+  - Ergebnis:
+    - Migration `20261003100000_board.sql`: Zonen `pool`/`seat`/`reject`, `departments.short_name`, `board_departments`, Verlaufsarten, `private.board_active`, Schreiben nur über `move_card`, `set_seats` (Admin), `set_board_departments`; `save_round` mit Kurzname und Schutz gegen weniger Plätze als belegt
+    - `src/lib/board-rules.ts` umgebaut (geordneter Pool, Ressorte, Leiste nach Zuteilung), `src/lib/board.ts`
+    - `/board` (`board-view.tsx`): Drag & Drop per Maus und Tastatur (dnd kit `@dnd-kit/core` 6.3.1, `@dnd-kit/sortable` 10.0.0), Details rechts, Ressort-Auswahl, „Verschieben“ ohne Ziehen, Handy-Blatt, Beamer-Modus
+    - `/einstellungen`, neues Menü, Feld „Kurzname fürs Board“
   - Prüfung: Mit 15 Testbewerbern auf N = 10 Plätzen:
     - Karten lassen sich in alle Zonen verschieben.
-    - Die Reihenfolge von „Auch gern“ bleibt nach dem Neuladen erhalten.
+    - Die Reihenfolge im Pool bleibt nach dem Neuladen erhalten.
     - Die Leiste stimmt mit einer Handzählung überein.
+  - Belegt am 30.09.2026, Abnahme durch Fynn lokal gegen `-test` („Funktioniert alles“; Beamer-Modus bleibt in der Größe): Vitest `board-rules.test.ts` 34/34, `board.test.ts` 11/11 gegen `-test` (15 Bewerber, 10 Plätze: alle Plätze belegt, belegter Platz abgelehnt, „Nicht aufnehmen“, Pool-Reihenfolge nach Neuladen, veraltete Pool-Ansicht abgelehnt, 1–2 Ressorts, drittes abgelehnt, Leiste = Handzählung, Plus/Minus nur Admin und nur leerer letzter Platz, Verlauf 14/3/2 Einträge, keine Direktschreibrechte, deaktiviert und ohne Anmeldung abgelehnt, vor Start und nach Einfrieren abgelehnt), `rls.test.ts` angepasst. `npm test` 610 grün, 2 an der Supabase-Ratenbegrenzung gescheitert und einzeln grün (`login.test.ts` 4/4, `team.test.ts` 10/10, `round.test.ts` 13/13). Build, Lint, `tsc` fehlerfrei. Im Browser (Chrome, per DevTools-Protokoll, lokal gegen `-test` mit 15 Probe-Bewerbern): Mausziehen Pool → Platz 4, „Nicht aufnehmen“ → Pool oben, Platz → „Nicht aufnehmen“ gespeichert; Platz auf belegten Platz abgelehnt mit Hinweis; nach Neuladen gleiche Pool-Reihenfolge (Abfrage `board_positions`). Fotos 1280 px hell/dunkel, Details, Ressort-Auswahl, 1920 px Beamer-Modus, 390 px hell/dunkel mit Blatt. Migration auf `-test` am 30.09.2026 laut Fynn „success“ (plus Korrektur `move_card`), per Abfrage bestätigt; **auf `-prod` noch nicht ausgeführt**. Probe-Daten danach entfernt (Abfrage: 0 Bewerbungen, 0 Feedback, 0 Board-Einträge, Auswahlrunde leer).
 
 - [ ] **Phase 17: Board live, Verlauf, Einfrieren und Ergebnis; Abnahme D**
   - Ergebnis:
@@ -304,7 +303,7 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
     - Einblendung „wer, was, wohin“
     - Verlauf mit Rückgängig
     - Einfrieren durch einen Admin
-    - `/board/ergebnis` mit den Gruppen Zusage, Nachrücker und Absage samt Adressen
+    - `/board/ergebnis` mit den Gruppen Zusage (mit zugeteiltem Ressort), Nachrücker (Pool in Reihenfolge) und Absage („Nicht aufnehmen“) samt Adressen
   - Prüfung:
     - Zwei Browser und ein Handy verschieben gleichzeitig, und alle zeigen innerhalb von etwa 1 Sekunde denselben Stand (Bildschirmaufnahme).
     - Rückgängig funktioniert.
