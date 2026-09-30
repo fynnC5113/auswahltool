@@ -18,7 +18,8 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
 | Datum | Ereignis |
 | :---- | :---- |
 | 29.09. | Gespräch mit Bian |
-| **01.10.** | Beginn der Bewerbungsphase |
+| 30.09. nachmittags | große Runde: alle Einstellungen der Runde festlegen |
+| **01.10. 17:00** | Beginn der Bewerbungsphase |
 | ca. 15.10. | Ende der Bewerbungsphase |
 | ca. 20.10. | erste Gespräche |
 | ca. 05.11. | Auswahlsitzung (eine Woche vor dem Onboarding) |
@@ -31,11 +32,25 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
 
 - [x] Supabase-Konto anlegen (kostenlos)
 - [x] Gmail-Konto nur für das Tool anlegen, Zwei-Faktor-Anmeldung einschalten und ein App-Passwort erzeugen (`lawclinic.orgateam@gmail.com`, 28.09.2026)
-- [ ] **29.09.:** Gespräch mit Bian über den Einsatz mit echten Daten
+- [x] **29.09.:** Gespräch mit Bian über den Einsatz mit echten Daten (laut Fynn sehr positiv; Wünsche siehe „Wünsche aus dem Gespräch mit Bian“)
+- [ ] **30.09. nachmittags, große Runde:** alle Einstellungen der Runde gemeinsam festlegen (Punkte darunter). Beginn der Bewerbungsphase steht: 01.10.2026 17:00.
 - [ ] **bis 30.09.:** Text des Datenschutzhinweises (Zweck, wer die Daten sieht, Löschdatum). Entwurf von Claude am 28.09.2026 geliefert; offen sind verantwortliche Stelle, Datenschutzbeauftragte(r), Rechtsgrundlage, Versandweg und Löschdatum. Der Entwurf steht vorläufig in der Runde auf `-prod`; im Formular ausklappbar mit Pflicht-Checkbox „zur Kenntnis genommen“.
 - [ ] **bis 30.09.:** Festlegen: Ende der Bewerbungsphase, Plätze, Löschdatum, Bewerbungsfragen und Ressorts 2026
 - [ ] **bis 06.10.:** Feedback-Kriterien und ihre Gewichtung mit dem Team festlegen
 - [ ] Anfrage an die Uni-IT zu Graph (siehe Phase G)
+
+## Wünsche aus dem Gespräch mit Bian (29.09.2026)
+
+Überlegungen und Vorschläge, noch nicht entschieden. Was wie umsetzbar ist, klären Fynn und Claude; gebaut wird erst nach Plan und Freigabe. Bis zur Entscheidung unter `/terminplanung` **keine Termine erzeugen** (ohne Termine kann niemand buchen; Bewerbungen gehen trotzdem ein). Ungeprüft: was `/b/[token]` zeigt, solange es keine Termine gibt.
+
+1. **Nachträgliche Befangenheit bei gebuchtem Termin:** heute keine Automatik; Admin sieht „… ist bei diesem Bewerber befangen. Bitte neu besetzen.“ und tauscht das Paar (Absage/Einladung gehen automatisch). Ungeprüft: ob der Admin versehentlich wieder eine befangene Person eintragen kann.
+2. **Gespräche im Block:** Viele wollen ihre Gespräche am Stück statt verstreut. Heute wählt `choosePair` nur nach Belastung, Tag und Nachbarschaft zählen nicht. Möglichkeiten: nur den Block als verfügbar eintragen (ohne Code); Block bei Gleichstand bevorzugen; eigener Haken „Gespräche lieber im Block“ (Claudes Empfehlung).
+3. **Termine verdichten:** Bewerber sollen nicht 9, 11 und 15 Uhr buchen und dazwischen bleibt alles frei. Möglichkeiten: A) Admin gibt nur gewünschte Termine frei (ohne Code); B) pro Tag nur freie Termine direkt neben gebuchten anbieten (mit Ausweg für Bewerber ohne passenden Termin); C) Bewerber wählen mehrere Wunschtermine, das Tool verteilt gesammelt, Admin bestätigt. **Fynn:** Termine sollen schon **vor** Ende der Bewerbungsphase feststehen können, damit die Gespräche direkt am Tag danach beginnen können; C also nur in Wellen (z. B. alle paar Tage verteilen), nicht einmal nach Fristende. Fynn klärt mit Bian.
+4. **Wenige Gesprächsführer mit vielen Gesprächen** (Bian: Vergleichbarkeit statt 20 Leute mit je einem Gespräch). Geht heute schon über „bevorzugt“ (zählt immer als unbelastet), begrenzt durch Obergrenze und Verfügbarkeit. Auffällig: Unter mehreren Bevorzugten verteilt `choosePair` nicht gleichmäßig, sondern nimmt die zuerst gelisteten (Reihenfolge in `members`), bis ihre Obergrenze erreicht ist. Offen: wer zum Kern gehört, welche Obergrenze.
+
+Variante C in Wellen würde 2, 3 und 4 gemeinsam lösen, weil das Tool viele Wünsche auf einmal verteilt.
+
+**Nachbar-Variante (Fynns Idee, 29.09.2026, Ausbau von B):** Bewerber sehen pro Tag und Ort nur freie Termine direkt vor oder nach bereits gebuchten; ohne Buchung einen Startpunkt (frühester Termin oder vom Admin gesetzt). Offen: wie viele Nachbarn sichtbar (Einstellung der Runde?), Ausweg für Bewerber mit festen Zeiten („alle Termine anzeigen“ oder „schreib uns“), Datenbank prüft, dass nur angebotene Termine buchbar sind. Dazu `choosePair`: Nachbartermin bevorzugt mit demselben Paar (Blöcke, Thema 2). Sofortige Buchung bleibt; deutlich kleiner als C. Claudes Empfehlung als Mittelweg. **Stand 30.09.2026:** Fynn bespricht 2–4 im Call mit weiteren Hauptamtlichen; bis zur Entscheidung weiter mit Phase 15, später anpassen.
 
 ---
 
