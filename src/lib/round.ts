@@ -24,6 +24,7 @@ type Row = {
   mail_transport: string;
   reply_to: string;
   privacy_notice: string;
+  required_answers: number | null;
   questions: { id: string; position: number; text: string }[];
   departments: { id: string; position: number; name: string; description: string }[];
   criteria: {
@@ -46,7 +47,7 @@ export async function loadRound(session: SupabaseClient, roundId?: string): Prom
     .select(
       `id, title, year, seats, interview_minutes, buffer_minutes, rebook_hours_before,
        application_opens_at, application_closes_at, interviews_from, interviews_until,
-       deletion_date, mail_transport, reply_to, privacy_notice,
+       deletion_date, mail_transport, reply_to, privacy_notice, required_answers,
        questions (id, position, text),
        departments (id, position, name, description),
        criteria (id, position, name, description, weight, scale_min, scale_max)`,
@@ -72,6 +73,7 @@ export async function loadRound(session: SupabaseClient, roundId?: string): Prom
     mailTransport: data.mail_transport,
     replyTo: data.reply_to,
     privacyNotice: data.privacy_notice,
+    requiredAnswers: data.required_answers === null ? "" : String(data.required_answers),
     questions: [...data.questions].sort(byPosition).map((q) => ({ key: q.id, id: q.id, text: q.text })),
     departments: [...data.departments]
       .sort(byPosition)

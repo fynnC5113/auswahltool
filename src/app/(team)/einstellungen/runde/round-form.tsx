@@ -268,6 +268,15 @@ export function RoundEditor({ initial }: { initial: RoundForm }) {
         >
           + Frage hinzufügen
         </button>
+        <div className={formGroup}>
+          <Field
+            label="Pflichtantworten"
+            note={`So viele Fragen muss eine Bewerbung beantworten, egal welche. Leer = alle ${form.questions.length} Fragen.`}
+            error={errors.requiredAnswers}
+          >
+            <input {...text("requiredAnswers")} inputMode="numeric" />
+          </Field>
+        </div>
       </section>
 
       <section className={section}>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ALL,
   NONE,
   UNSURE,
   alsoList,
@@ -307,11 +308,11 @@ describe("shortScore", () => {
 
 describe("composition", () => {
   const cards = [
-    { applicantId: "anna", cohort: "2025", departmentIds: ["d1"], departmentUnsure: false },
-    { applicantId: "ben", cohort: "2024", departmentIds: ["d1", "d2"], departmentUnsure: false },
-    { applicantId: "clara", cohort: "2025", departmentIds: [], departmentUnsure: true },
-    { applicantId: "dora", cohort: "2025", departmentIds: [], departmentUnsure: false },
-    { applicantId: "emil", cohort: "2023", departmentIds: ["d3"], departmentUnsure: false },
+    { applicantId: "anna", cohort: "2025", departmentIds: ["d1"], departmentUnsure: false, departmentAll: false },
+    { applicantId: "ben", cohort: "2024", departmentIds: ["d1", "d2"], departmentUnsure: false, departmentAll: false },
+    { applicantId: "clara", cohort: "2025", departmentIds: [], departmentUnsure: true, departmentAll: false },
+    { applicantId: "dora", cohort: "2025", departmentIds: [], departmentUnsure: false, departmentAll: false },
+    { applicantId: "emil", cohort: "2023", departmentIds: ["d3"], departmentUnsure: false, departmentAll: false },
   ];
 
   it("counts only cards on seats, by cohort and by department", () => {
@@ -337,6 +338,19 @@ describe("composition", () => {
         { key: NONE, count: 1 },
       ],
     });
+  });
+
+  it("counts 'für alle offen' as its own entry, not in every department", () => {
+    const withAll = cards.map((c) => (c.applicantId === "dora" ? { ...c, departmentAll: true } : c));
+    const { state } = play(empty(), 10, [
+      ["anna", "seat", 1],
+      ["dora", "seat", 2],
+    ]);
+    expect(composition(state, 10, withAll, ["d1", "d2"]).departments).toEqual([
+      { key: "d1", count: 1 },
+      { key: "d2", count: 0 },
+      { key: ALL, count: 1 },
+    ]);
   });
 
   it("is empty with no one on a seat", () => {

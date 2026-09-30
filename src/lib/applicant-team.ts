@@ -24,6 +24,7 @@ type ApplicantRow = {
   email: string;
   cohort: string;
   department_unsure: boolean;
+  department_all: boolean;
   status: ApplicantStatus;
   source: Source;
   cv_path: string | null;
@@ -32,7 +33,7 @@ type ApplicantRow = {
   applicant_departments: { department_id: string }[];
 };
 
-const APPLICANT_COLUMNS = `id, round_id, name, email, cohort, department_unsure, status, source, cv_path, created_at,
+const APPLICANT_COLUMNS = `id, round_id, name, email, cohort, department_unsure, department_all, status, source, cv_path, created_at,
   answers (question_id, text), applicant_departments (department_id)`;
 
 type SlotRow = {
@@ -104,6 +105,7 @@ export async function loadTeamList(session: SupabaseClient, roundId?: string): P
       cohort: a.cohort,
       departmentIds,
       departmentUnsure: a.department_unsure,
+      departmentAll: a.department_all,
       departments: departmentNames(round, departmentIds),
       status: a.status,
       answers: round.questions.map((q) => text.get(q.id) ?? ""),
@@ -130,6 +132,7 @@ export type TeamApplicant = {
   cohort: string;
   departments: string[];
   departmentUnsure: boolean;
+  departmentAll: boolean;
   status: ApplicantStatus;
   source: Source;
   hasCv: boolean;
@@ -179,6 +182,7 @@ export async function loadTeamApplicant(session: SupabaseClient, id: string): Pr
     cohort: a.cohort,
     departments: departmentNames(round, departmentIds),
     departmentUnsure: a.department_unsure,
+    departmentAll: a.department_all,
     status: a.status,
     source: a.source,
     hasCv: !!a.cv_path,

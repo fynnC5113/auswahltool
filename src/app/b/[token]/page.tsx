@@ -48,10 +48,12 @@ export default async function ApplicantPage({ params }: { params: Promise<{ toke
           answers: applicant.answers,
           departmentIds: applicant.departmentIds,
           departmentUnsure: applicant.departmentUnsure,
+          departmentAll: applicant.departmentAll,
           privacyConfirmed: false,
           hasCv: !!applicant.cvPath,
         }}
         questions={round.questions}
+        requiredAnswers={round.requiredAnswers}
         departments={round.departments}
         editable={canEdit(applicant)}
         deadline={formatBerlin(round.closesAt)}

@@ -40,6 +40,7 @@ function fields(changes: Partial<ApplicationFields> = {}): ApplicationFields {
     answers: { [questions[0]]: "Antwort eins", [questions[1]]: "Antwort zwei" },
     departmentIds: [departments[0]],
     departmentUnsure: false,
+    departmentAll: false,
     privacyConfirmed: true,
     ...changes,
   };
@@ -128,6 +129,71 @@ afterAll(async () => {
 beforeEach(() => {
   send.mockReset().mockResolvedValue("<id@test>");
   vi.stubEnv("APP_URL", "https://auswahltool.example");
+});
+
+describe("required answers and 'alle Ressorts' (round 2026)", () => {
+  it("saves an application with fewer answers when the round allows it, and 'alle Ressorts'", async () => {
+    await admin.from("rounds").update({ required_answers: 1 }).eq("id", roundId);
+    try {
+      const input = fields({ answers: { [questions[1]]: "Nur die zweite" }, departmentIds: [], departmentAll: true });
+      expect(await apply(input)).toEqual({ status: "done", mailSent: true });
+      const { data } = await admin
+        .from("applicants")
+        .select("department_all, department_unsure, answers (question_id, text), applicant_departments (department_id)")
+        .eq("round_id", roundId)
+        .eq("email", input.email.toLowerCase())
+        .single();
+      expect(data).toMatchObject({
+        department_all: true,
+        department_unsure: false,
+        answers: [{ question_id: questions[1], text: "Nur die zweite" }],
+        applicant_departments: [],
+      });
+    } finally {
+      await admin.from("rounds").update({ required_answers: null }).eq("id", roundId);
+    }
+  });
+
+  it("the database refuses too few answers", async () => {
+    await admin.from("rounds").update({ required_answers: 2 }).eq("id", roundId);
+    try {
+      const { error } = await admin.rpc("save_application", {
+        p_create: true,
+        p_applicant: {
+          id: randomUUID(),
+          round_id: roundId,
+          name: "Zu wenig",
+          email: `phase7-${randomUUID()}@example.invalid`,
+          cohort: "2024",
+          token_hash: randomUUID(),
+        },
+        p_answers: [{ question_id: questions[0], text: "eine" }, { question_id: questions[1], text: "   " }],
+        p_department_ids: [],
+      });
+      expect(error?.hint).toBe("answer_missing");
+    } finally {
+      await admin.from("rounds").update({ required_answers: null }).eq("id", roundId);
+    }
+  });
+
+  it("the database refuses 'alle Ressorts' together with 'weiß ich noch nicht'", async () => {
+    const { error } = await admin.rpc("save_application", {
+      p_create: true,
+      p_applicant: {
+        id: randomUUID(),
+        round_id: roundId,
+        name: "Beides",
+        email: `phase7-${randomUUID()}@example.invalid`,
+        cohort: "2024",
+        token_hash: randomUUID(),
+        department_all: true,
+        department_unsure: true,
+      },
+      p_answers: questions.map((question_id) => ({ question_id, text: "ok" })),
+      p_department_ids: [],
+    });
+    expect(error?.message).toContain("applicants_department_all_or_unsure");
+  });
 });
 
 describe("public form", () => {

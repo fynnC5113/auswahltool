@@ -35,6 +35,8 @@ export interface ApplicationRound {
   replyTo: string;
   mailTransport: MailTransport;
   privacyNotice: string;
+  /** How many questions must be answered; null = all. */
+  requiredAnswers: number | null;
   questions: { id: string; text: string }[];
   departments: { id: string; name: string; description: string }[];
 }
@@ -45,6 +47,7 @@ export interface Applicant {
   email: string;
   cohort: string;
   departmentUnsure: boolean;
+  departmentAll: boolean;
   departmentIds: string[];
   answers: Record<string, string>;
   cvPath: string | null;
@@ -79,6 +82,7 @@ type RoundRow = {
   reply_to: string;
   mail_transport: MailTransport;
   privacy_notice: string;
+  required_answers: number | null;
   questions: { id: string; position: number; text: string }[];
   departments: { id: string; position: number; name: string; description: string }[];
 };
@@ -88,7 +92,7 @@ export async function loadApplicationRound(db: SupabaseClient, roundId?: string)
   let query = db
     .from("rounds")
     .select(
-      `id, title, application_opens_at, application_closes_at, reply_to, mail_transport, privacy_notice,
+      `id, title, application_opens_at, application_closes_at, reply_to, mail_transport, privacy_notice, required_answers,
        questions (id, position, text), departments (id, position, name, description)`,
     );
   if (roundId) query = query.eq("id", roundId);
@@ -103,6 +107,7 @@ export async function loadApplicationRound(db: SupabaseClient, roundId?: string)
     replyTo: data.reply_to,
     mailTransport: data.mail_transport,
     privacyNotice: data.privacy_notice,
+    requiredAnswers: data.required_answers,
     questions: [...data.questions].sort(byPosition).map(({ id, text }) => ({ id, text })),
     departments: [...data.departments]
       .sort(byPosition)
@@ -111,7 +116,11 @@ export async function loadApplicationRound(db: SupabaseClient, roundId?: string)
 }
 
 function roundIds(round: ApplicationRound) {
-  return { questionIds: round.questions.map((q) => q.id), departmentIds: round.departments.map((d) => d.id) };
+  return {
+    questionIds: round.questions.map((q) => q.id),
+    departmentIds: round.departments.map((d) => d.id),
+    requiredAnswers: round.requiredAnswers,
+  };
 }
 
 function mailOptions(round: ApplicationRound): SendOptions {
@@ -276,6 +285,7 @@ export async function submitApplication(
       email: fields.email,
       cohort: fields.cohort,
       department_unsure: fields.departmentUnsure,
+      department_all: fields.departmentAll,
       cv_path: cvPath(round.id, applicantId),
       token_hash: hashToken(token),
       source,
@@ -325,6 +335,7 @@ type ApplicantRow = {
   email: string;
   cohort: string;
   department_unsure: boolean;
+  department_all: boolean;
   cv_path: string | null;
   source: Source;
   created_at: string;
@@ -339,7 +350,7 @@ export async function findApplicant(db: SupabaseClient, token: string): Promise<
   const { data, error } = await db
     .from("applicants")
     .select(
-      `id, round_id, name, email, cohort, department_unsure, cv_path, source, created_at, updated_at,
+      `id, round_id, name, email, cohort, department_unsure, department_all, cv_path, source, created_at, updated_at,
        answers (question_id, text), applicant_departments (department_id)`,
     )
     .eq("token_hash", hashToken(token))
@@ -354,6 +365,7 @@ export async function findApplicant(db: SupabaseClient, token: string): Promise<
     email: data.email,
     cohort: data.cohort,
     departmentUnsure: data.department_unsure,
+    departmentAll: data.department_all,
     departmentIds: data.applicant_departments.map((d) => d.department_id),
     answers: Object.fromEntries(data.answers.map((a) => [a.question_id, a.text])),
     cvPath: data.cv_path,
@@ -436,6 +448,7 @@ export async function updateApplication(
       name: fields.name,
       cohort: fields.cohort,
       department_unsure: fields.departmentUnsure,
+      department_all: fields.departmentAll,
       ...(newCvPath ? { cv_path: newCvPath } : {}),
     },
     p_answers: Object.entries(fields.answers).map(([question_id, text]) => ({ question_id, text })),

@@ -8,6 +8,7 @@ export type Searchable = {
   cohort: string;
   departmentIds: string[];
   departmentUnsure: boolean;
+  departmentAll: boolean;
   status: ApplicantStatus;
   /** Answer texts in question order. */
   answers: string[];
@@ -17,7 +18,7 @@ export type Filter = {
   query: string;
   /** "" = every cohort. */
   cohort: string;
-  /** "" = every department, "unsure" = "weiß noch nicht", else a department id. */
+  /** "" = every department, "all" = "für alle offen", "unsure" = "weiß noch nicht", else a department id. */
   department: string;
   /** "" = every status. */
   status: "" | ApplicantStatus;
@@ -34,8 +35,9 @@ function words(query: string): string[] {
 
 export function matchesFilter(item: Searchable, filter: Filter): boolean {
   if (filter.cohort && item.cohort !== filter.cohort) return false;
+  if (filter.department === "all" && !item.departmentAll) return false;
   if (filter.department === "unsure" && !item.departmentUnsure) return false;
-  if (filter.department && filter.department !== "unsure" && !item.departmentIds.includes(filter.department)) return false;
+  if (filter.department && filter.department !== "all" && filter.department !== "unsure" && !item.departmentIds.includes(filter.department)) return false;
   if (filter.status && item.status !== filter.status) return false;
   const haystack = [item.name, item.email, ...item.answers].map(fold);
   return words(filter.query).every((w) => haystack.some((h) => h.includes(w)));

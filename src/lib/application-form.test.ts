@@ -8,11 +8,12 @@ import {
   emptyFields,
   looksLikePdf,
   normalizeFields,
+  requiredAnswersNote,
   validateApplication,
   type ApplicationFields,
 } from "./application-form";
 
-const round = { questionIds: ["q1", "q2"], departmentIds: ["d1", "d2"] };
+const round = { questionIds: ["q1", "q2"], departmentIds: ["d1", "d2"], requiredAnswers: null };
 const publicForm = { requireDepartment: true, withEmail: true };
 
 function filled(changes: Partial<ApplicationFields> = {}): ApplicationFields {
@@ -23,6 +24,7 @@ function filled(changes: Partial<ApplicationFields> = {}): ApplicationFields {
     answers: { q1: "Weil …", q2: "Darum." },
     departmentIds: ["d1"],
     departmentUnsure: false,
+    departmentAll: false,
     privacyConfirmed: true,
     ...changes,
   };
@@ -83,6 +85,10 @@ describe("validateApplication", () => {
     expect(validateApplication(filled({ departmentIds: [], departmentUnsure: true }), round, publicForm)).toEqual({});
   });
 
+  it("accepts 'alle Ressorts' instead of a department", () => {
+    expect(validateApplication(filled({ departmentIds: [], departmentAll: true }), round, publicForm)).toEqual({});
+  });
+
   it("rejects a department of another round", () => {
     expect(validateApplication(filled({ departmentIds: ["x"] }), round, publicForm).departments).toBeDefined();
   });
@@ -104,6 +110,38 @@ describe("validateApplication", () => {
     expect(validateApplication(unconfirmed, round, publicForm)).toEqual({});
   });
 
+  describe("required answers (2 of 3)", () => {
+    const three = { questionIds: ["q1", "q2", "q3"], departmentIds: ["d1"], requiredAnswers: 2 };
+
+    it("accepts any two answers", () => {
+      expect(validateApplication(filled({ answers: { q1: "a", q3: "c" } }), three, publicForm)).toEqual({});
+      expect(validateApplication(filled({ answers: { q1: "a", q2: "b", q3: "c" } }), three, publicForm)).toEqual({});
+    });
+
+    it("rejects one answer, with one message for the questions", () => {
+      const errors = validateApplication(filled({ answers: { q2: "b", q3: "  " } }), three, publicForm);
+      expect(errors).toEqual({ answers: "Beantworte mindestens 2 der 3 Fragen." });
+    });
+
+    it("applies to admins as well", () => {
+      const admin = { requireDepartment: false, withEmail: true };
+      expect(validateApplication(filled({ answers: { q1: "a" } }), three, admin)).toHaveProperty("answers");
+    });
+
+    it("caps the number at the number of questions", () => {
+      expect(validateApplication(filled(), { ...round, requiredAnswers: 5 }, publicForm)).toEqual({});
+      expect(validateApplication(filled({ answers: { q1: "a" } }), { ...round, requiredAnswers: 5 }, publicForm)).toHaveProperty("answers.q2");
+    });
+
+    it("notes the rule above the questions", () => {
+      expect(requiredAnswersNote(3, 2)).toBe("Beantworte mindestens 2 der 3 Fragen.");
+      expect(requiredAnswersNote(3, 1)).toBe("Beantworte mindestens eine der 3 Fragen.");
+      expect(requiredAnswersNote(3, 0)).toBe("Die Fragen sind freiwillig.");
+      expect(requiredAnswersNote(3, null)).toBeNull();
+      expect(requiredAnswersNote(3, 3)).toBeNull();
+    });
+  });
+
   it("rejects overlong input", () => {
     const errors = validateApplication(filled({ name: "x".repeat(201), answers: { q1: "x".repeat(10_001), q2: "ok" } }), round, publicForm);
     expect(Object.keys(errors).sort()).toEqual(["answers.q1", "name"]);
@@ -117,6 +155,14 @@ describe("normalizeFields", () => {
       round.questionIds,
     );
     expect(result).toMatchObject({ name: "Anna", email: "anna@example.org", departmentIds: [] });
+  });
+
+  it("clears departments for 'alle Ressorts'; 'weiß ich noch nicht' wins if both are set", () => {
+    expect(normalizeFields(filled({ departmentAll: true }), round.questionIds)).toMatchObject({ departmentIds: [], departmentAll: true });
+    expect(normalizeFields(filled({ departmentAll: true, departmentUnsure: true }), round.questionIds)).toMatchObject({
+      departmentAll: false,
+      departmentUnsure: true,
+    });
   });
 
   it("keeps only answers to the round's questions", () => {

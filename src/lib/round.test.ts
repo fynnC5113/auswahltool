@@ -90,6 +90,17 @@ async function positions(table: "questions" | "departments" | "criteria", roundI
 }
 
 describe("saveRound as admin", () => {
+  it("saves and loads the number of required answers; empty means all", async () => {
+    const round = await create({ ...testRound(), requiredAnswers: "2" });
+    expect(round.requiredAnswers).toBe("2");
+    const { data } = await admin.from("rounds").select("required_answers").eq("id", round.id!).single();
+    expect(data?.required_answers).toBe(2);
+
+    const cleared = await saveRound(asAdmin, { ...round, requiredAnswers: "" });
+    expect(cleared).toHaveProperty("ok");
+    expect((await reload(round.id!)).requiredAnswers).toBe("");
+  });
+
   it("creates a round with 3 questions, 4 departments and 3 weighted criteria", async () => {
     const round = await create();
     expect(round).toMatchObject({

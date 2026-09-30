@@ -46,8 +46,10 @@ export default async function ApplicantPage({ params }: { params: Promise<{ id: 
   );
   const mine = applicant.conflicts.some((c) => c.memberId === member.id);
   const leading = !!applicant.slot?.interviewers.some((m) => m.id === member.id);
-  const departments = applicant.departmentUnsure
-    ? "Ressort: weiß noch nicht"
+  const departments = applicant.departmentAll
+    ? "Ressort: für alle offen"
+    : applicant.departmentUnsure
+      ? "Ressort: weiß noch nicht"
     : applicant.departments.join(", ") || "kein Ressort";
 
   return (

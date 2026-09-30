@@ -7,6 +7,7 @@ const lena: Searchable = {
   cohort: "2025",
   departmentIds: ["events"],
   departmentUnsure: false,
+  departmentAll: false,
   status: "active",
   answers: ["Ich will die Abläufe mitgestalten, damit Mandanten schneller einen Termin bekommen.", "Ich habe ein Schulfest organisiert."],
 };
@@ -16,6 +17,7 @@ const aylin: Searchable = {
   cohort: "2024",
   departmentIds: [],
   departmentUnsure: true,
+  departmentAll: false,
   status: "no_show",
   answers: ["Beratung von innen kennenlernen.", "Türkisch, Englisch, Social Media."],
 };
@@ -48,6 +50,13 @@ describe("matchesFilter", () => {
     expect(find({ department: "unsure" })).toEqual(["Aylin Demir"]);
     expect(find({ status: "no_show" })).toEqual(["Aylin Demir"]);
     expect(find({ status: "active", query: "türkisch" })).toEqual([]);
+  });
+
+  it("filters 'für alle offen' on its own, not under each department", () => {
+    const open: Searchable = { ...lena, name: "Ole Offen", departmentIds: [], departmentAll: true };
+    const pick = (department: string) => [lena, aylin, open].filter((a) => matchesFilter(a, { ...NO_FILTER, department })).map((a) => a.name);
+    expect(pick("all")).toEqual(["Ole Offen"]);
+    expect(pick("events")).toEqual(["Lena Hoffmann"]);
   });
 
   it("treats composed and decomposed umlauts alike", () => {

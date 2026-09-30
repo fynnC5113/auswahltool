@@ -68,6 +68,7 @@ export function ApplicantList({
               {d.name}
             </option>
           ))}
+          <option value="all">für alle offen</option>
           <option value="unsure">weiß noch nicht</option>
         </select>
         <select
@@ -109,7 +110,11 @@ export function ApplicantList({
                   <SlotChip item={item} />
                   <span className="col-span-2 text-note text-muted">
                     Jahrgang {item.cohort} ·{" "}
-                    {item.departmentUnsure ? "Ressort: weiß noch nicht" : item.departments.join(", ") || "kein Ressort"}
+                    {item.departmentAll
+                      ? "Ressort: für alle offen"
+                      : item.departmentUnsure
+                        ? "Ressort: weiß noch nicht"
+                        : item.departments.join(", ") || "kein Ressort"}
                     {item.conflicts.length > 0 && (
                       <span className="text-warn"> · befangen: {item.conflicts.join(", ")}</span>
                     )}

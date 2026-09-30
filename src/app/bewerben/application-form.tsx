@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type ReactNode } from "react";
 import {
   cvFileError,
+  requiredAnswersNote,
   validateApplication,
   type ApplicationFields,
   type FieldErrors,
@@ -47,6 +48,8 @@ export type Mode = "apply" | "admin" | "edit";
 interface Props {
   mode: Mode;
   questions: { id: string; text: string }[];
+  /** How many questions must be answered; null = all. */
+  requiredAnswers: number | null;
   departments: { id: string; name: string; description: string }[];
   initial: ApplicationFields;
   replyTo: string;
@@ -82,7 +85,7 @@ function uploadClient() {
   });
 }
 
-export function ApplicationForm({ mode, questions, departments, initial, replyTo, privacyNotice, prepare, submit, onCancel, onSaved }: Props) {
+export function ApplicationForm({ mode, questions, requiredAnswers, departments, initial, replyTo, privacyNotice, prepare, submit, onCancel, onSaved }: Props) {
   const router = useRouter();
   const [fields, setFields] = useState(initial);
   const [file, setFile] = useState<File | null>(null);
@@ -103,7 +106,7 @@ export function ApplicationForm({ mode, questions, departments, initial, replyTo
 
   function toggleDepartment(id: string, checked: boolean) {
     const ids = checked ? [...fields.departmentIds, id] : fields.departmentIds.filter((d) => d !== id);
-    setFields((f) => ({ ...f, departmentIds: ids, departmentUnsure: checked ? false : f.departmentUnsure }));
+    setFields((f) => ({ ...f, departmentIds: ids }));
     setErrors((e) => ({ ...e, departments: "" }));
   }
 
@@ -111,7 +114,7 @@ export function ApplicationForm({ mode, questions, departments, initial, replyTo
     event.preventDefault();
     const local = validateApplication(
       fields,
-      { questionIds: questions.map((q) => q.id), departmentIds: departments.map((d) => d.id) },
+      { questionIds: questions.map((q) => q.id), departmentIds: departments.map((d) => d.id), requiredAnswers },
       { requireDepartment: mode !== "admin", withEmail: mode !== "edit", requirePrivacy: mode === "apply" && !!privacyNotice?.trim() },
     );
     if (cvRequired || file) {
@@ -177,7 +180,19 @@ export function ApplicationForm({ mode, questions, departments, initial, replyTo
 
   if (result) return <Result mode={mode} result={result} email={fields.email} replyTo={replyTo} onReset={reset} />;
 
-  const departmentsDisabled = fields.departmentUnsure;
+  const departmentsDisabled = fields.departmentUnsure || fields.departmentAll;
+  const answersNote = requiredAnswersNote(questions.length, requiredAnswers);
+
+  /** "alle Ressorts" and "weiß ich noch nicht" exclude each other and the single departments. */
+  function setDepartmentChoice(choice: "departmentAll" | "departmentUnsure", checked: boolean) {
+    setFields((f) => ({
+      ...f,
+      departmentAll: choice === "departmentAll" && checked,
+      departmentUnsure: choice === "departmentUnsure" && checked,
+      departmentIds: checked ? [] : f.departmentIds,
+    }));
+    setErrors((er) => ({ ...er, departments: "" }));
+  }
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-7 sm:gap-9">
@@ -209,18 +224,23 @@ export function ApplicationForm({ mode, questions, departments, initial, replyTo
       {questions.length > 0 && (
         <section className={section}>
           <h2 className={sectionTitle}>{mode === "admin" ? "Antworten" : "Deine Antworten"}</h2>
+          {answersNote && <p className={lead}>{answersNote}</p>}
           <div className={formGroup}>
             {questions.map((q) => (
               <Field key={q.id} label={q.text} error={errors[`answers.${q.id}`]}>
                 <textarea
                   className={`${input} min-h-32 resize-y`}
                   value={fields.answers[q.id] ?? ""}
-                  onChange={(e) => set("answers", { ...fields.answers, [q.id]: e.target.value }, `answers.${q.id}`)}
+                  onChange={(e) => {
+                    set("answers", { ...fields.answers, [q.id]: e.target.value }, `answers.${q.id}`);
+                    setErrors((er) => ({ ...er, answers: "" }));
+                  }}
                   aria-invalid={!!errors[`answers.${q.id}`] || undefined}
                 />
               </Field>
             ))}
           </div>
+          {errors.answers && <span className={fieldError}>{errors.answers}</span>}
         </section>
       )}
 
@@ -228,6 +248,16 @@ export function ApplicationForm({ mode, questions, departments, initial, replyTo
         <legend className={`${sectionTitle} mb-2`}>Wunsch-Ressort</legend>
         <p className={lead}>Du kannst mehrere wählen.{mode === "admin" && " Bei der Erfassung optional."}</p>
         <div className={listGroup}>
+          <label className={`${checkRow} ${fields.departmentUnsure ? "opacity-50" : ""}`}>
+            <input
+              type="checkbox"
+              className="check"
+              checked={fields.departmentAll}
+              disabled={fields.departmentUnsure}
+              onChange={(e) => setDepartmentChoice("departmentAll", e.target.checked)}
+            />
+            <span>Ich bin für alle Ressorts offen</span>
+          </label>
           {departments.map((d) => (
             <label key={d.id} className={`${checkRow} ${departmentsDisabled ? "opacity-50" : ""}`}>
               <input
@@ -243,15 +273,13 @@ export function ApplicationForm({ mode, questions, departments, initial, replyTo
               </span>
             </label>
           ))}
-          <label className={checkRow}>
+          <label className={`${checkRow} ${fields.departmentAll ? "opacity-50" : ""}`}>
             <input
               type="checkbox"
               className="check"
               checked={fields.departmentUnsure}
-              onChange={(e) => {
-                setFields((f) => ({ ...f, departmentUnsure: e.target.checked, departmentIds: e.target.checked ? [] : f.departmentIds }));
-                setErrors((er) => ({ ...er, departments: "" }));
-              }}
+              disabled={fields.departmentAll}
+              onChange={(e) => setDepartmentChoice("departmentUnsure", e.target.checked)}
             />
             <span>weiß ich noch nicht</span>
           </label>
@@ -284,7 +312,7 @@ export function ApplicationForm({ mode, questions, departments, initial, replyTo
       {mode === "apply" && privacyNotice?.trim() && (
         <section className={section}>
           <h2 className={sectionTitle}>Datenschutz</h2>
-          <details className="group rounded-group bg-surface">
+          <details id="datenschutz" className="group scroll-mt-4 rounded-group bg-surface">
             <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-[11px] font-medium [&::-webkit-details-marker]:hidden">
               Datenschutzhinweis lesen
               <span aria-hidden className="mr-1 size-2 rotate-45 border-r-2 border-b-2 border-muted transition-transform group-open:-rotate-135" />

@@ -36,6 +36,8 @@ export interface RoundForm {
   mailTransport: string;
   replyTo: string;
   privacyNotice: string;
+  /** How many questions an application must answer; "" = all. */
+  requiredAnswers: string;
   questions: QuestionItem[];
   departments: DepartmentItem[];
   criteria: CriterionItem[];
@@ -75,6 +77,7 @@ export function emptyForm(year: number): RoundForm {
     mailTransport: "gmail",
     replyTo: DEFAULT_REPLY_TO,
     privacyNotice: "",
+    requiredAnswers: "",
     questions: [],
     departments: [],
     criteria: [],
@@ -120,6 +123,7 @@ export function toRoundForm(raw: unknown): RoundForm {
     mailTransport: str(r.mailTransport),
     replyTo: str(r.replyTo),
     privacyNotice: str(r.privacyNotice),
+    requiredAnswers: str(r.requiredAnswers),
     questions: list(r.questions).map((q) => ({ key: str(q.key), id: idOf(q.id), text: str(q.text) })),
     departments: list(r.departments).map((d) => ({
       key: str(d.key),
@@ -204,6 +208,14 @@ export function validateRound(form: RoundForm): { errors: FieldErrors } | { valu
     return { id: q.id, text };
   });
 
+  let requiredAnswers: number | null = null;
+  if (form.requiredAnswers.trim() !== "") {
+    requiredAnswers = wholeNumber(form.requiredAnswers);
+    if (requiredAnswers === null || requiredAnswers < 0 || requiredAnswers > questions.length) {
+      errors.requiredAnswers = `Bitte eine Zahl von 0 bis ${questions.length} eingeben oder leer lassen.`;
+    }
+  }
+
   const departments = form.departments.map((d, i) => {
     const name = d.name.trim();
     if (!name) errors[`departments.${i}.name`] = "Bitte einen Namen eingeben.";
@@ -247,6 +259,7 @@ export function validateRound(form: RoundForm): { errors: FieldErrors } | { valu
         mail_transport: form.mailTransport,
         reply_to: replyTo,
         privacy_notice: form.privacyNotice.trim(),
+        required_answers: requiredAnswers,
       },
       p_questions: questions,
       p_departments: departments,

@@ -28,11 +28,12 @@ export default async function CapturePage() {
         <>
           <PageHeader heading="Bewerbung erfassen">
             Für Bewerbungen, die per Mail oder nach dem Ende der Bewerbungsphase kommen. Die Person bekommt ihren persönlichen Link per Mail.
-            Pflicht sind Name, Mail, Jahrgang, Antworten und Lebenslauf; das Ressort ist optional.
+            Pflicht sind Name, Mail, Jahrgang, die Antworten wie im Formular und der Lebenslauf; das Ressort ist optional.
           </PageHeader>
           <ApplicationForm
             mode="admin"
             questions={round.questions}
+            requiredAnswers={round.requiredAnswers}
             departments={round.departments}
             initial={emptyFields()}
             replyTo={round.replyTo}

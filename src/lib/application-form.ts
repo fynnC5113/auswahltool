@@ -19,6 +19,8 @@ export interface ApplicationFields {
   departmentIds: string[];
   /** "weiß ich noch nicht" */
   departmentUnsure: boolean;
+  /** "Ich bin für alle Ressorts offen" */
+  departmentAll: boolean;
   /** Checkbox under the privacy notice (public form only). */
   privacyConfirmed: boolean;
 }
@@ -32,7 +34,7 @@ export function applicationWindow(opensAt: Date, closesAt: Date, now: Date): App
 }
 
 export function emptyFields(): ApplicationFields {
-  return { name: "", email: "", cohort: "", answers: {}, departmentIds: [], departmentUnsure: false, privacyConfirmed: false };
+  return { name: "", email: "", cohort: "", answers: {}, departmentIds: [], departmentUnsure: false, departmentAll: false, privacyConfirmed: false };
 }
 
 /** Server actions receive whatever the client sends: bring it into shape first. */
@@ -47,14 +49,28 @@ export function coerceFields(raw: unknown): ApplicationFields {
     answers: Object.fromEntries(Object.entries(answers).map(([k, v]) => [k, str(v)])),
     departmentIds: Array.isArray(r.departmentIds) ? r.departmentIds.filter((d): d is string => typeof d === "string") : [],
     departmentUnsure: r.departmentUnsure === true,
+    departmentAll: r.departmentAll === true && r.departmentUnsure !== true,
     privacyConfirmed: r.privacyConfirmed === true,
   };
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** How many questions must be answered: requiredAnswers of the round, capped; null = all. */
+export function requiredCount(questionCount: number, requiredAnswers: number | null): number {
+  return requiredAnswers === null ? questionCount : Math.min(requiredAnswers, questionCount);
+}
+
+/** "Beantworte mindestens 2 der 3 Fragen." or null when every question is required. */
+export function requiredAnswersNote(questionCount: number, requiredAnswers: number | null): string | null {
+  const required = requiredCount(questionCount, requiredAnswers);
+  if (required >= questionCount) return null;
+  if (required === 0) return "Die Fragen sind freiwillig.";
+  return `Beantworte mindestens ${required === 1 ? "eine" : required} der ${questionCount} Fragen.`;
+}
+
 /**
- * Keys: "name", "email", "cohort", "answers.<questionId>", "departments", "privacy".
+ * Keys: "name", "email", "cohort", "answers", "answers.<questionId>", "departments", "privacy".
  * requireDepartment: the public form requires a department or "weiß ich noch
  * nicht"; an admin entering an application may leave it open.
  * withEmail: false when editing (the address is bound to the link).
@@ -62,7 +78,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 export function validateApplication(
   fields: ApplicationFields,
-  round: { questionIds: string[]; departmentIds: string[] },
+  round: { questionIds: string[]; departmentIds: string[]; requiredAnswers: number | null },
   options: { requireDepartment: boolean; withEmail: boolean; requirePrivacy?: boolean },
 ): FieldErrors {
   const errors: FieldErrors = {};
@@ -81,16 +97,23 @@ export function validateApplication(
   if (!cohort) errors.cohort = "Bitte gib deinen Jahrgang an.";
   else if (cohort.length > MAX_SHORT) errors.cohort = `Höchstens ${MAX_SHORT} Zeichen.`;
 
+  const required = requiredCount(round.questionIds.length, round.requiredAnswers);
+  const allRequired = required >= round.questionIds.length;
+  let answered = 0;
   for (const id of round.questionIds) {
     const answer = (fields.answers[id] ?? "").trim();
-    if (!answer) errors[`answers.${id}`] = "Bitte beantworte diese Frage.";
+    if (answer) answered++;
+    if (!answer && allRequired) errors[`answers.${id}`] = "Bitte beantworte diese Frage.";
     else if (answer.length > MAX_ANSWER) errors[`answers.${id}`] = `Höchstens ${MAX_ANSWER} Zeichen.`;
+  }
+  if (!allRequired && answered < required) {
+    errors.answers = requiredAnswersNote(round.questionIds.length, round.requiredAnswers)!;
   }
 
   if (fields.departmentIds.some((id) => !round.departmentIds.includes(id))) {
     errors.departments = "Unbekanntes Ressort. Bitte lade die Seite neu.";
-  } else if (options.requireDepartment && !fields.departmentUnsure && fields.departmentIds.length === 0) {
-    errors.departments = "Bitte wähle mindestens ein Ressort oder „weiß ich noch nicht“.";
+  } else if (options.requireDepartment && !fields.departmentUnsure && !fields.departmentAll && fields.departmentIds.length === 0) {
+    errors.departments = "Bitte wähle „Ich bin für alle Ressorts offen“, mindestens ein Ressort oder „weiß ich noch nicht“.";
   }
 
   if (options.requirePrivacy && !fields.privacyConfirmed) {
@@ -100,15 +123,16 @@ export function validateApplication(
   return errors;
 }
 
-/** Trimmed values as saved; "weiß ich noch nicht" clears the department choice. */
+/** Trimmed values as saved; "alle Ressorts" and "weiß ich noch nicht" clear the department choice. */
 export function normalizeFields(fields: ApplicationFields, questionIds: string[]): ApplicationFields {
   return {
     name: fields.name.trim(),
     email: fields.email.trim().toLowerCase(),
     cohort: fields.cohort.trim(),
     answers: Object.fromEntries(questionIds.map((id) => [id, (fields.answers[id] ?? "").trim()])),
-    departmentIds: fields.departmentUnsure ? [] : [...new Set(fields.departmentIds)],
+    departmentIds: fields.departmentUnsure || fields.departmentAll ? [] : [...new Set(fields.departmentIds)],
     departmentUnsure: fields.departmentUnsure,
+    departmentAll: fields.departmentAll && !fields.departmentUnsure,
     privacyConfirmed: fields.privacyConfirmed,
   };
 }

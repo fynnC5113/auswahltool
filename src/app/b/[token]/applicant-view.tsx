@@ -22,6 +22,7 @@ import {
 interface Props {
   applicant: Omit<ApplicationFields, "email"> & { email: string; hasCv: boolean };
   questions: { id: string; text: string }[];
+  requiredAnswers: number | null;
   departments: { id: string; name: string; description: string }[];
   editable: boolean;
   /** Formatted end of the application phase. */
@@ -36,7 +37,7 @@ interface Props {
 }
 
 export function ApplicantView(props: Props) {
-  const { applicant, questions, departments, editable, deadline, replyTo, cvHref } = props;
+  const { applicant, questions, requiredAnswers, departments, editable, deadline, replyTo, cvHref } = props;
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -51,6 +52,7 @@ export function ApplicantView(props: Props) {
         <ApplicationForm
           mode="edit"
           questions={questions}
+          requiredAnswers={requiredAnswers}
           departments={departments}
           initial={applicant}
           replyTo={replyTo}
@@ -119,12 +121,14 @@ export function ApplicantView(props: Props) {
           {questions.map((q) => (
             <div key={q.id} className={listRow}>
               <dt className={readLabel}>{q.text}</dt>
-              <dd className="whitespace-pre-line">{applicant.answers[q.id] ?? ""}</dd>
+              <dd className="whitespace-pre-line">{applicant.answers[q.id] ?? "–"}</dd>
             </div>
           ))}
           <div className={listRow}>
             <dt className={readLabel}>Wunsch-Ressort</dt>
-            <dd>{applicant.departmentUnsure ? "weiß ich noch nicht" : chosen.join(", ") || "–"}</dd>
+            <dd>
+              {applicant.departmentAll ? "für alle Ressorts offen" : applicant.departmentUnsure ? "weiß ich noch nicht" : chosen.join(", ") || "–"}
+            </dd>
           </div>
           <div className={listRow}>
             <dt className={readLabel}>Lebenslauf</dt>
