@@ -107,6 +107,7 @@ Alle Tabellen hängen über `round_id` an `rounds`, mit `on delete cascade`. Lö
 | mail_transport | `graph` \| `gmail` | Versandweg |
 | reply_to | text | Antwortadresse (Funktionspostfach) |
 | privacy_notice | text | Datenschutzhinweis |
+| required_answers | int, null | Wie viele Fragen eine Bewerbung beantworten muss, egal welche; null = alle (30.09.2026) |
 | selection_started_at | timestamptz, null | ab hier fällt die Sichtsperre für alle |
 | board_frozen_at, board_frozen_by | timestamptz, uuid, null | Einfrieren |
 | deletion_reminder_sent_at | timestamptz, null | |
@@ -121,6 +122,7 @@ Alle Tabellen hängen über `round_id` an `rounds`, mit `on delete cascade`. Lö
 | round_id | uuid | |
 | name, email, cohort | text | email pro Runde eindeutig (ohne Groß- und Kleinschreibung) |
 | department_unsure | bool | „weiß ich noch nicht“ |
+| department_all | bool | „Ich bin für alle Ressorts offen“; nie zusammen mit department_unsure (30.09.2026) |
 | cv_path | text | Pfad im Bucket `cv` |
 | token_hash | text | SHA-256 des persönlichen Tokens. Das Token selbst wird nie gespeichert. |
 | source | `form` \| `admin` | Formular oder Erfassung durch Admin |
@@ -261,7 +263,7 @@ Eine Funktion `sendMail({ to, subject, text, html, ics? })` mit zwei Umsetzungen
 - **gmail:** Nodemailer mit `service: 'gmail'`, App-Passwort, `icalEvent` für Einladungen (`text/calendar; method=…`, Dateiname `termin.ics`, keine weiteren Anhänge)
 - **graph:** OAuth-Anmeldung als App (Client Credentials, Token etwa 1 Stunde gültig und bis kurz vor Ablauf wiederverwendet), dann `POST /users/{funktionspostfach}/sendMail` im **MIME-Format** (`Content-Type: text/plain`, Mail base64-kodiert, Antwort `202`). Die MIME-Nachricht baut Nodemailer (Stream-Transport), damit beide Wege dieselbe Mail mit Text- und HTML-Teil und später derselben Kalendereinladung verschicken.
 
-Absender ist „Law Clinic Orga-Team“ mit der Gmail-Adresse bzw. dem Funktionspostfach, „Antwort an“ ist `rounds.reply_to` (Ersatz: `MAIL_REPLY_TO`). Umgebungsvariablen: `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `MAIL_REPLY_TO`, `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`, `GRAPH_MAILBOX`.
+Absender ist „Law Clinic Orga-Team“ mit der Gmail-Adresse bzw. dem Funktionspostfach. „Antwort an“ ist `rounds.reply_to` (Ersatz: `MAIL_REPLY_TO`), **aber nur bei graph**: Über Gmail setzt das Tool seit 30.09.2026 keine Antwortadresse, weil eine Law-School-Antwortadresse bei einem Gmail-Absender zusammen mit dem Link die Mails beim Erstkontakt in den Junk brachte; Antworten gehen dann an das Gmail-Konto. Links in Mails zeigen die volle Adresse als Text. Umgebungsvariablen: `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `MAIL_REPLY_TO`, `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`, `GRAPH_MAILBOX`.
 
 Freigabe durch die IT für **graph** (laut Microsoft-Doku, am 28.09.2026 nachgelesen):
 1. App-Registrierung in Entra ID mit Client Secret. `Mail.Send` dort **nicht** per Admin-Consent freigeben, sonst gilt das Recht für alle Postfächer (Entra- und Exchange-Rechte addieren sich).
@@ -321,8 +323,8 @@ Mails an Bewerber und Team enthalten keine Lebensläufe und keine Bewertungen, n
 
 ## 9. Prüfpunkte (nicht verifiziert)
 
-- [ ] Bietet Vercel für den kostenlosen Tarif einen Auftragsverarbeitungsvertrag an? Relevant für das Gespräch mit Bian.
+- [x] Bietet Vercel für den kostenlosen Tarif einen Auftragsverarbeitungsvertrag an? **Nein** (nachgelesen 30.09.2026): Das DPA gilt laut vercel.com/legal/dpa (Fassung vom 17.03.2026) nur „for Customers who are on Enterprise and Pro plans“; der Hobby-Tarif ist laut Doku „non-commercial, personal use only“. Entscheidung des Teams am 30.09.2026: vorerst unverändert im kostenlosen Tarif. Ob mit Supabase ein DPA abgeschlossen ist, ist ungeprüft.
 - [x] Wie hoch ist das tägliche Sendelimit des Gmail-Kontos? Erwartet werden rund 150 Mails pro Runde, verteilt über Wochen. **Geklärt 28.09.2026:** 500 Mails pro Tag, danach 1 bis 24 Stunden gesperrt (Google-Hilfe, support.google.com/mail/answer/22839). Reicht deutlich.
 - [ ] Hält der tägliche Zeitplan-Job Supabase wach, sodass es während einer Runde nicht pausiert? Sonst muss das Projekt vor einer Runde einmal von Hand aufgeweckt werden.
-- [ ] Genauer Ablauf der IT-Freigabe für Graph (App-Registrierung, `Mail.Send`, Beschränkung auf das Funktionspostfach). Das ist die Grundlage für die Anfrage an die IT. Stand 28.09.2026: Ablauf laut Doku in 6.5 beschrieben, von der IT noch nicht bestätigt.
+- [ ] (Ruht: IT hat Graph und Allow-Liste am 30.09.2026 abgelehnt.) Genauer Ablauf der IT-Freigabe für Graph (App-Registrierung, `Mail.Send`, Beschränkung auf das Funktionspostfach). Das ist die Grundlage für die Anfrage an die IT. Stand 28.09.2026: Ablauf laut Doku in 6.5 beschrieben, von der IT noch nicht bestätigt.
 - [ ] Laufen Realtime-Änderungen bei 20 gleichzeitigen Geräten im kostenlosen Tarif ohne Engpass?
