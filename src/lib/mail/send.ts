@@ -37,11 +37,17 @@ function senderAddress(transport: MailTransport): string {
   return requireEnv(transport === "graph" ? "GRAPH_MAILBOX" : "GMAIL_USER");
 }
 
-/** Message as handed to nodemailer: sender name and address, reply-to. */
+/**
+ * Message as handed to nodemailer: sender name and address, reply-to.
+ * Via Gmail without Reply-To: a Law School reply-to on a Gmail sender pushed
+ * test mails into the junk folder of Law School mailboxes (30.09.2026);
+ * replies then reach the Gmail account.
+ */
 export function buildMessage(mail: Mail, options: SendOptions = {}): SendMailOptions {
+  const transport = options.transport ?? "gmail";
   return {
-    from: { name: FROM_NAME, address: senderAddress(options.transport ?? "gmail") },
-    replyTo: options.replyTo ?? requireEnv("MAIL_REPLY_TO"),
+    from: { name: FROM_NAME, address: senderAddress(transport) },
+    ...(transport === "graph" && { replyTo: options.replyTo ?? requireEnv("MAIL_REPLY_TO") }),
     to: mail.to,
     subject: mail.subject,
     text: mail.text,

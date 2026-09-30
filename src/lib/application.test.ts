@@ -163,7 +163,7 @@ describe("public form", () => {
       status: "exists",
     });
     expect(send).toHaveBeenCalledTimes(2);
-    expect(send.mock.calls[1][0].subject).toBe("Dein neuer Link zu deiner Bewerbung");
+    expect(send.mock.calls[1][0].subject).toBe("Deine Bewerbung für das Orga-Team der Law Clinic");
     const newToken = lastToken();
 
     expect(newToken).not.toBe(oldToken);

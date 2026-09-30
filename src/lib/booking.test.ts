@@ -310,7 +310,7 @@ describe("asking applicants without a slot to book", () => {
     // P2, P5 and whichever of P3/P4 did not get s2.
     expect(result).toEqual({ ok: true, sent: 3, failed: 0 });
     const mail = to(people.P5.email)[0];
-    expect(mail.subject).toBe("Buche jetzt deinen Gesprächstermin");
+    expect(mail.subject).toBe("Dein Gesprächstermin beim Orga-Team der Law Clinic");
     const token = mail.text.match(/\/b\/([A-Za-z0-9_-]{43})/)![1];
     expect(await findApplicant(admin, people.P5.token)).toBeNull();
     expect((await findApplicant(admin, token))?.id).toBe(people.P5.id);

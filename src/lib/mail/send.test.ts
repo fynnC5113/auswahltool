@@ -33,12 +33,17 @@ describe("buildMessage", () => {
     expect(await render({ transport: "graph" })).toMatch(/^From: "?Law Clinic Orga-Team"? <termin@example\.org>$/m);
   });
 
-  it("sets Reply-To to the function mailbox by default", async () => {
-    expect(await render()).toMatch(/^Reply-To: funktionspostfach@example\.org$/m);
+  it("sets no Reply-To via gmail, even when the round has one", async () => {
+    expect(await render()).not.toMatch(/^Reply-To:/m);
+    expect(await render({ replyTo: "runde@example.org" })).not.toMatch(/^Reply-To:/m);
   });
 
-  it("uses the reply-to of the round when given", async () => {
-    expect(await render({ replyTo: "runde@example.org" })).toMatch(/^Reply-To: runde@example\.org$/m);
+  it("sets Reply-To to the function mailbox by default via graph", async () => {
+    expect(await render({ transport: "graph" })).toMatch(/^Reply-To: funktionspostfach@example\.org$/m);
+  });
+
+  it("uses the reply-to of the round via graph", async () => {
+    expect(await render({ transport: "graph", replyTo: "runde@example.org" })).toMatch(/^Reply-To: runde@example\.org$/m);
   });
 
   it("adds a calendar invitation as text/calendar with its method", async () => {

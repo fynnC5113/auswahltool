@@ -37,6 +37,27 @@ describe("loginLinkMail", () => {
     expect(mail.text).toContain(url);
     expect(mail.html).toContain(`href="${escapeHtml(url)}"`);
   });
+
+  // Wording that passed the Law School spam filter on first contact (30.09.2026).
+  it("uses neutral wording without 'Login'", () => {
+    expect(mail.subject).toBe("Auswahltool der Law Clinic");
+    expect(mail.text).not.toMatch(/login|angefordert/i);
+  });
+});
+
+describe("links in mails", () => {
+  it("show the full address as link text", () => {
+    const url = "https://lawclinic-bewerbung.vercel.app/b/token?x=1&y=2";
+    const mails = [
+      loginLinkMail({ url }),
+      applicationReceivedMail({ name: "Anna", url, closesAt: null }),
+      applicationLinkMail({ name: "Anna", url }),
+      bookNowMail({ name: "Anna", url }),
+    ];
+    for (const mail of mails) {
+      expect(mail.html).toContain(`<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`);
+    }
+  });
 });
 
 describe("applicationReceivedMail", () => {

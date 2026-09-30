@@ -28,24 +28,24 @@ function html(paragraphs: string[]): string {
   return paragraphs.map((p) => `<p>${p}</p>`).join("\n");
 }
 
-function link(url: string, label: string): string {
-  return `<a href="${escapeHtml(url)}">${escapeHtml(label)}</a>`;
+// The full address as link text: a hidden target ("Zum Login") pushed test
+// mails into the junk folder of Law School mailboxes (30.09.2026).
+function link(url: string): string {
+  return `<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`;
 }
 
 export function loginLinkMail({ url }: { url: string }): Content {
   return {
-    subject: "Dein Login-Link für das Auswahltool",
+    subject: "Auswahltool der Law Clinic",
     text: [
       "Hallo,",
-      `hier ist dein Login-Link für das Auswahltool des Orga-Teams:\n${url}`,
-      "Der Link gilt nur einmal. Wenn du ihn nicht angefordert hast, kannst du diese Mail ignorieren.",
-      "Law Clinic Orga-Team",
+      `über diesen Link kommst du ins Auswahltool des Orga-Teams:\n${url}`,
+      "Viele Grüße\nLaw Clinic Orga-Team",
     ].join("\n\n"),
     html: html([
       "Hallo,",
-      `hier ist dein Login-Link für das Auswahltool des Orga-Teams:<br>${link(url, "Zum Login")}`,
-      "Der Link gilt nur einmal. Wenn du ihn nicht angefordert hast, kannst du diese Mail ignorieren.",
-      "Law Clinic Orga-Team",
+      `über diesen Link kommst du ins Auswahltool des Orga-Teams:<br>${link(url)}`,
+      "Viele Grüße<br>Law Clinic Orga-Team",
     ]),
   };
 }
@@ -69,14 +69,12 @@ export function applicationReceivedMail({
       `Hallo ${name},`,
       "vielen Dank für deine Bewerbung für das Orga-Team der Law Clinic. Sie ist bei uns eingegangen.",
       `${use} Dort buchst du auch deinen Gesprächstermin:\n${url}`,
-      "Bitte gib den Link nicht weiter, er ist dein Zugang zu deiner Bewerbung.",
       "Viele Grüße\nLaw Clinic Orga-Team",
     ].join("\n\n"),
     html: html([
       `Hallo ${escapeHtml(name)},`,
       "vielen Dank für deine Bewerbung für das Orga-Team der Law Clinic. Sie ist bei uns eingegangen.",
-      `${escapeHtml(use)} Dort buchst du auch deinen Gesprächstermin:<br>${link(url, "Zu deiner Bewerbung")}`,
-      "Bitte gib den Link nicht weiter, er ist dein Zugang zu deiner Bewerbung.",
+      `${escapeHtml(use)} Dort buchst du auch deinen Gesprächstermin:<br>${link(url)}`,
       "Viele Grüße<br>Law Clinic Orga-Team",
     ]),
   };
@@ -85,19 +83,19 @@ export function applicationReceivedMail({
 /** Second application with the same address: a new link, the old one no longer works. */
 export function applicationLinkMail({ name, url }: { name: string; url: string }): Content {
   return {
-    subject: "Dein neuer Link zu deiner Bewerbung",
+    subject: "Deine Bewerbung für das Orga-Team der Law Clinic",
     text: [
       `Hallo ${name},`,
       "für deine Adresse gibt es bereits eine Bewerbung für das Orga-Team der Law Clinic. Deshalb wurde keine zweite angelegt.",
-      `Hier ist dein neuer persönlicher Link. Über ihn kannst du deine Bewerbung ansehen, ändern oder zurückziehen:\n${url}`,
-      "Frühere Links zu deiner Bewerbung gelten nicht mehr. Bitte gib den Link nicht weiter.",
+      `Über diesen Link kannst du deine Bewerbung ansehen, ändern oder zurückziehen:\n${url}`,
+      "Frühere Links zu deiner Bewerbung gelten nicht mehr.",
       "Viele Grüße\nLaw Clinic Orga-Team",
     ].join("\n\n"),
     html: html([
       `Hallo ${escapeHtml(name)},`,
       "für deine Adresse gibt es bereits eine Bewerbung für das Orga-Team der Law Clinic. Deshalb wurde keine zweite angelegt.",
-      `Hier ist dein neuer persönlicher Link. Über ihn kannst du deine Bewerbung ansehen, ändern oder zurückziehen:<br>${link(url, "Zu deiner Bewerbung")}`,
-      "Frühere Links zu deiner Bewerbung gelten nicht mehr. Bitte gib den Link nicht weiter.",
+      `Über diesen Link kannst du deine Bewerbung ansehen, ändern oder zurückziehen:<br>${link(url)}`,
+      "Frühere Links zu deiner Bewerbung gelten nicht mehr.",
       "Viele Grüße<br>Law Clinic Orga-Team",
     ]),
   };
@@ -151,7 +149,7 @@ export function bookingConfirmedMail({
     [
       `Hallo ${escapeHtml(name)},`,
       `${escapeHtml(intro)}<br><strong>${escapeHtml(slot.when)}</strong><br>Ort: ${escapeHtml(slot.location)}`,
-      url ? `${escapeHtml(change)}<br>${link(url, "Zu deiner Bewerbung")}` : escapeHtml(change),
+      url ? `${escapeHtml(change)}<br>${link(url)}` : escapeHtml(change),
       "Die Einladung für deinen Kalender hängt an dieser Mail.",
       "Viele Grüße<br>Law Clinic Orga-Team",
     ],
@@ -198,7 +196,7 @@ export function interviewInviteMail({
     [
       `Hallo ${escapeHtml(memberName)},`,
       `du führst ein Bewerbungsgespräch:<br>Bewerber: ${escapeHtml(applicantName)}<br><strong>${escapeHtml(slot.when)}</strong><br>Ort: ${escapeHtml(slot.location)}<br>mit ${escapeHtml(partnerName)}`,
-      `Die Unterlagen findest du im Auswahltool:<br>${link(url, "Zum Auswahltool")}`,
+      `Die Unterlagen findest du im Auswahltool:<br>${link(url)}`,
       "Die Einladung für deinen Kalender hängt an dieser Mail.",
       "Law Clinic Orga-Team",
     ],
@@ -233,17 +231,16 @@ export function bookNowMail({ name, url }: { name: string; url: string }): Conte
   const body = both(
     [
       `Hallo ${name},`,
-      "du kannst jetzt deinen Termin für das Gespräch mit dem Orga-Team der Law Clinic buchen. Wähle dazu über deinen persönlichen Link einen freien Termin:",
-      url,
-      "Frühere Links zu deiner Bewerbung gelten nicht mehr. Bitte gib den Link nicht weiter.",
+      `du kannst jetzt deinen Termin für das Gespräch mit dem Orga-Team der Law Clinic buchen. Über diesen Link wählst du einen freien Termin:\n${url}`,
+      "Frühere Links zu deiner Bewerbung gelten nicht mehr.",
       "Viele Grüße\nLaw Clinic Orga-Team",
     ],
     [
       `Hallo ${escapeHtml(name)},`,
-      `du kannst jetzt deinen Termin für das Gespräch mit dem Orga-Team der Law Clinic buchen. Wähle dazu über deinen persönlichen Link einen freien Termin:<br>${link(url, "Termin buchen")}`,
-      "Frühere Links zu deiner Bewerbung gelten nicht mehr. Bitte gib den Link nicht weiter.",
+      `du kannst jetzt deinen Termin für das Gespräch mit dem Orga-Team der Law Clinic buchen. Über diesen Link wählst du einen freien Termin:<br>${link(url)}`,
+      "Frühere Links zu deiner Bewerbung gelten nicht mehr.",
       "Viele Grüße<br>Law Clinic Orga-Team",
     ],
   );
-  return { ...body, subject: "Buche jetzt deinen Gesprächstermin" };
+  return { ...body, subject: "Dein Gesprächstermin beim Orga-Team der Law Clinic" };
 }

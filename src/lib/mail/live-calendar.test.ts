@@ -5,6 +5,7 @@
 // Add MAIL_LIVE_CAL_CANCEL=1 to send the cancellation of the same test entry,
 // MAIL_LIVE_TRANSPORT=graph to send via the function mailbox.
 import { describe, expect, it } from "vitest";
+import { createToken } from "../applicant-token";
 import { sendCancellations, sendInvitations, type SlotSnapshot } from "../calendar-mail";
 import type { MailTransport } from "./send";
 
@@ -29,7 +30,7 @@ describe.skipIf(!to)(`live calendar mail via ${transport}`, () => {
   it(cancel ? "sends the cancellation" : "sends the invitation", async () => {
     const failed = cancel
       ? await sendCancellations(slot(2), { applicant: { rebooked: false }, memberIds: [] })
-      : await sendInvitations(slot(1), { applicant: { url: "https://lawclinic-bewerbung.vercel.app/b/test-phase12", rebooked: false }, memberIds: [] });
+      : await sendInvitations(slot(1), { applicant: { url: `https://lawclinic-bewerbung.vercel.app/b/${createToken()}`, rebooked: false }, memberIds: [] });
     expect(failed).toBe(0);
   });
 });
