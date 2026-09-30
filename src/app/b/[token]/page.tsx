@@ -47,7 +47,6 @@ export default async function ApplicantPage({ params }: { params: Promise<{ toke
           cohort: applicant.cohort,
           answers: applicant.answers,
           departmentIds: applicant.departmentIds,
-          departmentUnsure: applicant.departmentUnsure,
           departmentAll: applicant.departmentAll,
           privacyConfirmed: false,
           hasCv: !!applicant.cvPath,

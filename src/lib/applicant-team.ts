@@ -23,7 +23,6 @@ type ApplicantRow = {
   name: string;
   email: string;
   cohort: string;
-  department_unsure: boolean;
   department_all: boolean;
   status: ApplicantStatus;
   source: Source;
@@ -33,7 +32,7 @@ type ApplicantRow = {
   applicant_departments: { department_id: string }[];
 };
 
-const APPLICANT_COLUMNS = `id, round_id, name, email, cohort, department_unsure, department_all, status, source, cv_path, created_at,
+const APPLICANT_COLUMNS = `id, round_id, name, email, cohort, department_all, status, source, cv_path, created_at,
   answers (question_id, text), applicant_departments (department_id)`;
 
 type SlotRow = {
@@ -104,7 +103,6 @@ export async function loadTeamList(session: SupabaseClient, roundId?: string): P
       email: a.email,
       cohort: a.cohort,
       departmentIds,
-      departmentUnsure: a.department_unsure,
       departmentAll: a.department_all,
       departments: departmentNames(round, departmentIds),
       status: a.status,
@@ -131,7 +129,6 @@ export type TeamApplicant = {
   email: string;
   cohort: string;
   departments: string[];
-  departmentUnsure: boolean;
   departmentAll: boolean;
   status: ApplicantStatus;
   source: Source;
@@ -181,7 +178,6 @@ export async function loadTeamApplicant(session: SupabaseClient, id: string): Pr
     email: a.email,
     cohort: a.cohort,
     departments: departmentNames(round, departmentIds),
-    departmentUnsure: a.department_unsure,
     departmentAll: a.department_all,
     status: a.status,
     source: a.source,

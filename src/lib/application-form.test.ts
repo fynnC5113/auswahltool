@@ -23,7 +23,6 @@ function filled(changes: Partial<ApplicationFields> = {}): ApplicationFields {
     cohort: "2024",
     answers: { q1: "Weil …", q2: "Darum." },
     departmentIds: ["d1"],
-    departmentUnsure: false,
     departmentAll: false,
     privacyConfirmed: true,
     ...changes,
@@ -81,8 +80,10 @@ describe("validateApplication", () => {
     expect(validateApplication(filled({ email: "anna@" }), round, publicForm).email).toBeDefined();
   });
 
-  it("accepts 'weiß ich noch nicht' instead of a department", () => {
-    expect(validateApplication(filled({ departmentIds: [], departmentUnsure: true }), round, publicForm)).toEqual({});
+  it("requires a department or 'alle Ressorts' in the public form", () => {
+    expect(validateApplication(filled({ departmentIds: [] }), round, publicForm).departments).toBe(
+      "Bitte wähle mindestens ein Ressort oder „Ich bin für alle Ressorts offen“.",
+    );
   });
 
   it("accepts 'alle Ressorts' instead of a department", () => {
@@ -149,20 +150,16 @@ describe("validateApplication", () => {
 });
 
 describe("normalizeFields", () => {
-  it("trims, lower-cases the address and clears departments when unsure", () => {
+  it("trims, lower-cases the address and removes duplicate departments", () => {
     const result = normalizeFields(
-      filled({ name: " Anna ", email: " Anna@Example.ORG ", departmentIds: ["d1", "d1"], departmentUnsure: true }),
+      filled({ name: " Anna ", email: " Anna@Example.ORG ", departmentIds: ["d1", "d1"] }),
       round.questionIds,
     );
-    expect(result).toMatchObject({ name: "Anna", email: "anna@example.org", departmentIds: [] });
+    expect(result).toMatchObject({ name: "Anna", email: "anna@example.org", departmentIds: ["d1"] });
   });
 
-  it("clears departments for 'alle Ressorts'; 'weiß ich noch nicht' wins if both are set", () => {
+  it("clears departments for 'alle Ressorts'", () => {
     expect(normalizeFields(filled({ departmentAll: true }), round.questionIds)).toMatchObject({ departmentIds: [], departmentAll: true });
-    expect(normalizeFields(filled({ departmentAll: true, departmentUnsure: true }), round.questionIds)).toMatchObject({
-      departmentAll: false,
-      departmentUnsure: true,
-    });
   });
 
   it("keeps only answers to the round's questions", () => {
@@ -199,7 +196,7 @@ describe("looksLikePdf", () => {
 describe("coerceFields", () => {
   it("turns anything into well-formed fields", () => {
     expect(coerceFields(null)).toEqual(emptyFields());
-    expect(coerceFields({ name: 1, answers: { q1: 2, q2: "ok" }, departmentIds: ["d1", 3], departmentUnsure: "yes", privacyConfirmed: "yes" })).toEqual({
+    expect(coerceFields({ name: 1, answers: { q1: 2, q2: "ok" }, departmentIds: ["d1", 3], departmentAll: "yes", privacyConfirmed: "yes" })).toEqual({
       ...emptyFields(),
       answers: { q1: "", q2: "ok" },
       departmentIds: ["d1"],

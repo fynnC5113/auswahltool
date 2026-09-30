@@ -17,8 +17,6 @@ export interface ApplicationFields {
   /** question id → answer */
   answers: Record<string, string>;
   departmentIds: string[];
-  /** "weiß ich noch nicht" */
-  departmentUnsure: boolean;
   /** "Ich bin für alle Ressorts offen" */
   departmentAll: boolean;
   /** Checkbox under the privacy notice (public form only). */
@@ -34,7 +32,7 @@ export function applicationWindow(opensAt: Date, closesAt: Date, now: Date): App
 }
 
 export function emptyFields(): ApplicationFields {
-  return { name: "", email: "", cohort: "", answers: {}, departmentIds: [], departmentUnsure: false, departmentAll: false, privacyConfirmed: false };
+  return { name: "", email: "", cohort: "", answers: {}, departmentIds: [], departmentAll: false, privacyConfirmed: false };
 }
 
 /** Server actions receive whatever the client sends: bring it into shape first. */
@@ -48,8 +46,7 @@ export function coerceFields(raw: unknown): ApplicationFields {
     cohort: str(r.cohort),
     answers: Object.fromEntries(Object.entries(answers).map(([k, v]) => [k, str(v)])),
     departmentIds: Array.isArray(r.departmentIds) ? r.departmentIds.filter((d): d is string => typeof d === "string") : [],
-    departmentUnsure: r.departmentUnsure === true,
-    departmentAll: r.departmentAll === true && r.departmentUnsure !== true,
+    departmentAll: r.departmentAll === true,
     privacyConfirmed: r.privacyConfirmed === true,
   };
 }
@@ -71,8 +68,8 @@ export function requiredAnswersNote(questionCount: number, requiredAnswers: numb
 
 /**
  * Keys: "name", "email", "cohort", "answers", "answers.<questionId>", "departments", "privacy".
- * requireDepartment: the public form requires a department or "weiß ich noch
- * nicht"; an admin entering an application may leave it open.
+ * requireDepartment: the public form requires a department or "alle
+ * Ressorts"; an admin entering an application may leave it open.
  * withEmail: false when editing (the address is bound to the link).
  * requirePrivacy: the public form, when the round has a privacy notice.
  */
@@ -112,8 +109,8 @@ export function validateApplication(
 
   if (fields.departmentIds.some((id) => !round.departmentIds.includes(id))) {
     errors.departments = "Unbekanntes Ressort. Bitte lade die Seite neu.";
-  } else if (options.requireDepartment && !fields.departmentUnsure && !fields.departmentAll && fields.departmentIds.length === 0) {
-    errors.departments = "Bitte wähle „Ich bin für alle Ressorts offen“, mindestens ein Ressort oder „weiß ich noch nicht“.";
+  } else if (options.requireDepartment && !fields.departmentAll && fields.departmentIds.length === 0) {
+    errors.departments = "Bitte wähle mindestens ein Ressort oder „Ich bin für alle Ressorts offen“.";
   }
 
   if (options.requirePrivacy && !fields.privacyConfirmed) {
@@ -123,16 +120,15 @@ export function validateApplication(
   return errors;
 }
 
-/** Trimmed values as saved; "alle Ressorts" and "weiß ich noch nicht" clear the department choice. */
+/** Trimmed values as saved; "alle Ressorts" clears the department choice. */
 export function normalizeFields(fields: ApplicationFields, questionIds: string[]): ApplicationFields {
   return {
     name: fields.name.trim(),
     email: fields.email.trim().toLowerCase(),
     cohort: fields.cohort.trim(),
     answers: Object.fromEntries(questionIds.map((id) => [id, (fields.answers[id] ?? "").trim()])),
-    departmentIds: fields.departmentUnsure || fields.departmentAll ? [] : [...new Set(fields.departmentIds)],
-    departmentUnsure: fields.departmentUnsure,
-    departmentAll: fields.departmentAll && !fields.departmentUnsure,
+    departmentIds: fields.departmentAll ? [] : [...new Set(fields.departmentIds)],
+    departmentAll: fields.departmentAll,
     privacyConfirmed: fields.privacyConfirmed,
   };
 }

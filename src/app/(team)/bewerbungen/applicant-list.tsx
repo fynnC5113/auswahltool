@@ -69,7 +69,6 @@ export function ApplicantList({
             </option>
           ))}
           <option value="all">für alle offen</option>
-          <option value="unsure">weiß noch nicht</option>
         </select>
         <select
           aria-label="Status"
@@ -112,9 +111,7 @@ export function ApplicantList({
                     Jahrgang {item.cohort} ·{" "}
                     {item.departmentAll
                       ? "Ressort: für alle offen"
-                      : item.departmentUnsure
-                        ? "Ressort: weiß noch nicht"
-                        : item.departments.join(", ") || "kein Ressort"}
+                      : item.departments.join(", ") || "kein Ressort"}
                     {item.conflicts.length > 0 && (
                       <span className="text-warn"> · befangen: {item.conflicts.join(", ")}</span>
                     )}

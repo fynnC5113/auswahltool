@@ -127,7 +127,7 @@ export function ApplicantView(props: Props) {
           <div className={listRow}>
             <dt className={readLabel}>Wunsch-Ressort</dt>
             <dd>
-              {applicant.departmentAll ? "für alle Ressorts offen" : applicant.departmentUnsure ? "weiß ich noch nicht" : chosen.join(", ") || "–"}
+              {applicant.departmentAll ? "für alle Ressorts offen" : chosen.join(", ") || "–"}
             </dd>
           </div>
           <div className={listRow}>

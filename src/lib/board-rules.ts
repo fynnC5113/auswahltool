@@ -186,25 +186,22 @@ export type CompositionCard = {
   applicantId: string;
   cohort: string;
   departmentIds: string[];
-  departmentUnsure: boolean;
   departmentAll: boolean;
 };
 export const ALL = "all";
-export const UNSURE = "unsure";
 export const NONE = "none";
 export type Composition = {
   filled: number;
   seats: number;
   cohorts: { cohort: string; count: number }[];
-  /** Every department of the round in order (also with 0), then ALL, UNSURE and NONE if they occur. */
+  /** Every department of the round in order (also with 0), then ALL and NONE if they occur. */
   departments: { key: string; count: number }[];
 };
 
 /**
  * Cards on seats, counted by cohort and by preferred department. A card
  * with several departments counts in each; "für alle Ressorts offen" is ALL
- * (its own entry, not counted in every department), "weiß ich noch nicht" is UNSURE,
- * no choice at all (possible when an admin enters the application) is NONE.
+ * (its own entry, not counted in every department), no choice at all (possible when an admin enters the application) is NONE.
  */
 export function composition(
   state: BoardState,
@@ -220,11 +217,9 @@ export function composition(
 
   const departments = new Map<string, number>(departmentIds.map((id) => [id, 0]));
   let all = 0;
-  let unsure = 0;
   let none = 0;
   for (const c of onSeats) {
     if (c.departmentAll) all++;
-    else if (c.departmentUnsure) unsure++;
     else if (c.departmentIds.length === 0) none++;
     for (const id of new Set(c.departmentIds)) departments.set(id, (departments.get(id) ?? 0) + 1);
   }
@@ -236,7 +231,6 @@ export function composition(
     departments: [
       ...[...departments].map(([key, count]) => ({ key, count })),
       ...(all ? [{ key: ALL, count: all }] : []),
-      ...(unsure ? [{ key: UNSURE, count: unsure }] : []),
       ...(none ? [{ key: NONE, count: none }] : []),
     ],
   };

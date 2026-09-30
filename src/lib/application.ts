@@ -46,7 +46,6 @@ export interface Applicant {
   name: string;
   email: string;
   cohort: string;
-  departmentUnsure: boolean;
   departmentAll: boolean;
   departmentIds: string[];
   answers: Record<string, string>;
@@ -284,7 +283,6 @@ export async function submitApplication(
       name: fields.name,
       email: fields.email,
       cohort: fields.cohort,
-      department_unsure: fields.departmentUnsure,
       department_all: fields.departmentAll,
       cv_path: cvPath(round.id, applicantId),
       token_hash: hashToken(token),
@@ -334,7 +332,6 @@ type ApplicantRow = {
   name: string;
   email: string;
   cohort: string;
-  department_unsure: boolean;
   department_all: boolean;
   cv_path: string | null;
   source: Source;
@@ -350,7 +347,7 @@ export async function findApplicant(db: SupabaseClient, token: string): Promise<
   const { data, error } = await db
     .from("applicants")
     .select(
-      `id, round_id, name, email, cohort, department_unsure, department_all, cv_path, source, created_at, updated_at,
+      `id, round_id, name, email, cohort, department_all, cv_path, source, created_at, updated_at,
        answers (question_id, text), applicant_departments (department_id)`,
     )
     .eq("token_hash", hashToken(token))
@@ -364,7 +361,6 @@ export async function findApplicant(db: SupabaseClient, token: string): Promise<
     name: data.name,
     email: data.email,
     cohort: data.cohort,
-    departmentUnsure: data.department_unsure,
     departmentAll: data.department_all,
     departmentIds: data.applicant_departments.map((d) => d.department_id),
     answers: Object.fromEntries(data.answers.map((a) => [a.question_id, a.text])),
@@ -447,7 +443,6 @@ export async function updateApplication(
       id: applicant.id,
       name: fields.name,
       cohort: fields.cohort,
-      department_unsure: fields.departmentUnsure,
       department_all: fields.departmentAll,
       ...(newCvPath ? { cv_path: newCvPath } : {}),
     },

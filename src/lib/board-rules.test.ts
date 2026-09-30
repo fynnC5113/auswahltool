@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   ALL,
   NONE,
-  UNSURE,
   alsoList,
   boardState,
   changeSeats,
@@ -308,11 +307,11 @@ describe("shortScore", () => {
 
 describe("composition", () => {
   const cards = [
-    { applicantId: "anna", cohort: "2025", departmentIds: ["d1"], departmentUnsure: false, departmentAll: false },
-    { applicantId: "ben", cohort: "2024", departmentIds: ["d1", "d2"], departmentUnsure: false, departmentAll: false },
-    { applicantId: "clara", cohort: "2025", departmentIds: [], departmentUnsure: true, departmentAll: false },
-    { applicantId: "dora", cohort: "2025", departmentIds: [], departmentUnsure: false, departmentAll: false },
-    { applicantId: "emil", cohort: "2023", departmentIds: ["d3"], departmentUnsure: false, departmentAll: false },
+    { applicantId: "anna", cohort: "2025", departmentIds: ["d1"], departmentAll: false },
+    { applicantId: "ben", cohort: "2024", departmentIds: ["d1", "d2"], departmentAll: false },
+    { applicantId: "clara", cohort: "2025", departmentIds: ["d3"], departmentAll: false },
+    { applicantId: "dora", cohort: "2025", departmentIds: [], departmentAll: false },
+    { applicantId: "emil", cohort: "2023", departmentIds: ["d3"], departmentAll: false },
   ];
 
   it("counts only cards on seats, by cohort and by department", () => {
@@ -333,8 +332,7 @@ describe("composition", () => {
       departments: [
         { key: "d1", count: 2 },
         { key: "d2", count: 1 },
-        { key: "d3", count: 0 },
-        { key: UNSURE, count: 1 },
+        { key: "d3", count: 1 },
         { key: NONE, count: 1 },
       ],
     });

@@ -39,7 +39,6 @@ function fields(changes: Partial<ApplicationFields> = {}): ApplicationFields {
     cohort: "2024",
     answers: { [questions[0]]: "Antwort eins", [questions[1]]: "Antwort zwei" },
     departmentIds: [departments[0]],
-    departmentUnsure: false,
     departmentAll: false,
     privacyConfirmed: true,
     ...changes,
@@ -208,7 +207,7 @@ describe("public form", () => {
     expect(options).toEqual({ transport: "gmail", replyTo: "test@example.invalid" });
 
     const applicant = await findApplicant(admin, lastToken());
-    expect(applicant).toMatchObject({ name: "Test Bewerberin", cohort: "2024", source: "form", departmentUnsure: false });
+    expect(applicant).toMatchObject({ name: "Test Bewerberin", cohort: "2024", source: "form" });
     expect(applicant!.answers).toEqual({ [questions[0]]: "Antwort eins", [questions[1]]: "Antwort zwei" });
     expect(applicant!.departmentIds.sort()).toEqual([...departments].sort());
     expect(applicant!.cvPath).toBe(`${roundId}/${applicant!.id}.pdf`);
@@ -331,12 +330,12 @@ describe("applicant page", () => {
       name: "Neuer Name",
       answers: { [questions[0]]: "Geändert", [questions[1]]: "Auch geändert" },
       departmentIds: [],
-      departmentUnsure: true,
+      departmentAll: true,
     });
     expect(await updateApplication(admin, token, edited, replacement.path)).toEqual({ status: "done" });
 
     const after = (await findApplicant(admin, token))!;
-    expect(after).toMatchObject({ name: "Neuer Name", email: before.email, departmentUnsure: true, departmentIds: [], cvPath: replacement.path });
+    expect(after).toMatchObject({ name: "Neuer Name", email: before.email, departmentAll: true, departmentIds: [], cvPath: replacement.path });
     expect(after.answers[questions[0]]).toBe("Geändert");
     expect(await filesOf(before.id)).toEqual([replacement.path.split("/")[1]]);
   });

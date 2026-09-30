@@ -6,7 +6,6 @@ const lena: Searchable = {
   email: "lena.hoffmann@law-school.de",
   cohort: "2025",
   departmentIds: ["events"],
-  departmentUnsure: false,
   departmentAll: false,
   status: "active",
   answers: ["Ich will die Abläufe mitgestalten, damit Mandanten schneller einen Termin bekommen.", "Ich habe ein Schulfest organisiert."],
@@ -16,7 +15,6 @@ const aylin: Searchable = {
   email: "aylin.demir@law-school.de",
   cohort: "2024",
   departmentIds: [],
-  departmentUnsure: true,
   departmentAll: false,
   status: "no_show",
   answers: ["Beratung von innen kennenlernen.", "Türkisch, Englisch, Social Media."],
@@ -44,10 +42,9 @@ describe("matchesFilter", () => {
     expect(find({ query: "lena türkisch" })).toEqual([]);
   });
 
-  it("filters cohort, department, 'weiß noch nicht' and status", () => {
+  it("filters cohort, department and status", () => {
     expect(find({ cohort: "2024" })).toEqual(["Aylin Demir"]);
     expect(find({ department: "events" })).toEqual(["Lena Hoffmann"]);
-    expect(find({ department: "unsure" })).toEqual(["Aylin Demir"]);
     expect(find({ status: "no_show" })).toEqual(["Aylin Demir"]);
     expect(find({ status: "active", query: "türkisch" })).toEqual([]);
   });

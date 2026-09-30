@@ -180,17 +180,12 @@ export function ApplicationForm({ mode, questions, requiredAnswers, departments,
 
   if (result) return <Result mode={mode} result={result} email={fields.email} replyTo={replyTo} onReset={reset} />;
 
-  const departmentsDisabled = fields.departmentUnsure || fields.departmentAll;
+  const departmentsDisabled = fields.departmentAll;
   const answersNote = requiredAnswersNote(questions.length, requiredAnswers);
 
-  /** "alle Ressorts" and "weiß ich noch nicht" exclude each other and the single departments. */
-  function setDepartmentChoice(choice: "departmentAll" | "departmentUnsure", checked: boolean) {
-    setFields((f) => ({
-      ...f,
-      departmentAll: choice === "departmentAll" && checked,
-      departmentUnsure: choice === "departmentUnsure" && checked,
-      departmentIds: checked ? [] : f.departmentIds,
-    }));
+  /** "alle Ressorts" excludes the single departments. */
+  function setDepartmentAll(checked: boolean) {
+    setFields((f) => ({ ...f, departmentAll: checked, departmentIds: checked ? [] : f.departmentIds }));
     setErrors((er) => ({ ...er, departments: "" }));
   }
 
@@ -248,14 +243,8 @@ export function ApplicationForm({ mode, questions, requiredAnswers, departments,
         <legend className={`${sectionTitle} mb-2`}>Wunsch-Ressort</legend>
         <p className={lead}>Du kannst mehrere wählen.{mode === "admin" && " Bei der Erfassung optional."}</p>
         <div className={listGroup}>
-          <label className={`${checkRow} ${fields.departmentUnsure ? "opacity-50" : ""}`}>
-            <input
-              type="checkbox"
-              className="check"
-              checked={fields.departmentAll}
-              disabled={fields.departmentUnsure}
-              onChange={(e) => setDepartmentChoice("departmentAll", e.target.checked)}
-            />
+          <label className={checkRow}>
+            <input type="checkbox" className="check" checked={fields.departmentAll} onChange={(e) => setDepartmentAll(e.target.checked)} />
             <span>Ich bin für alle Ressorts offen</span>
           </label>
           {departments.map((d) => (
@@ -273,16 +262,6 @@ export function ApplicationForm({ mode, questions, requiredAnswers, departments,
               </span>
             </label>
           ))}
-          <label className={`${checkRow} ${fields.departmentAll ? "opacity-50" : ""}`}>
-            <input
-              type="checkbox"
-              className="check"
-              checked={fields.departmentUnsure}
-              disabled={fields.departmentAll}
-              onChange={(e) => setDepartmentChoice("departmentUnsure", e.target.checked)}
-            />
-            <span>weiß ich noch nicht</span>
-          </label>
         </div>
         {errors.departments && <span className={fieldError}>{errors.departments}</span>}
       </fieldset>
