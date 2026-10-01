@@ -16,7 +16,7 @@ const app = "https://lawclinic-bewerbung.vercel.app";
 
 describe.skipIf(!to)(`live mail via ${transport}`, () => {
   it("sends the login link template", async () => {
-    const mail = loginLinkMail({ url: `${app}/auth/confirm?token_hash=${randomBytes(28).toString("hex")}` });
+    const mail = loginLinkMail({ name: "Testperson Probe", url: `${app}/auth/confirm?token_hash=${randomBytes(28).toString("hex")}` });
     expect(await sendMail({ to: to!, ...mail }, { transport })).toBeTruthy();
   });
 

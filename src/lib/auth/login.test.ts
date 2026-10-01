@@ -38,6 +38,8 @@ describe("requestLoginLink", () => {
     expect(send).toHaveBeenCalledTimes(1);
     const [mail] = send.mock.calls[0];
     expect(mail.to).toBe(active);
+    // First name from team_members (createMember: "Test member").
+    expect(mail.text).toMatch(/^Hallo Test,/);
     const link = new URL(mail.text.match(/https:\/\/\S+/)![0]);
     expect(`${link.origin}${link.pathname}`).toBe("https://auswahltool.example/auth/confirm");
 

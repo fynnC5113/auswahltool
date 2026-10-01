@@ -31,17 +31,26 @@ describe("escapeHtml", () => {
 
 describe("loginLinkMail", () => {
   const url = "https://auswahltool.vercel.app/auth/confirm?token_hash=abc&type=email";
-  const mail = loginLinkMail({ url });
+  const mail = loginLinkMail({ name: "Fynn Clemens", url });
 
   it("contains the link in text and html", () => {
     expect(mail.text).toContain(url);
     expect(mail.html).toContain(`href="${escapeHtml(url)}"`);
   });
 
-  // Wording that passed the Law School spam filter on first contact (30.09.2026).
-  it("uses neutral wording without 'Login'", () => {
-    expect(mail.subject).toBe("Auswahltool der Law Clinic");
+  // 30.09.2026: "Login" and "nicht angefordert" went to junk. 01.10.2026: a
+  // greeting and a link only went to junk too, so first name, purpose and sender line.
+  it("greets by first name, says what the tool is for and ends with the sender line", () => {
+    expect(mail.subject).toBe("Dein Zugang zum Auswahltool des Orga-Teams");
+    expect(mail.text).toMatch(/^Hallo Fynn,/);
+    expect(mail.text).toContain("Bewerbungen der aktuellen Runde");
+    expect(mail.text).toContain("Jungiusstraße 6 · 20355 Hamburg");
     expect(mail.text).not.toMatch(/login|angefordert/i);
+  });
+
+  it("escapes the name and falls back to 'Hallo,' without one", () => {
+    expect(loginLinkMail({ name: "<b>Eve</b> X", url }).html).toContain("Hallo &lt;b&gt;Eve&lt;/b&gt;,");
+    expect(loginLinkMail({ url }).text).toMatch(/^Hallo,\n/);
   });
 });
 

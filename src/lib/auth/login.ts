@@ -26,7 +26,7 @@ export async function requestLoginLink(email: string, admin: SupabaseClient, sen
 
   const { data: member, error } = await admin
     .from("team_members")
-    .select("id")
+    .select("id, name")
     .eq("email", address)
     .eq("active", true)
     .maybeSingle();
@@ -47,7 +47,7 @@ export async function requestLoginLink(email: string, admin: SupabaseClient, sen
     .maybeSingle<{ mail_transport: MailTransport; reply_to: string }>();
 
   await send(
-    { to: address, ...loginLinkMail({ url: url.toString() }) },
+    { to: address, ...loginLinkMail({ name: member.name, url: url.toString() }) },
     round ? { transport: round.mail_transport, replyTo: round.reply_to } : {},
   );
 }

@@ -34,18 +34,28 @@ function link(url: string): string {
   return `<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`;
 }
 
-export function loginLinkMail({ url }: { url: string }): Content {
+/** Postal sender line under team mails (01.10.2026: a real address reads less like phishing). */
+const SENDER_LINE = "Law Clinic an der Bucerius Law School · Jungiusstraße 6 · 20355 Hamburg";
+
+/**
+ * Link for team members. The short version (a greeting and a link only) went
+ * to the junk folder via team@bls-lc.de on 01.10.2026 (CAT:SPM, SCL 5), so it
+ * now has the first name, what the tool is for and a sender line.
+ */
+export function loginLinkMail({ name, url }: { name?: string; url: string }): Content {
+  const first = name?.trim().split(/\s+/)[0] ?? "";
+  const hello = first ? `Hallo ${first},` : "Hallo,";
+  const intro = "hier ist dein Link zum Auswahltool des Orga-Teams der Law Clinic. Dort findest du die Bewerbungen der aktuellen Runde, deine Gesprächstermine und dein Feedback:";
+  const once = "Der Link funktioniert einmal. Für einen neuen Link gibst du auf der Startseite des Tools einfach wieder deine Mailadresse ein.";
   return {
-    subject: "Auswahltool der Law Clinic",
-    text: [
-      "Hallo,",
-      `über diesen Link kommst du ins Auswahltool des Orga-Teams:\n${url}`,
-      "Viele Grüße\nLaw Clinic Orga-Team",
-    ].join("\n\n"),
+    subject: "Dein Zugang zum Auswahltool des Orga-Teams",
+    text: [hello, `${intro}\n${url}`, once, "Viele Grüße\nLaw Clinic Orga-Team", SENDER_LINE].join("\n\n"),
     html: html([
-      "Hallo,",
-      `über diesen Link kommst du ins Auswahltool des Orga-Teams:<br>${link(url)}`,
+      escapeHtml(hello),
+      `${escapeHtml(intro)}<br>${link(url)}`,
+      escapeHtml(once),
       "Viele Grüße<br>Law Clinic Orga-Team",
+      `<small>${escapeHtml(SENDER_LINE)}</small>`,
     ]),
   };
 }
