@@ -11,7 +11,7 @@ import { appUrl } from "@/lib/auth/login";
 import { createToken, hashToken } from "@/lib/applicant-token";
 import { findApplicant, type Applicant } from "@/lib/application";
 import { roomLabel, sendCancellations, sendInvitations, snapshotSlot, type Deliver } from "@/lib/calendar-mail";
-import { sendMail } from "@/lib/mail/send";
+import { sendMail, type MailTransport } from "@/lib/mail/send";
 import { bookNowMail } from "@/lib/mail/templates";
 import { hintContext, loadScheduling } from "@/lib/scheduling";
 import { bookingDeadline, isBookable, offersFor, pairFor } from "@/lib/scheduling-rules";
@@ -154,7 +154,7 @@ export async function inviteToBook(session: SupabaseClient, roundId: string, sen
   const waiting = data.applicants.filter((a) => !booked.has(a.id));
 
   const round = await session.from("rounds").select("mail_transport, reply_to").eq("id", roundId).single<{
-    mail_transport: "gmail" | "graph";
+    mail_transport: MailTransport;
     reply_to: string;
   }>();
   if (round.error) return { error: round.error.message };

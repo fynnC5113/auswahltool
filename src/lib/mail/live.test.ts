@@ -1,7 +1,8 @@
 // Phase 4 / G check: sends both templates for real. Skipped unless a
 // recipient is given, so "npm test" never sends mail:
 //   MAIL_LIVE_TO=you@example.com npx vitest run src/lib/mail/live.test.ts
-// Add MAIL_LIVE_TRANSPORT=graph to send via the function mailbox.
+// Add MAIL_LIVE_TRANSPORT=graph to send via the function mailbox,
+// MAIL_LIVE_TRANSPORT=smtp via the SMTP_* server.
 import { randomBytes } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { createToken } from "../applicant-token";

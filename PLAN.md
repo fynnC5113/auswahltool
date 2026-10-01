@@ -38,7 +38,7 @@ Entwickelt und getestet wird gegen `auswahltool-test`. Echte Daten liegen nur in
 - [x] **bis 30.09.:** Festlegen: Ende der Bewerbungsphase, Löschdatum, Bewerbungsfragen und Ressorts 2026 (auf `-prod` per Abfrage 30.09.2026). Plätze: siehe unten.
 - [ ] Plätze festlegen (Team; vorläufig 10)
 - [ ] **bis 06.10.:** Feedback-Kriterien und ihre Gewichtung mit dem Team festlegen
-- [x] Anfrage an die Uni-IT zu Graph (siehe Phase G): **abgelehnt am 30.09.2026**, weder Graph noch Allow-Liste für Gmail (Sicherheitsbedenken: produktives System mit Bewerbungsdaten ohne benannte Verantwortliche, Versionierung, Peer Review; kurze Vorlaufzeit). Entscheidung im Call am 30.09.: offen mit den Bewerbern kommunizieren und mit Gmail und den umgebauten Mails planmäßig weitermachen.
+- [x] Anfrage an die Uni-IT zu Graph (siehe Phase G): **abgelehnt am 30.09.2026**, weder Graph noch Allow-Liste für Gmail (Sicherheitsbedenken: produktives System mit Bewerbungsdaten ohne benannte Verantwortliche, Versionierung, Peer Review; kurze Vorlaufzeit). Entscheidung im Call am 30.09.: offen mit den Bewerbern kommunizieren und mit Gmail und den umgebauten Mails planmäßig weitermachen. **Uni-SMTP geprüft (01.10.2026):** Versand über `smtp.office365.com:587` mit Fynns Konto als `termin.lawclinic@law-school.de` scheitert an der Anmeldung (`535 5.7.3 Authentication unsuccessful`, Passwort laut Fynn richtig, Zwei-Faktor-Anmeldung an); die Uni bietet keine App-Kennwörter an (Screenshot mysignins.microsoft.com, „Anmeldemethode hinzufügen“ ohne „App-Kennwort“). Ohne IT also kein Uni-SMTP.
 
 ## Wünsche aus dem Gespräch mit Bian (29.09.2026)
 

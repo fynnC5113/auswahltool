@@ -64,6 +64,12 @@ describe("validateRound", () => {
     expect(errorsOf({ ...validForm(), deletionDate: "2026-10-31" })).toEqual({});
   });
 
+  it("accepts all three mail transports", () => {
+    for (const mailTransport of ["gmail", "graph", "smtp"]) {
+      expect(errorsOf({ ...validForm(), mailTransport })).toEqual({});
+    }
+  });
+
   it.each(["0", "-1", "", "abc", "0,0"])("rejects weight %j", (weight) => {
     const form = validForm();
     form.criteria[0].weight = weight;

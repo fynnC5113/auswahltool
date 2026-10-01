@@ -237,6 +237,7 @@ export function RoundEditor({ initial }: { initial: RoundForm }) {
           <Field label="Versandweg" error={errors.mailTransport}>
             <select {...text("mailTransport")} className={select}>
               <option value="gmail">Gmail-Konto des Tools</option>
+              <option value="smtp">Eigener Mailserver (team@bls-lc.de)</option>
               <option value="graph">Funktionspostfach (Microsoft Graph)</option>
             </select>
           </Field>

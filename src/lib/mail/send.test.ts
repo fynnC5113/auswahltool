@@ -18,6 +18,7 @@ beforeEach(() => {
   vi.stubEnv("GRAPH_CLIENT_ID", "client-1");
   vi.stubEnv("GRAPH_CLIENT_SECRET", "secret-1");
   vi.stubEnv("GRAPH_MAILBOX", "termin@example.org");
+  vi.stubEnv("SMTP_FROM", "bewerbung@example.net");
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -31,6 +32,17 @@ describe("buildMessage", () => {
 
   it("sends from the function mailbox via graph", async () => {
     expect(await render({ transport: "graph" })).toMatch(/^From: "?Law Clinic Orga-Team"? <termin@example\.org>$/m);
+  });
+
+  it("sends from SMTP_FROM via smtp, without Reply-To", async () => {
+    const raw = await render({ transport: "smtp", replyTo: "runde@example.org" });
+    expect(raw).toMatch(/^From: "?Law Clinic Orga-Team"? <bewerbung@example\.net>$/m);
+    expect(raw).not.toMatch(/^Reply-To:/m);
+  });
+
+  it("fails without SMTP_FROM for smtp", () => {
+    vi.stubEnv("SMTP_FROM", "");
+    expect(() => buildMessage(mail, { transport: "smtp" })).toThrow("SMTP_FROM");
   });
 
   it("sets no Reply-To via gmail, even when the round has one", async () => {

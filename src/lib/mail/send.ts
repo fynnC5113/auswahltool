@@ -1,12 +1,13 @@
 // Mail module (TECH_DESIGN 6.5): one sendMail() for every automatic mail.
-// Both transports deliver the same MIME message: "gmail" via Nodemailer SMTP,
+// All transports deliver the same MIME message: "gmail" via Nodemailer SMTP,
 // "graph" via Microsoft Graph sendMail in MIME format from the function
-// mailbox. A calendar invitation (src/lib/calendar.ts) goes as nodemailer's
+// mailbox, "smtp" via any SMTP server (01.10.2026: test with a Law Clinic
+// member's mail server and own domain, under a DPA; no round uses it yet). A calendar invitation (src/lib/calendar.ts) goes as nodemailer's
 // icalEvent: a text/calendar part with the method, no other attachment.
 // Server only.
 import nodemailer, { type SendMailOptions, type Transporter } from "nodemailer";
 
-export type MailTransport = "gmail" | "graph";
+export type MailTransport = "gmail" | "graph" | "smtp";
 
 export interface Mail {
   to: string;
@@ -32,16 +33,17 @@ function requireEnv(name: string): string {
   return value;
 }
 
-/** Sender address of a transport: the Gmail account or the function mailbox. */
+/** Sender address of a transport: the Gmail account, the function mailbox or SMTP_FROM. */
 function senderAddress(transport: MailTransport): string {
-  return requireEnv(transport === "graph" ? "GRAPH_MAILBOX" : "GMAIL_USER");
+  return requireEnv(transport === "graph" ? "GRAPH_MAILBOX" : transport === "smtp" ? "SMTP_FROM" : "GMAIL_USER");
 }
 
 /**
  * Message as handed to nodemailer: sender name and address, reply-to.
  * Via Gmail without Reply-To: a Law School reply-to on a Gmail sender pushed
  * test mails into the junk folder of Law School mailboxes (30.09.2026);
- * replies then reach the Gmail account.
+ * replies then reach the Gmail account. Via SMTP also without Reply-To
+ * until the test shows whether one is safe.
  */
 export function buildMessage(mail: Mail, options: SendOptions = {}): SendMailOptions {
   const transport = options.transport ?? "gmail";
@@ -73,13 +75,30 @@ function gmailTransporter(): Transporter {
   return gmail;
 }
 
-async function sendViaGmail(message: SendMailOptions): Promise<string> {
-  const info = await gmailTransporter().sendMail(message);
+async function sendViaSmtp(transporter: Transporter, message: SendMailOptions): Promise<string> {
+  const info = await transporter.sendMail(message);
   const rejected = info.rejected ?? [];
   if (rejected.length > 0) {
     throw new Error(`Mail rejected for ${rejected.join(", ")}`);
   }
   return info.messageId;
+}
+
+// --- smtp ------------------------------------------------------------------
+
+let smtp: Transporter | undefined;
+
+/** Port 465: TLS from the start; any other port (587): STARTTLS is required. */
+function smtpTransporter(): Transporter {
+  const port = Number(requireEnv("SMTP_PORT"));
+  smtp ??= nodemailer.createTransport({
+    host: requireEnv("SMTP_HOST"),
+    port,
+    secure: port === 465,
+    requireTLS: port !== 465,
+    auth: { user: requireEnv("SMTP_USER"), pass: requireEnv("SMTP_PASSWORD") },
+  });
+  return smtp;
 }
 
 // --- graph -----------------------------------------------------------------
@@ -131,5 +150,6 @@ async function sendViaGraph(message: SendMailOptions): Promise<string> {
 /** Sends one mail and returns its Message-ID. Throws if it was not accepted. */
 export async function sendMail(mail: Mail, options: SendOptions = {}): Promise<string> {
   const message = buildMessage(mail, options);
-  return options.transport === "graph" ? sendViaGraph(message) : sendViaGmail(message);
+  if (options.transport === "graph") return sendViaGraph(message);
+  return sendViaSmtp(options.transport === "smtp" ? smtpTransporter() : gmailTransporter(), message);
 }

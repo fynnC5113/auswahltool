@@ -199,7 +199,7 @@ export function validateRound(form: RoundForm): { errors: FieldErrors } | { valu
     errors.deletionDate = "Das Löschdatum muss nach dem Ende der Gespräche liegen.";
   }
 
-  if (form.mailTransport !== "gmail" && form.mailTransport !== "graph") errors.mailTransport = "Bitte einen Versandweg wählen.";
+  if (!["gmail", "graph", "smtp"].includes(form.mailTransport)) errors.mailTransport = "Bitte einen Versandweg wählen.";
 
   const replyTo = form.replyTo.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyTo)) errors.replyTo = "Bitte eine gültige Mailadresse eingeben.";
