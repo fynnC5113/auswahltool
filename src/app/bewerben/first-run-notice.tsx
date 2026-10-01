@@ -29,7 +29,7 @@ export function FirstRunNotice({ replyTo, hasPrivacyNotice }: { replyTo: string;
         </p>
       )}
       <p className="text-note">
-        Wenn du das Tool nicht nutzen möchtest, kannst du deine Unterlagen (Lebenslauf und Antworten auf die Fragen) auch per Mail an {mail} schicken.
+        Wenn du das Tool nicht nutzen möchtest, kannst du dich auch per Mail bewerben. Schreib uns dafür kurz an {mail}. Wir schicken dir dann die Fragen und sagen dir, welche Unterlagen wir brauchen.
       </p>
     </section>
   );
