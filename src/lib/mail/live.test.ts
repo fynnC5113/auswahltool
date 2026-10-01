@@ -3,6 +3,7 @@
 //   MAIL_LIVE_TO=you@example.com npx vitest run src/lib/mail/live.test.ts
 // Add MAIL_LIVE_TRANSPORT=graph to send via the function mailbox,
 // MAIL_LIVE_TRANSPORT=smtp via the SMTP_* server.
+// MAIL_LIVE_NAME="Vorname Nachname" sets the name in the login link mail.
 import { randomBytes } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { createToken } from "../applicant-token";
@@ -16,7 +17,7 @@ const app = "https://lawclinic-bewerbung.vercel.app";
 
 describe.skipIf(!to)(`live mail via ${transport}`, () => {
   it("sends the login link template", async () => {
-    const mail = loginLinkMail({ name: "Testperson Probe", url: `${app}/auth/confirm?token_hash=${randomBytes(28).toString("hex")}` });
+    const mail = loginLinkMail({ name: process.env.MAIL_LIVE_NAME ?? "Testperson Probe", url: `${app}/auth/confirm?token_hash=${randomBytes(28).toString("hex")}` });
     expect(await sendMail({ to: to!, ...mail }, { transport })).toBeTruthy();
   });
 
