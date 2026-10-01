@@ -589,6 +589,7 @@ export function BoardView({ initial, isAdmin, memberId }: { initial: Board; isAd
     >
       {header}
       <DndContext
+        id="board"
         sensors={sensors}
         collisionDetection={detect}
         accessibility={{
