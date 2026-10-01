@@ -172,6 +172,82 @@ export function toggleDepartment(current: string[], departmentId: string): Depar
 }
 
 // ---------------------------------------------------------------------------
+// History with undo (Phase 17, Fynn 30.09.2026): every member undoes moves
+// and departments, admins also "+"/"−". The database checks the same in
+// undo_board_event; here it decides whether "Rückgängig" is offered and why not.
+// ---------------------------------------------------------------------------
+
+export type EventKind = "move" | "seats" | "departments" | "freeze" | "unfreeze";
+
+/** A board_events row, history in order (seq). */
+export type BoardEvent = {
+  id: string;
+  kind: EventKind;
+  applicantId: string | null;
+  fromZone: Zone | null;
+  fromPosition: number | null;
+  toZone: Zone | null;
+  toPosition: number | null;
+  fromSeats: number | null;
+  toSeats: number | null;
+  fromDepartments: string[] | null;
+  toDepartments: string[] | null;
+  /** This entry undoes that one. */
+  undoes: string | null;
+};
+
+export type UndoBlock =
+  | { error: "unknown_entry" | "not_undoable" | "already_undone" | "moved_since" | "changed_since" | "not_seated" | "not_admin" }
+  | { error: "origin_gone" | "seat_taken"; position: number };
+
+const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x));
+
+/** Why an entry cannot be undone right now, or null if it can. */
+export function undoBlock(
+  history: BoardEvent[],
+  entryId: string,
+  state: BoardState,
+  seats: number,
+  assigned: Record<string, string[]>,
+  isAdmin: boolean,
+): UndoBlock | null {
+  const index = history.findIndex((e) => e.id === entryId);
+  if (index < 0) return { error: "unknown_entry" };
+  const e = history[index];
+  if (e.kind === "freeze" || e.kind === "unfreeze") return { error: "not_undoable" };
+  const later = history.slice(index + 1);
+  if (later.some((x) => x.undoes === e.id)) return { error: "already_undone" };
+
+  if (e.kind === "move") {
+    const card = state.find((p) => p.applicantId === e.applicantId);
+    if (!card) return { error: "moved_since" };
+    const movedLater = later.some((x) => x.kind === "move" && x.applicantId === e.applicantId);
+    const stillThere = card.zone === e.toZone && (card.zone !== "seat" || card.position === e.toPosition);
+    if (movedLater || !stillThere) return { error: "moved_since" };
+    if (e.fromZone === "seat" && e.fromPosition !== null) {
+      if (e.fromPosition > seats) return { error: "origin_gone", position: e.fromPosition };
+      if (state.some((p) => p.zone === "seat" && p.position === e.fromPosition)) return { error: "seat_taken", position: e.fromPosition };
+    }
+    return null;
+  }
+
+  if (e.kind === "seats") {
+    if (!isAdmin) return { error: "not_admin" };
+    if (seats !== e.toSeats) return { error: "changed_since" };
+    // Undoing "+" removes that seat again, which needs it empty.
+    if (e.toSeats! > e.fromSeats! && state.some((p) => p.zone === "seat" && p.position === e.toSeats)) {
+      return { error: "seat_taken", position: e.toSeats! };
+    }
+    return null;
+  }
+
+  const card = state.find((p) => p.applicantId === e.applicantId);
+  if (card?.zone !== "seat") return { error: "not_seated" };
+  if (!sameSet(assigned[e.applicantId!] ?? [], e.toDepartments ?? [])) return { error: "changed_since" };
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Short score (TECH_DESIGN 4.3)
 // ---------------------------------------------------------------------------
 

@@ -1,12 +1,16 @@
 "use client";
 
 // Draft Board (Phase 16, Fynn 30.09.2026, preview "Board-Vorschau Phase 16",
-// version 3). Laptop: three columns, drag with mouse or keyboard (dnd kit),
+// version 3; live, history and freezing Phase 17, preview "Board live –
+// Phase 17", notice variant A). Laptop: three columns, drag with mouse or keyboard (dnd kit),
 // a click opens the details on the right. Phone: zones one below the other,
 // a tap opens "Verschieben nach …". Beamer mode: the same board without the
 // menu and larger. Every change goes through a server action that returns
 // the stored board; the rules are checked in the browser first (board-rules)
-// so a taken seat is rejected at once.
+// so a taken seat is rejected at once. Changes by others arrive over
+// Realtime (a new board_events row), then the board reloads and a line at the
+// bottom says who moved what where.
+import Link from "next/link";
 import {
   DndContext,
   DragOverlay,
@@ -26,7 +30,7 @@ import {
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
-import { shortName, type Board, type BoardCard } from "@/lib/board";
+import { boardResult, shortName, type Board, type BoardCard, type HistoryItem } from "@/lib/board";
 import {
   NONE,
   boardState,
@@ -36,10 +40,33 @@ import {
   moveCard,
   poolOrder,
   toggleDepartment,
+  undoBlock,
   type Target,
+  type UndoBlock,
 } from "@/lib/board-rules";
-import { readLabel, smallButton, textButton, title } from "../../ui";
-import { moveCardAction, setDepartmentsAction, setSeatsAction, type BoardActionResult } from "./actions";
+import { createClient } from "@/lib/supabase/client";
+import {
+  button,
+  dialog as dialogClass,
+  dialogBody,
+  lead,
+  readLabel,
+  secondaryButton,
+  sectionTitle,
+  smallButton,
+  textButton,
+  title,
+} from "../../ui";
+import {
+  freezeAction,
+  moveCardAction,
+  reloadBoardAction,
+  setDepartmentsAction,
+  setSeatsAction,
+  undoAction,
+  unfreezeAction,
+  type BoardActionResult,
+} from "./actions";
 
 const WIDE = "(min-width: 1024px)";
 
@@ -66,8 +93,9 @@ function Dot({ index }: { index: number }) {
   return <span aria-hidden="true" className="inline-block size-2 shrink-0 rounded-full" style={deptColor(index)} />;
 }
 
-export function BoardView({ initial, isAdmin }: { initial: Board; isAdmin: boolean }) {
+export function BoardView({ initial, isAdmin, memberId }: { initial: Board; isAdmin: boolean; memberId: string }) {
   const [board, setBoard] = useState(initial);
+  const [history, setHistory] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [sheet, setSheet] = useState<string | null>(null);
   const [popover, setPopover] = useState<Popover | null>(null);
@@ -77,6 +105,16 @@ export function BoardView({ initial, isAdmin }: { initial: Board; isAdmin: boole
   const [, startTransition] = useTransition();
   const wide = useWide();
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const freezeDialog = useRef<HTMLDialogElement>(null);
+  const unfreezeDialog = useRef<HTMLDialogElement>(null);
+
+  /**
+   * A board from the server. The history only grows, so an answer that
+   * arrives late (shorter history) never replaces a newer one.
+   */
+  function accept(next: Board) {
+    setBoard((current) => (next.history.length >= current.history.length ? next : current));
+  }
 
   const cards = useMemo(() => new Map(board.cards.map((c) => [c.id, c])), [board.cards]);
   const state = useMemo(() => boardState(board.cards.map((c) => c.id), board.placements), [board.cards, board.placements]);
@@ -104,6 +142,68 @@ export function BoardView({ initial, isAdmin }: { initial: Board; isAdmin: boole
   }
 
   useEffect(() => () => clearTimeout(toastTimer.current), []);
+
+  // Live: every new history entry of this round (RLS: members only) reloads
+  // the board. Changes by others get a line at the bottom. After a lost
+  // connection or when the page becomes visible again, reload once.
+  const roundId = board.roundId;
+  useEffect(() => {
+    const supabase = createClient();
+    const fromOthers = new Set<string>();
+    let busy = false;
+    let again = false;
+    let subscribed = false;
+    let closed = false;
+
+    async function reload() {
+      if (busy) {
+        again = true;
+        return;
+      }
+      busy = true;
+      try {
+        do {
+          again = false;
+          const result = await reloadBoardAction(roundId);
+          if (closed || !result.board) continue;
+          accept(result.board);
+          const last = result.board.history.filter((e) => fromOthers.has(e.id)).at(-1);
+          fromOthers.clear();
+          if (last) showToast(`${firstName(last.actorName)}: ${last.undoes ? "Rückgängig, " : ""}${describeEvent(last, result.board)}`);
+        } while (again && !closed);
+      } catch {
+        // The next change or the next visit to the page tries again.
+      } finally {
+        busy = false;
+      }
+    }
+
+    const channel = supabase
+      .channel(`board:${roundId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "board_events", filter: `round_id=eq.${roundId}` },
+        (payload) => {
+          const row = payload.new as { id: string; actor_id: string | null };
+          if (row.actor_id !== memberId) fromOthers.add(row.id);
+          void reload();
+        },
+      )
+      .subscribe((status) => {
+        if (status !== "SUBSCRIBED") return;
+        if (subscribed) void reload();
+        subscribed = true;
+      });
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void reload();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      closed = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      void supabase.removeChannel(channel);
+    };
+  }, [roundId, memberId]);
   useEffect(() => {
     if (!popover) return;
     const close = (e: KeyboardEvent) => e.key === "Escape" && setPopover(null);
@@ -116,7 +216,7 @@ export function BoardView({ initial, isAdmin }: { initial: Board; isAdmin: boole
     startTransition(async () => {
       try {
         const result = await request();
-        if (result.board) setBoard(result.board);
+        if (result.board) accept(result.board);
         if (result.error) showToast(result.error, true);
         else if (done) showToast(done);
       } catch {
@@ -163,6 +263,26 @@ export function BoardView({ initial, isAdmin }: { initial: Board; isAdmin: boole
     const ids = [...r.ids].sort((a, b) => (deptIndex.get(a) ?? 0) - (deptIndex.get(b) ?? 0));
     setBoard({ ...board, assigned: { ...board.assigned, [id]: ids } });
     send(before, () => setDepartmentsAction(board.roundId, id, ids));
+  }
+
+  function undo(eventId: string) {
+    send(board, () => undoAction(board.roundId, eventId, pool), "Rückgängig gemacht.");
+  }
+
+  function freeze() {
+    freezeDialog.current?.close();
+    send(board, () => freezeAction(board.roundId), "Board eingefroren. Das Ergebnis steht fest.");
+  }
+
+  function unfreeze() {
+    unfreezeDialog.current?.close();
+    send(board, () => unfreezeAction(board.roundId), "Einfrieren aufgehoben. Das Board lässt sich wieder ändern.");
+  }
+
+  function openHistory() {
+    setSelected(null);
+    setSheet(null);
+    setHistory(!history);
   }
 
   function togglePresent() {
@@ -222,7 +342,7 @@ export function BoardView({ initial, isAdmin }: { initial: Board; isAdmin: boole
     present,
     editable,
     selected: selected === id,
-    onOpen: () => (wide ? setSelected(selected === id ? null : id) : setSheet(id)),
+    onOpen: () => (setHistory(false), wide ? setSelected(selected === id ? null : id) : setSheet(id)),
     onAssign: (x: number, y: number) => setPopover(popover?.id === id ? null : { id, x, y }),
   });
 
@@ -278,21 +398,98 @@ export function BoardView({ initial, isAdmin }: { initial: Board; isAdmin: boole
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h1 className={title}>Board</h1>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
           {stepper}
+          <button type="button" onClick={openHistory} className={textButton}>
+            Verlauf
+          </button>
           {wide && (
             <button type="button" onClick={togglePresent} className={textButton}>
               {present ? "Beamer-Modus beenden" : "Beamer-Modus"}
             </button>
           )}
+          {isAdmin && editable && (
+            <button type="button" onClick={() => freezeDialog.current?.showModal()} className={textButton}>
+              Einfrieren
+            </button>
+          )}
         </div>
       </div>
-      {board.frozen && <p className="text-note text-muted">Das Board ist eingefroren. Es lässt sich nichts mehr verschieben.</p>}
+      {board.frozen && (
+        <div role="status" className={`flex flex-wrap items-center gap-x-5 gap-y-2 rounded-field bg-accent-soft px-4 py-2.5 ${present ? "text-body" : "text-note"}`}>
+          <span className="min-w-[14rem] flex-1">
+            <b className="font-semibold">Eingefroren</b>
+            {board.frozenAt && ` am ${formatDay(board.frozenAt)} um ${formatTime(board.frozenAt)}`}
+            {board.frozenBy && ` von ${board.frozenBy}`}. Das Ergebnis steht fest, nichts lässt sich mehr verschieben.
+          </span>
+          <Link href="/board/ergebnis" className={textButton}>
+            Ergebnis ansehen
+          </Link>
+          {isAdmin && (
+            <button type="button" onClick={() => unfreezeDialog.current?.showModal()} className={textButton}>
+              Einfrieren aufheben
+            </button>
+          )}
+        </div>
+      )}
       {summary}
     </div>
   );
 
   const seatNumbers = Array.from({ length: board.seats }, (_, i) => i + 1);
+
+  const result = boardResult(board);
+  const dialogs = (
+    <>
+      <dialog ref={freezeDialog} aria-label="Board einfrieren" className={dialogClass}>
+        <div className={dialogBody}>
+          <h2 className={sectionTitle}>Board einfrieren?</h2>
+          <p className={lead}>
+            Danach kann niemand mehr etwas verschieben, Ressorts ändern oder Feedback bearbeiten. Das Ergebnis erscheint unter
+            „Ergebnis“. Ein Admin kann das Einfrieren wieder aufheben.
+          </p>
+          <p className={lead}>
+            {result.accepted.length} {result.accepted.length === 1 ? "Zusage" : "Zusagen"}
+            {bar.filled < board.seats && ` (${board.seats - bar.filled} ${board.seats - bar.filled === 1 ? "Platz" : "Plätze"} frei)`},{" "}
+            {result.waiting.length} Nachrücker, {result.rejected.length} {result.rejected.length === 1 ? "Absage" : "Absagen"}.
+          </p>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button type="button" onClick={freeze} className={button}>
+              Einfrieren
+            </button>
+            <button type="button" onClick={() => freezeDialog.current?.close()} className={secondaryButton}>
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      </dialog>
+      <dialog ref={unfreezeDialog} aria-label="Einfrieren aufheben" className={dialogClass}>
+        <div className={dialogBody}>
+          <h2 className={sectionTitle}>Einfrieren aufheben?</h2>
+          <p className={lead}>Das Board lässt sich danach wieder ändern, das Ergebnis gilt nicht mehr als fest. Alle sehen das sofort.</p>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button type="button" onClick={unfreeze} className={button}>
+              Einfrieren aufheben
+            </button>
+            <button type="button" onClick={() => unfreezeDialog.current?.close()} className={secondaryButton}>
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      </dialog>
+    </>
+  );
+  const historyList = (
+    <HistoryList
+      board={board}
+      state={state}
+      isAdmin={isAdmin}
+      memberId={memberId}
+      editable={editable}
+      large={present}
+      onUndo={undo}
+    />
+  );
 
   // ----- phone -----
   if (!wide) {
@@ -350,6 +547,15 @@ export function BoardView({ initial, isAdmin }: { initial: Board; isAdmin: boole
             </button>
           </Sheet>
         )}
+        {history && (
+          <Sheet onClose={() => setHistory(false)} label="Verlauf">
+            {historyList}
+            <button type="button" onClick={() => setHistory(false)} className={`${textButton} min-h-11 self-center`}>
+              Schließen
+            </button>
+          </Sheet>
+        )}
+        {dialogs}
         {selected && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-surface pb-[env(safe-area-inset-bottom)]">
             <div className="px-4 pt-4">
@@ -431,6 +637,17 @@ export function BoardView({ initial, isAdmin }: { initial: Board; isAdmin: boole
         <DragOverlay dropAnimation={null}>{dragging && cards.has(dragging) ? <CardView {...cardProps(dragging)} lifted /> : null}</DragOverlay>
       </DndContext>
 
+      {history && (
+        <aside className="fixed inset-y-0 right-0 z-[60] flex w-[min(440px,100vw)] flex-col bg-surface shadow-[-12px_0_40px_rgba(0,0,0,0.18)]" aria-label="Verlauf">
+          <div className="flex justify-end px-5 pt-4">
+            <button type="button" onClick={() => setHistory(false)} className={`${textButton} min-h-11`}>
+              Schließen
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8">{historyList}</div>
+        </aside>
+      )}
+      {dialogs}
       {selected && cards.has(selected) && (
         <aside className="fixed inset-y-0 right-0 z-[60] flex w-[min(440px,100vw)] flex-col bg-surface shadow-[-12px_0_40px_rgba(0,0,0,0.18)]" aria-label="Details">
           <div className="flex justify-end px-5 pt-4">
@@ -972,5 +1189,110 @@ function ToastView({ toast }: { toast: Toast }) {
     >
       {toast.text}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// History (Phase 17)
+// ---------------------------------------------------------------------------
+
+const timeFormat = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
+const dayFormat = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit" });
+const formatTime = (iso: string) => timeFormat.format(new Date(iso));
+const formatDay = (iso: string) => `${dayFormat.format(new Date(iso))}.`;
+const firstName = (name: string) => name.split(" ")[0];
+
+/** "Lena Hoffmann → Platz 4", "Plätze 10 → 11", "Lena Hoffmann: ÖA, SBS". */
+function describeEvent(e: HistoryItem, board: Board): string {
+  const name = board.cards.find((c) => c.id === e.applicantId)?.name ?? "Karte";
+  switch (e.kind) {
+    case "move":
+      return `${name} → ${e.toZone === "seat" ? `Platz ${e.toPosition}` : e.toZone === "reject" ? "Nicht aufnehmen" : e.toPosition ? `Pool, Stelle ${e.toPosition}` : "Pool"}`;
+    case "seats":
+      return `Plätze ${e.fromSeats} → ${e.toSeats}`;
+    case "departments": {
+      const names = (e.toDepartments ?? []).map((id) => board.departments.find((d) => d.id === id)).filter((d) => !!d).map((d) => shortName(d!));
+      return `${name}: ${names.length ? names.join(", ") : "kein Ressort"}`;
+    }
+    case "freeze":
+      return "Board eingefroren";
+    case "unfreeze":
+      return "Einfrieren aufgehoben";
+  }
+}
+
+function blockText(block: UndoBlock, e: HistoryItem, board: Board): string | null {
+  const who = firstName(board.cards.find((c) => c.id === e.applicantId)?.name ?? "Die Karte");
+  switch (block.error) {
+    case "moved_since":
+      return `${who} wurde seitdem bewegt.`;
+    case "changed_since":
+      return "Seitdem geändert.";
+    case "seat_taken":
+      return `Platz ${block.position} ist jetzt belegt.`;
+    case "origin_gone":
+      return `Platz ${block.position} gibt es nicht mehr.`;
+    case "not_seated":
+      return `${who} ist nicht mehr auf einem Platz.`;
+    case "not_admin":
+      return "Plätze nehmen nur Admins zurück.";
+    default:
+      return null;
+  }
+}
+
+function HistoryList({
+  board,
+  state,
+  isAdmin,
+  memberId,
+  editable,
+  large,
+  onUndo,
+}: {
+  board: Board;
+  state: ReturnType<typeof boardState>;
+  isAdmin: boolean;
+  memberId: string;
+  editable: boolean;
+  large: boolean;
+  onUndo: (eventId: string) => void;
+}) {
+  const undone = new Set(board.history.map((e) => e.undoes).filter((id): id is string => !!id));
+  const rows = [...board.history].reverse();
+  const text = large ? "text-body" : "text-note";
+  return (
+    <section className="flex flex-col gap-3">
+      <div>
+        <h2 className={sectionTitle}>Verlauf</h2>
+        <p className="text-small text-muted">
+          {rows.length ? `${rows.length} ${rows.length === 1 ? "Änderung" : "Änderungen"}, neueste oben` : "Noch keine Änderungen."}
+        </p>
+      </div>
+      <ol className="-mx-5 flex flex-col">
+        {rows.map((e) => {
+          const block = editable ? undoBlock(board.history, e.id, state, board.seats, board.assigned, isAdmin) : null;
+          const why = block ? blockText(block, e, board) : null;
+          return (
+            <li key={e.id} className="grid grid-cols-[3rem_minmax(0,1fr)_auto] gap-x-2.5 gap-y-0.5 border-t border-line px-5 py-2.5 first:border-t-0">
+              <span className="text-small leading-[21px] text-muted tabular-nums">{formatTime(e.at)}</span>
+              <span className={`${text} min-w-0 ${undone.has(e.id) ? "text-muted line-through decoration-line" : ""}`}>
+                {e.undoes && <span className="text-muted">Rückgängig: </span>}
+                {describeEvent(e, board)}{" "}
+                <span className="text-muted">· {e.actorId === memberId ? "du" : firstName(e.actorName)}</span>
+              </span>
+              {editable && !block ? (
+                <button type="button" onClick={() => onUndo(e.id)} className="text-small leading-[21px] font-medium text-accent">
+                  Rückgängig
+                </button>
+              ) : (
+                <span />
+              )}
+              {why && <span className="col-start-2 col-end-4 text-small text-muted">{why}</span>}
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
