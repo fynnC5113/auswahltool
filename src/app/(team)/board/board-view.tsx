@@ -188,12 +188,18 @@ export function BoardView({ initial, isAdmin, memberId }: { initial: Board; isAd
           if (row.actor_id !== memberId) fromOthers.add(row.id);
           void reload();
         },
-      )
-      .subscribe((status) => {
+      );
+    // Realtime checks the rights once, when the channel joins. Without the
+    // member's token first, it joins as anon and the filter is rejected
+    // ("invalid column for filter round_id", 01.10.2026).
+    void supabase.realtime.setAuth().then(() => {
+      if (closed) return;
+      channel.subscribe((status) => {
         if (status !== "SUBSCRIBED") return;
         if (subscribed) void reload();
         subscribed = true;
       });
+    });
     const onVisible = () => {
       if (document.visibilityState === "visible") void reload();
     };
@@ -1199,7 +1205,7 @@ function ToastView({ toast }: { toast: Toast }) {
 const timeFormat = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
 const dayFormat = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit" });
 const formatTime = (iso: string) => timeFormat.format(new Date(iso));
-const formatDay = (iso: string) => `${dayFormat.format(new Date(iso))}.`;
+const formatDay = (iso: string) => dayFormat.format(new Date(iso));
 const firstName = (name: string) => name.split(" ")[0];
 
 /** "Lena Hoffmann → Platz 4", "Plätze 10 → 11", "Lena Hoffmann: ÖA, SBS". */
