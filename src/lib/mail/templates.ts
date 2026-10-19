@@ -241,16 +241,16 @@ export function bookNowMail({ name, url }: { name: string; url: string }): Conte
   const body = both(
     [
       `Hallo ${name},`,
-      `du kannst jetzt deinen Termin für das Gespräch mit dem Orga-Team der Law Clinic buchen. Über diesen Link wählst du einen freien Termin:\n${url}`,
+      `du kannst jetzt deinen Termin für das Bewerbungsgespräch mit dem Orga-Team der Law Clinic buchen. Über diesen Link wählst du einen freien Termin:\n${url}`,
       "Frühere Links zu deiner Bewerbung gelten nicht mehr.",
       "Viele Grüße\nLaw Clinic Orga-Team",
     ],
     [
       `Hallo ${escapeHtml(name)},`,
-      `du kannst jetzt deinen Termin für das Gespräch mit dem Orga-Team der Law Clinic buchen. Über diesen Link wählst du einen freien Termin:<br>${link(url)}`,
+      `du kannst jetzt deinen Termin für das Bewerbungsgespräch mit dem Orga-Team der Law Clinic buchen. Über diesen Link wählst du einen freien Termin:<br>${link(url)}`,
       "Frühere Links zu deiner Bewerbung gelten nicht mehr.",
       "Viele Grüße<br>Law Clinic Orga-Team",
     ],
   );
-  return { ...body, subject: "Dein Gesprächstermin beim Orga-Team der Law Clinic" };
+  return { ...body, subject: "Termin für dein Bewerbungsgespräch beim Orga-Team der Law Clinic" };
 }
