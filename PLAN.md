@@ -176,7 +176,7 @@ Variante C in Wellen würde 2, 3 und 4 gemeinsam lösen, weil das Tool viele Wü
 
 Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügbarkeiten des Teams müssen vorher stehen.
 
-- [ ] **Phase 9: Verfügbarkeit, Orte und Sperrzeiten**, Ziel **06.10.**
+- [x] **Phase 9: Verfügbarkeit, Orte und Sperrzeiten**, Ziel **06.10.**
   - Ergebnis:
     - `/verfuegbarkeit` mit einem 15-Minuten-Raster zum Antippen und der Obergrenze, am Handy bedienbar
     - Orte und Sperrzeiten in `/terminplanung`
@@ -185,6 +185,7 @@ Die Bewerber sollen ab dem Ende der Bewerbungsphase buchen können. Die Verfügb
     - Eine Sperrzeit für 0.23 wird im Raster als belegt angezeigt.
     - Danach trägt das Team seine echten Verfügbarkeiten ein.
   - Stand 28.09.2026, **Prüfung belegt, Haken fehlt nur wegen der echten Einträge des Teams:** Commit `2b961df`, live. Vitest `src/lib/availability-grid.test.ts` (19: Raster 08:00–20:00, Winterzeit ab 25.10., Felder außerhalb abgewiesen, Sperrzeit-Überlappung, Obergrenze) und `src/lib/availability.test.ts` gegen `-test` (13: speichern und ändern, deaktiviertes Mitglied speichert nichts, Orte und Sperrzeiten nur Admin, Ende vor Beginn abgewiesen, Ort mit Termin nicht löschbar); `npm test` 419 grün. Von Hand auf `-prod` am Handy (Fynn, Screenshots 22:24–22:27): Ort 0.23 als Standard angelegt, Sperrzeit „Beratung“ im Raster grau; beide Konten (Gmail, Uni) je 8 Felder am 20.10. mit Obergrenze 2 bzw. 1 gespeichert, per Abfrage auf `-prod` bestätigt. **Offen:** Das Team trägt die echten Verfügbarkeiten ein, sobald der Gesprächszeitraum nach dem Gespräch mit Bian feststeht; dann abhaken.
+  - Abgehakt 19.10.2026: Per Abfrage auf `-prod` haben acht Mitglieder echte Verfügbarkeiten eingetragen (Fynn 140,75 Std, Leonhard 62,5, Erna 28,75, Viviane 24,75, Josina 22, Victoria 21, Jan 10, Tom 7; Obergrenzen Erna 4, Victoria 2). Daraus 121 Termine, alle buchbar; Buchungsaufforderung an 12 Bewerber verschickt, die ersten zwei haben am selben Abend gebucht.
 
 - [x] **Phase 10: Slotvorschläge (Kernlogik)**
   - Ergebnis: Eine reine Funktion nach TECH_DESIGN 6.2.
