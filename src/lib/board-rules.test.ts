@@ -10,12 +10,15 @@ import {
   poolOrder,
   shortScore,
   toggleDepartment,
+  undoBlock,
   undoMove,
+  type BoardEvent,
   type BoardState,
   type HistoryEntry,
   type Move,
   type MoveResult,
   type ScoreCriterion,
+  type Zone,
 } from "./board-rules";
 
 const ids = ["anna", "ben", "clara", "dora", "emil"];
@@ -264,6 +267,80 @@ describe("toggleDepartment", () => {
   });
 });
 
+describe("undoBlock", () => {
+  const blank = { applicantId: null, fromZone: null, fromPosition: null, toZone: null, toPosition: null, fromSeats: null, toSeats: null, fromDepartments: null, toDepartments: null, undoes: null };
+  const mv = (id: string, applicantId: string, from: [Zone, number | null], to: [Zone, number | null], undoes: string | null = null): BoardEvent => ({
+    ...blank,
+    id,
+    kind: "move",
+    applicantId,
+    fromZone: from[0],
+    fromPosition: from[1],
+    toZone: to[0],
+    toPosition: to[1],
+    undoes,
+  });
+  const seatsEv = (id: string, from: number, to: number): BoardEvent => ({ ...blank, id, kind: "seats", fromSeats: from, toSeats: to });
+  const depEv = (id: string, applicantId: string, from: string[], to: string[]): BoardEvent => ({
+    ...blank,
+    id,
+    kind: "departments",
+    applicantId,
+    fromDepartments: from,
+    toDepartments: to,
+  });
+  const onSeats = (...seated: [string, number][]) =>
+    boardState(ids, seated.map(([applicantId, position]) => ({ applicantId, zone: "seat" as const, position })));
+
+  it("allows undoing a move while the card is still where the entry put it", () => {
+    const state = onSeats(["anna", 2]);
+    expect(undoBlock([mv("e1", "anna", ["pool", 1], ["seat", 2])], "e1", state, 5, {}, false)).toBeNull();
+  });
+
+  it("rejects a move that was already undone or where the card moved later", () => {
+    const state = onSeats(["anna", 3]);
+    const history = [mv("e1", "anna", ["pool", 1], ["seat", 2]), mv("e2", "anna", ["seat", 2], ["seat", 3])];
+    expect(undoBlock(history, "e1", state, 5, {}, true)).toEqual({ error: "moved_since" });
+    const back = [mv("e1", "anna", ["pool", 1], ["seat", 2]), mv("e2", "anna", ["seat", 2], ["pool", 1], "e1")];
+    expect(undoBlock(back, "e1", empty(), 5, {}, true)).toEqual({ error: "already_undone" });
+    // The undo itself can be undone (the card is back in the pool).
+    expect(undoBlock(back, "e2", empty(), 5, {}, true)).toBeNull();
+  });
+
+  it("rejects a move back to a taken or removed seat", () => {
+    const taken = onSeats(["ben", 1]);
+    const history = [mv("e1", "anna", ["seat", 1], ["reject", null])];
+    const state = taken.map((p) => (p.applicantId === "anna" ? { ...p, zone: "reject" as const } : p));
+    expect(undoBlock(history, "e1", state, 5, {}, true)).toEqual({ error: "seat_taken", position: 1 });
+    const gone = [mv("e1", "anna", ["seat", 5], ["reject", null])];
+    const rejected = empty().map((p) => (p.applicantId === "anna" ? { ...p, zone: "reject" as const } : p));
+    expect(undoBlock(gone, "e1", rejected, 4, {}, true)).toEqual({ error: "origin_gone", position: 5 });
+  });
+
+  it("lets only admins undo the seats, and only while the number is unchanged", () => {
+    expect(undoBlock([seatsEv("e1", 10, 11)], "e1", empty(), 11, {}, false)).toEqual({ error: "not_admin" });
+    expect(undoBlock([seatsEv("e1", 10, 11)], "e1", empty(), 11, {}, true)).toBeNull();
+    expect(undoBlock([seatsEv("e1", 10, 11)], "e1", empty(), 12, {}, true)).toEqual({ error: "changed_since" });
+    // Undoing "+" removes seat 11, which must be empty.
+    expect(undoBlock([seatsEv("e1", 10, 11)], "e1", onSeats(["anna", 11]), 11, {}, true)).toEqual({ error: "seat_taken", position: 11 });
+    expect(undoBlock([seatsEv("e1", 11, 10)], "e1", onSeats(["anna", 10]), 10, {}, true)).toBeNull();
+  });
+
+  it("undoes departments only on a seat and only while they are unchanged", () => {
+    const state = onSeats(["anna", 1]);
+    const history = [depEv("e1", "anna", [], ["d1", "d2"])];
+    expect(undoBlock(history, "e1", state, 5, { anna: ["d2", "d1"] }, false)).toBeNull();
+    expect(undoBlock(history, "e1", state, 5, { anna: ["d1"] }, false)).toEqual({ error: "changed_since" });
+    expect(undoBlock(history, "e1", empty(), 5, { anna: ["d1", "d2"] }, false)).toEqual({ error: "not_seated" });
+  });
+
+  it("never undoes freezing, and rejects unknown entries", () => {
+    const freeze: BoardEvent = { ...blank, id: "e1", kind: "freeze" };
+    expect(undoBlock([freeze], "e1", empty(), 5, {}, true)).toEqual({ error: "not_undoable" });
+    expect(undoBlock([], "x", empty(), 5, {}, true)).toEqual({ error: "unknown_entry" });
+  });
+});
+
 describe("shortScore", () => {
   const criteria: ScoreCriterion[] = [
     { id: "c1", weight: 1, scaleMin: 1, scaleMax: 5 },
@@ -310,6 +387,19 @@ describe("shortScore", () => {
     expect(onlyDraft.value).toBeNull();
     expect(formatShortScore(onlyDraft.value)).toBe("–");
     expect(shortScore([], [{ submitted: true, scores: [] }]).value).toBeNull();
+  });
+
+  it("counts 0 on a 0..2 scale as the lowest score, not as missing", () => {
+    // 0 on 0..2 = 0, 2 on 0..2 = 1 → (0 + 1) / 2 = 0.5 → 1 on 0..2
+    const zeroToTwo: ScoreCriterion[] = [{ id: "z", weight: 1, scaleMin: 0, scaleMax: 2 }];
+    const low = shortScore(zeroToTwo, [{ submitted: true, scores: [{ criterionId: "z", score: 0 }] }]);
+    expect(low).toEqual({ value: 0, feedbackCount: 1 });
+    expect(formatShortScore(low.value)).toBe("0,0");
+    const mixed = shortScore(zeroToTwo, [
+      { submitted: true, scores: [{ criterionId: "z", score: 0 }] },
+      { submitted: true, scores: [{ criterionId: "z", score: 2 }] },
+    ]);
+    expect(mixed.value).toBe(1);
   });
 
   it("formats with one decimal and a comma", () => {

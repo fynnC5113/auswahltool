@@ -31,5 +31,5 @@ export default async function BoardPage() {
     );
   }
 
-  return <BoardView initial={board} isAdmin={member.role === "admin"} />;
+  return <BoardView initial={board} isAdmin={member.role === "admin"} memberId={member.id} />;
 }

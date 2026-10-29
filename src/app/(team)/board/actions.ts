@@ -1,9 +1,9 @@
 "use server";
 
-// Board actions (Phase 16). The member's session; the database functions
+// Board actions (Phase 16, undo and freezing Phase 17). The member's session; the database functions
 // check every rule again. Each action returns the fresh board, so the page
 // shows the stored state after every change (also after a rejected one).
-import { loadBoard, moveCard, setBoardDepartments, setSeats, type Board, type BoardResult } from "@/lib/board";
+import { freezeBoard, loadBoard, moveCard, setBoardDepartments, setSeats, undoEvent, unfreezeBoard, type Board, type BoardResult } from "@/lib/board";
 import type { Zone } from "@/lib/board-rules";
 import { createClient } from "@/lib/supabase/server";
 
@@ -30,6 +30,18 @@ export async function setSeatsAction(roundId: string, delta: 1 | -1): Promise<Bo
 
 export async function setDepartmentsAction(roundId: string, applicantId: string, departmentIds: string[]): Promise<BoardActionResult> {
   return after(roundId, await setBoardDepartments(await createClient(), applicantId, departmentIds));
+}
+
+export async function undoAction(roundId: string, eventId: string, pool: string[]): Promise<BoardActionResult> {
+  return after(roundId, await undoEvent(await createClient(), eventId, pool));
+}
+
+export async function freezeAction(roundId: string): Promise<BoardActionResult> {
+  return after(roundId, await freezeBoard(await createClient(), roundId));
+}
+
+export async function unfreezeAction(roundId: string): Promise<BoardActionResult> {
+  return after(roundId, await unfreezeBoard(await createClient(), roundId));
 }
 
 /** Reload without a change ("Neu laden" after a conflict). */

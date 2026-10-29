@@ -32,6 +32,12 @@ describe("missingParts", () => {
     ).toEqual(["c1", "c2", OVERALL]);
   });
 
+  it("counts 0 on a 0..2 scale as a score, not as empty", () => {
+    const zeroToTwo: Criterion[] = [{ id: "z", name: "Motivation", description: "", scaleMin: 0, scaleMax: 2 }];
+    expect(missingParts(zeroToTwo, { overall: "Gut.", scores: [{ criterionId: "z", score: 0, text: "Kaum." }] })).toEqual([]);
+    expect(missingParts(zeroToTwo, { overall: "Gut.", scores: [{ criterionId: "z", score: null, text: "Kaum." }] })).toEqual(["z"]);
+  });
+
   it("is empty when everything is filled in", () => {
     expect(
       missingParts(criteria, {
