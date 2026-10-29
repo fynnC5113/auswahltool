@@ -389,6 +389,19 @@ describe("shortScore", () => {
     expect(shortScore([], [{ submitted: true, scores: [] }]).value).toBeNull();
   });
 
+  it("counts 0 on a 0..2 scale as the lowest score, not as missing", () => {
+    // 0 on 0..2 = 0, 2 on 0..2 = 1 → (0 + 1) / 2 = 0.5 → 1 on 0..2
+    const zeroToTwo: ScoreCriterion[] = [{ id: "z", weight: 1, scaleMin: 0, scaleMax: 2 }];
+    const low = shortScore(zeroToTwo, [{ submitted: true, scores: [{ criterionId: "z", score: 0 }] }]);
+    expect(low).toEqual({ value: 0, feedbackCount: 1 });
+    expect(formatShortScore(low.value)).toBe("0,0");
+    const mixed = shortScore(zeroToTwo, [
+      { submitted: true, scores: [{ criterionId: "z", score: 0 }] },
+      { submitted: true, scores: [{ criterionId: "z", score: 2 }] },
+    ]);
+    expect(mixed.value).toBe(1);
+  });
+
   it("formats with one decimal and a comma", () => {
     expect(formatShortScore(4)).toBe("4,0");
     expect(formatShortScore(3.25)).toBe("3,3");
